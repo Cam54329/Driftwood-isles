@@ -9,7 +9,7 @@ function setupPlayer(){const sp=world.spawn[state.last]||world.spawn.cove;player
  const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='rgba(255,253,249,.95)';x.beginPath();x.arc(64,64,52,0,TAU);x.fill();x.font='800 84px Manrope, sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#f39d7c';x.fillText('!',64,70);
  exclaim=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthTest:false}));exclaim.scale.set(1.3,1.3,1);exclaim.visible=false;exclaim.renderOrder=6;scene.add(exclaim);}
 function rebuildPlayerRig(){const pos=prig?prig.root.position.clone():player.pos.clone();const ry=prig?prig.root.rotation.y:player.face;disposeRig(prig);prig=makeChar(playerLook());prig.root.position.copy(pos);prig.root.rotation.y=ry;scene.add(prig.root);
- panim=new CharAnim(prig);panim.onStep=footstep;rodObj=null;equipRodModel();if(F.held)prig.root.add(F.held);
+ panim=new CharAnim(prig);panim.onStep=footstep;rodObj=null;equipRodModel();if(F.held)prig.root.add(F.held);myTag=null;rebuildPlayerTag();
  if(boat){const p=boat.g.position.clone(),r=boat.g.rotation.clone();scene.remove(boat.g);boat.g=makeBoat(profileOr().color,state.boat);boat.g.position.copy(p);boat.g.rotation.copy(r);}}
 function equipRodModel(){if(rodObj&&rodObj.g.parent)rodObj.g.parent.remove(rodObj.g);rodObj=buildRod(RODM[state.rod],state.ench[state.rod]);prig.aR.hand.add(rodObj.g);}
 function placeBoatAt(key){const d=world.boatDock[key];boat.pos.set(d.x,0,d.z);boat.yaw=d.yaw;boat.speed=0;}
@@ -23,19 +23,20 @@ const keys={},input={x:0,y:0,rot:0},joy={x:0,y:0,id:null};
 const cam={yaw:0,pitch:.34,dist:12,tdist:12,target:new V3(),goal:null,manualT:9,fov:55};
 const ptrs=new Map();let pinch=null,camBtn=0;
 const typing=()=>{const a=document.activeElement;return a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA');};
-function uiBlocked(){return !$('#panelWrap').hidden||!$('#joinWrap').hidden;}
+function uiBlocked(){return !$('#panelWrap').hidden||!$('#joinWrap').hidden||PAUSE.on||MENU.on;}
 addEventListener('keydown',e=>{const k=e.code;if(typing()){if(k==='Escape')document.activeElement.blur();return;}
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k))e.preventDefault();AU.init();
  if(e.repeat){keys[k]=true;return;}keys[k]=true;
- if(k==='Escape'){if(PHOTO.on)togglePhoto(false);else if(uiBlocked())closePanel();else hideEmotes();return;}
+ if(MENU.on){if(k==='Escape')closePanel();else menuKey(k);return;}
+ if(k==='Escape'){if(PHOTO.on)togglePhoto(false);else if(!$('#panelWrap').hidden)closePanel();else if(PAUSE.on)closePause();else if(!$('#emoteMenu').hidden)hideEmotes();else if(!JOIN.on)openPause();return;}
  if(PHOTO.on){if(k==='KeyP')togglePhoto(false);return;}
  if(uiBlocked())return;
  if(F.st==='reeling'&&(k==='Space'||k==='KeyF')){reelHold(true);return;}
  if(F.st==='waiting'&&k==='Space'){if(shakes.length)hitShake(shakes[0]);return;}
  if(k==='Enter'){if(F.st==='reeling'){reelHold(true);return;}openChat();e.preventDefault();return;}
- if(k==='Space')doJump();if(k==='KeyE')doInteract();if(k==='KeyF')castDown();if(k==='KeyB')openBag();if(k==='KeyG')openDex();if(k==='KeyL')openLeaderboard();if(k==='KeyK')openStats();if(k==='KeyO')openOnline();if(k==='KeyP')togglePhoto(true);
+ if(k==='Space')doJump();if(k==='KeyE')doInteract();if(k==='KeyF')castDown();if(k==='KeyB')openBag();if(k==='KeyG')openDex();if(k==='KeyL')openLeaderboard();if(k==='KeyK')openStats();if(k==='KeyO')openOnline();if(k==='KeyP')togglePhoto(true);if(k==='KeyM')openMap();if(k==='KeyQ')openQuests();
  if(k==='Comma')snapCam(1);if(k==='Period')snapCam(-1);
- if(k==='Digit1')playEmote('wave');if(k==='Digit2')playEmote('dance');if(k==='Digit3')playEmote('cheer');if(k==='Digit4')playEmote('show');});
+ const dg=/^Digit([1-8])$/.exec(k);if(dg){const n=+dg[1];if(!$('#emoteMenu').hidden&&n<=4)playEmote(['wave','dance','cheer','show'][n-1]);else hotbarKey(n);}});
 addEventListener('keyup',e=>{const k=e.code;keys[k]=false;if(F.st==='reeling'&&(k==='Space'||k==='KeyF'||k==='Enter'))reelHold(false);if(k==='KeyF')castUp();});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;if(F.st==='reeling')reelHold(false);if(F.st==='charging')castUp();camBtn=0;});
 function snapCam(dir){cam.goal=(cam.goal==null?cam.yaw:cam.goal)+dir*Math.PI/4;cam.manualT=0;}
@@ -47,7 +48,7 @@ canvas.addEventListener('pointerdown',e=>{AU.init();canvas.focus({preventScroll:
 canvas.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
  if(p.mode==='pinch'&&pinch&&ptrs.size===2){const a=[...ptrs.values()];const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);cam.tdist=clamp(pinch.dist*pinch.d/Math.max(d,1),4,PHOTO.on?60:32);return;}
  if(p.mode==='pending'&&Math.hypot(p.x-p.sx,p.y-p.sy)>6)p.mode='drag';
- if(p.mode==='drag'){cam.yaw-=dx*.0058;cam.pitch=clamp(cam.pitch+dy*.0048,.04,1.35);cam.goal=null;cam.manualT=0;}});
+ if(p.mode==='drag'){cam.yaw-=dx*.0058*(state.settings.sens??1);cam.pitch=clamp(cam.pitch+dy*.0048*(state.settings.sens??1)*(state.settings.invY?-1:1),.04,1.35);cam.goal=null;cam.manualT=0;}});
 const endPtr=e=>{const p=ptrs.get(e.pointerId);if(!p)return;if(p.mode==='charge')castUp();ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;};
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
 canvas.addEventListener('wheel',e=>{e.preventDefault();cam.tdist=clamp(cam.tdist*(1+e.deltaY*.0011),4,PHOTO.on?60:32);},{passive:false});
@@ -226,11 +227,12 @@ function updateReel(dt){const R=F.reel;R.t+=dt;const acc=2.7;R.bv+=(R.hold?acc:-
  if(R.prog>=1)landCatch();else if(R.prog<=0){hideReel();F.st='retract';F.t=0;F.retFrom.copy(bobber.position);AU.escape();toast(F.catch.relic?'The relic slipped off the hook…':'The fish got away!');}}
 function landCatch(){hideReel();const c=F.catch;AU.catch(c.r);splash(bobber.position,22,6);addRipple(bobber.position.x,bobber.position.z,1.5);bobber.visible=false;fline.visible=false;
  let held,card;const id=rid();
- if(c.relic){state.relics++;held=buildRelic();held.scale.setScalar(.8);card=`<div class="cc-new">TIDE RELIC</div><div class="cc-name">Tide Relic</div><div class="cc-tags"><span class="pill" style="--c:#c6f4ff">Enchant item</span></div><div class="muted">Offer it at the Tide Altar on Mossreach to enchant your rod.</div>`;gainXP(80);F.lastCatch={i:id,sp:'relic',m:null,w:0};$('#catchCard').style.setProperty('--rc','#9eeaff');}
+ if(c.relic){state.relics++;questEvent('relic');held=buildRelic();held.scale.setScalar(.8);card=`<div class="cc-new">TIDE RELIC</div><div class="cc-name">Tide Relic</div><div class="cc-tags"><span class="pill" style="--c:#c6f4ff">Enchant item</span></div><div class="muted">Offer it at the Tide Altar on Mossreach to enchant your rod.</div>`;gainXP(80);F.lastCatch={i:id,sp:'relic',m:null,w:0};$('#catchCard').style.setProperty('--rc','#9eeaff');}
  else{const f={id:state.uid++,sp:c.sp.id,w:c.w,mut:c.mut,lock:false};state.inv.push(f);const dx=state.dex[c.sp.id]||(state.dex[c.sp.id]={n:0,best:0,muts:[]});const isNew=dx.n===0;dx.n++;dx.best=Math.max(dx.best,c.w);if(c.mut&&!dx.muts.includes(c.mut))dx.muts.push(c.mut);if(Math.random()<stats().dbl&&state.inv.length<maxInv()){state.inv.push({id:state.uid++,sp:c.sp.id,w:rollWeight(c.sp,stats().wt),mut:c.mut,lock:false});dx.n++;setTimeout(()=>toast('Double catch! A second '+c.sp.name+' came up too.','gold'),600);}
   held=buildFish(c.sp,c.mut);held.scale.setScalar(fishScale(c.sp,c.w));
   card=`${isNew?'<div class="cc-new">NEW SPECIES</div>':''}<div class="cc-name">${c.mut?MUTS[c.mut].n+' ':''}${esc(c.sp.name)}</div><div class="cc-tags">${rarPill(c.r)}${c.mut?mutPill(c.mut):''}</div><div class="cc-stats"><span><b>${fmtW(c.w)} kg</b>Weight</span><span><b>${fmt(fishValue(f))}c</b>Value</span></div>`;
   const avg=(c.sp.minW+c.sp.maxW)/2;gainXP(RAR[c.r].xp*(c.mut?1.5:1)*clamp(c.w/avg,.6,2));F.lastCatch={i:id,sp:c.sp.id,m:c.mut||null,w:c.w};$('#catchCard').style.setProperty('--rc',RAR[c.r].c);
+  {const pz=pondAt(F.to.x,F.to.z);questEvent('catch',{sp:c.sp.id,w:c.w,mut:c.mut,r:c.r,zone:F.zone,isl:pz?pz.isl:zoneAt(F.to.x,F.to.z),night:isNight(),sea:player.mode==='boat'&&zoneAt(player.pos.x,player.pos.z)==='sea',ev:!!(env.event&&env.event.big)});card+=catchQuestInfo();}
   if(isNotable(c.r,c.mut)){addFeed(profileOr().name,c.sp,c.mut,c.w,profileOr().color,true,id);if(typeof netOnMyCatch==='function')netOnMyCatch(c,id);}}
  const cc=$('#catchCard');cc.innerHTML=card;cc.hidden=false;cc.onclick=()=>finishCatch();
  F.held=held;prig.root.add(held);held.position.set(0,HEAD_TOP+.75,0);rodObj.g.visible=false;player.face=cam.yaw;F.st='caught';F.t=0;save();updateHUD();}
@@ -254,7 +256,7 @@ function updateFishing(dt){F.t+=dt;const T=WIND.uTime.value;
 
 /* ---------- XP / HUD ---------- */
 const xpNeed=l=>Math.round(80*Math.pow(l,1.45));
-function gainXP(n){state.xp+=Math.round(n*stats().xp);while(state.xp>=xpNeed(state.level)){state.xp-=xpNeed(state.level);state.level++;const bonus=state.level*50;state.coins+=bonus;state.earned+=bonus;AU.level();toast(`Level ${state.level}! +${fmt(bonus)} coins, +1.5% luck`,'gold');}}
+function gainXP(n){state.xp+=Math.round(n*stats().xp);let up=false;while(state.xp>=xpNeed(state.level)){state.xp-=xpNeed(state.level);state.level++;up=true;const bonus=state.level*50;state.coins+=bonus;state.earned+=bonus;AU.level();toast(`Level ${state.level}! +${fmt(bonus)} coins, +1.5% luck`,'gold');}if(up){checkLevelTitles();rebuildPlayerTag();}}
 function rarPill(r){const R=RAR[r];return `<span class="pill ${r===6?'secret':r===5?'exotic':''}" style="--c:${R.p}">${R.n}</span>`;}
 function mutPill(m){return `<span class="pill" style="--c:${MUTS[m].c}">${MUTS[m].n} ×${MUTS[m].m}</span>`;}
 function updateHUD(){$('#coinTxt').textContent=fmt(state.coins);$('#lvlTxt').textContent='Level '+state.level;$('#xpFill').style.width=(state.xp/xpNeed(state.level)*100)+'%';$('#relicTxt').textContent=state.relics?state.relics+' relic'+(state.relics>1?'s':''):'';updateGear();}
@@ -334,7 +336,7 @@ function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].in
  const fs=F.st==='caught'||player.emote==='show'?'caught':F.st;
  panim.update(dt,{spd:player.mode==='walk'?player.speed:0,ground:player.onGround,vy:player.vy,turn:player.mode==='walk'?player.turn:0,sit:player.mode==='boat',fish:fs,fishT:F.t,power:F.power,hold:F.reel&&F.reel.hold,emote:player.emote,emT:player.emT});
  if(rodObj){const re=rodObj.g;re.rotation.x=Math.PI/2+(F.st==='reeling'?.12+Math.sin(F.t*24)*.05*(F.reel&&F.reel.hold?1:.3):F.st==='bite'?.18:0);if(re.userData.ench){re.userData.ench.rotation.y+=dt*3;re.userData.ench.scale.setScalar(1+Math.sin(WIND.uTime.value*5)*.2);}}
- const z=zoneAt(player.pos.x,player.pos.z);if(z!==player.zone){player.zone=z;showZone(z);if(z!=='sea'&&state.unlocked.includes(z))state.last=z;}}
+ const z=zoneAt(player.pos.x,player.pos.z);if(z!==player.zone){player.zone=z;if(!MENU.on)showZone(z);if(z!=='sea')questEvent('visit',{zone:z});if(z!=='sea'&&state.unlocked.includes(z))state.last=z;}}
 function updateBoat(dt){const T=WIND.uTime.value,p=boat.pos;const y=waveH(p.x,p.z,T);boat.g.position.set(p.x,y-.15,p.z);boat.g.rotation.set(0,boat.yaw,0);
  const fx=Math.sin(boat.yaw),fz=Math.cos(boat.yaw);const pitch=(waveH(p.x+fx*2,p.z+fz*2,T)-waveH(p.x-fx*2,p.z-fz*2,T))/4;const roll=(waveH(p.x+fz,p.z-fx,T)-waveH(p.x-fz,p.z+fx,T))/2;
  boat.g.rotation.x=-pitch-boat.speed*.004;boat.g.rotation.z=roll;}

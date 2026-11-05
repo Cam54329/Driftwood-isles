@@ -1,0 +1,120 @@
+'use strict';
+/* Driftwood Isles — NPC quests, dialogue and titles.
+   Each NPC offers a short chain. Progress is tracked from game events (questEvent) and saved in state.quests. */
+
+/* goal filters for 'catch': zone (island or pond key), sp, r (min rarity), mut (true = any), w (min kg), night, sea (from the boat at sea), ev (during a big event) */
+const QUESTS=[
+ {id:'marlo1',npc:'marlo',n:'First Catch',goal:{t:'catch',n:3},rw:{c:120,xp:40},
+  offer:"New face on the docks! Tell you what: bring me three fish, any kind at all, and I'll show you how fair old Marlo pays.",prog:"Any fish will do. The end of the dock is where the nibbles are.",done:"Three fish! You've got the knack. Here, first wage of many."},
+ {id:'marlo2',npc:'marlo',n:'Market Day',goal:{t:'sell',n:600},rw:{c:250,xp:80,bait:['shrimp',5]},req:['marlo1'],
+  offer:"Now let's see you trade. Sell me 600 coins' worth of fish. Lock the ones you love so you don't sell them by accident.",prog:"Keep 'em coming. Heavy fish and mutations pay best.",done:"Ha! You drive a bargain. Take some salted shrimp, they work wonders."},
+ {id:'marlo3',npc:'marlo',n:'The Big One',goal:{t:'catch',n:1,w:8},rw:{c:600,xp:160,title:'Big Catch'},req:['marlo2'],
+  offer:"Every angler has a story about the big one. Go make yours: land a single fish over 8 kilograms.",prog:"Over eight kilos. Try deeper water, or the far islands.",done:"Would you look at that monster! I'll be telling this one for years."},
+ {id:'tess1',npc:'tess',n:'Tackle Up',goal:{t:'rod',n:1},rw:{c:150,xp:60,bait:['worm',10]},
+  offer:"That driftwood stick won't last you. Buy any new rod from my rack and I'll throw in a tin of worms.",prog:"Pine, bamboo, coral... pick whatever feels right in your hands.",done:"Now that's a proper rod. Here's your worms, as promised."},
+ {id:'tess2',npc:'tess',n:'Fine Tuning',goal:{t:'catch',n:5,r:1},rw:{c:400,xp:120,bait:['glowfly',5]},req:['tess1'],
+  offer:"A good rod finds good fish. Catch five Uncommon fish or better and come tell me how it handles.",prog:"Uncommon or rarer. Bait helps the odds.",done:"Told you it'd sing. Glowflies for the night shift."},
+ {id:'gilda1',npc:'gilda',n:'Shiny Things',goal:{t:'catch',n:1,mut:true},rw:{c:500,xp:140,title:'Collector'},
+  offer:"I collect oddities, dear. Shiny, golden, glowing... Bring me word of any mutated fish and I'll make it worth your while.",prog:"Mutations are rare. The Prism Lure tilts the odds, and so does a Mutation Surge.",done:"Oh, marvellous! A true collector's eye. Wear the title proudly."},
+ {id:'gilda2',npc:'gilda',n:'Wonders of the Deep',goal:{t:'catch',n:3,ev:true},rw:{c:1500,xp:300,title:'Starwatcher'},req:['gilda1'],
+  offer:"Sometimes the isles put on a show: whales, falling stars, the glowing tide. Catch three fish while a big event is running.",prog:"Watch the banner at the top. A big event comes every quarter hour or so.",done:"You were there for it! Not many can say that."},
+ {id:'rook1',npc:'rook',n:'Chart a Course',goal:{t:'visit',n:1,zone:'moss'},rw:{c:400,xp:100},
+  offer:"Pebble Cove's only the start. Buy a chart for Mossreach and set foot on it. The bog's got fish you won't believe.",prog:"Charts are on my board. Sail there, or I'll ferry you once you own the chart.",done:"Smell that bog on you! Welcome back, explorer."},
+ {id:'rook2',npc:'rook',n:'Sea Legs',goal:{t:'catch',n:3,sea:true},rw:{c:600,xp:160,title:'Sea Legs'},req:['rook1'],
+  offer:"Real anglers fish the open water. Take your boat out past the buoys and land three fish from the deck.",prog:"From the boat, out at sea. Stop the engine before you cast.",done:"Steady hands, salt in the hair. You've earned your sea legs."},
+ {id:'harlan1',npc:'harlan',n:'Shakedown Cruise',goal:{t:'catch',n:2,sea:true},rw:{c:300,xp:90,bait:['shrimp',8]},
+  offer:"Every boat needs a shakedown. Take yours out and haul in two fish from the deck. Tell me how she rides.",prog:"Two fish, from the boat. She's moored at the end of the dock.",done:"Not a leak in sight! Fine work. Have some shrimp for the next trip."},
+ {id:'odessa1',npc:'odessa',n:'Moonlight Brew',goal:{t:'catch',n:3,night:true},rw:{c:450,xp:140,title:'Night Owl'},
+  offer:"My best brews need fish caught under the moon. Bring me three night-caught fish, would you?",prog:"After dusk. The lamps on the dock light the way.",done:"Perfect, still cold from the dark water. You're a proper night owl."},
+ {id:'bramble1',npc:'bramble',n:'Bog Bounty',goal:{t:'catch',n:5,zone:'moss'},rw:{c:800,xp:200},
+  offer:"Mossreach waters are thick with life if you're patient. Five fish from around the isle, that's all I ask.",prog:"Around the shore or in the Murk Pool. Mind the mushrooms.",done:"Good haul! The bog likes you."},
+ {id:'mags1',npc:'mags',n:'Pond Life',goal:{t:'catch',n:3,zone:'pond_moss'},rw:{c:700,xp:180,bait:['prism',3]},
+  offer:"The Murk Pool keeps its own secrets. Three fish from it, and I'll part with some Prism Lures.",prog:"The pool's up the path from the dock. Its fish live nowhere else.",done:"Murk Pool regulars! Here, these lures shimmer like nothing else."},
+ {id:'fen1',npc:'fen',n:'Relic Hunter',goal:{t:'relic',n:1},rw:{c:1200,xp:250,title:'Tide-Touched'},
+  offer:"The tide hides relics in the deep. One in a hundred casts, perhaps. Find one and bring it to the altar.",prog:"Relics come up anywhere. Luck helps.",done:"The tide has chosen you. Offer it here whenever you're ready."},
+ {id:'hollis1',npc:'hollis',n:'Cold Comfort',goal:{t:'catch',n:5,zone:'frost'},rw:{c:1500,xp:300},
+  offer:"Fish keep fresh in this cold. Bring me five from around Frostmere and warm your hands by my stove.",prog:"Off the shore or the Frozen Tarn.",done:"Fresh as the snow! Good on you."},
+ {id:'brannoc1',npc:'brannoc',n:'Frozen Solid',goal:{t:'catch',n:1,mut:'frozen'},rw:{c:2500,xp:400,title:'Frost Fisher'},req:['hollis1'],
+  offer:"Once in a while the cold gets into a fish and stays. Catch a Frozen one. They show up more often round here.",prog:"Frozen mutations, most common on Frostmere.",done:"Solid ice, scales and all! A true Frost Fisher."},
+ {id:'pip1',npc:'pip',n:'Under the Ice',goal:{t:'catch',n:3,zone:'pond_frost'},rw:{c:1100,xp:220},
+  offer:"Cut a hole in the Frozen Tarn, they say, and the char come to you. Three fish from the tarn!",prog:"The tarn is inland. Look for the ring of ice.",done:"Brr! Well done. Hot cocoa's on me."},
+ {id:'cinda1',npc:'cinda',n:'Trial by Fire',goal:{t:'catch',n:5,zone:'ember'},rw:{c:3000,xp:450},
+  offer:"Emberkey burns the careless. Fish five from around the island and you've passed the trial.",prog:"Around the black sand, or the Ash Spring.",done:"Not even singed! Respect."},
+ {id:'oren1',npc:'oren',n:'Forged in Ash',goal:{t:'catch',n:1,r:3},rw:{c:4000,xp:600,title:'Ember Legend'},req:['cinda1'],
+  offer:"I forge rods for legends. Show me you are one: land a Legendary fish or anything rarer.",prog:"Legendary or better. Good bait and a strong rod help.",done:"A legend in the flesh! The forge salutes you."},
+ {id:'kettle1',npc:'kettle',n:'Hot Spring',goal:{t:'catch',n:3,zone:'pond_ember'},rw:{c:2000,xp:350,bait:['ink',2]},
+  offer:"The Ash Spring bubbles with strange fish. Three of them, and I'll trade you some Kraken Ink.",prog:"The spring's in the middle of the island. Mind the steam.",done:"Steamed to perfection. Here's your ink. Use it wisely."},
+];
+const QM={};QUESTS.forEach(q=>QM[q.id]=q);
+const LEVEL_TITLES=[[1,'Novice Angler'],[10,'Seasoned Angler'],[25,'Master Angler'],[50,'Legend of the Isles']];
+const TITLE_COL={'Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a'};
+const ALL_TITLES=Object.keys(TITLE_COL);
+
+/* ---------- dialogue lines (extra flavour beyond the quests) ---------- */
+const NPC_LINES={
+ marlo:['Fresh catch? I pay fair, and I pay in shiny coins.','Heavier fish fetch more. A mutated one? Even better.','Lock your favourites so you don\'t sell them by accident!','The tide\'s been kind this week. Good time to be an angler.','My grandfather sold fish from this very spot. Same smell, too.'],
+ tess:['Every rod has a personality. Find the one that fits your hands.','Bait gets used one per cast. Stock up before a long trip.','Glowflies at night, shrimp by day. Trust me.','Saw a fellow lose a Legendary to a cheap line last week. Heartbreaking.'],
+ gilda:['Let me look at that fish... hm, there\'s more weight in it than you think.','A reroll can turn a common catch into a treasure.','Mutations are the sea\'s little jokes. I adore them.'],
+ rook:['Charts to the far isles, right here. The sea\'s wide open between them.','Watch the sky. Storms bring big waves and bigger fish.','The ferry runs to any isle you\'ve charted.','The lighthouse up the hill? Built by the first families. Still burns every night.'],
+ harlan:['Your boat\'s moored at the end of the dock. Treat her kindly.','Upgrades make all the difference in a swell.','Nothing like the open water at sunrise.'],
+ odessa:['Brews last a few minutes of fishing. Mix and match!','The moon pulls more than tides, dear. Fish feel it too.','Careful with the Abyss Tonic. Strong stuff.'],
+ bramble:['Bog fish are slimy, but they sell.','Don\'t mind the mushrooms. Mostly harmless.','Fog rolls in thick here. Some fish only bite in it.'],
+ mags:['The Murk Pool\'s deeper than it looks.','Charts? I\'ve got them for every isle.','Mind the reeds when you dock.'],
+ fen:['The altar hums when a relic is near.','Offer a relic and the tide blesses your rod.','The old stones remember everything.'],
+ hollis:['Cold hands, warm coins.','Frozen fish fetch a pretty price, you know.','Snow\'s the quietest sound there is.'],
+ pip:['Brr! Charts are inside where it\'s warm.','Ice floes drift out past the bay. Steer clear.','I\'ve lived here forty winters and still lose my mittens.'],
+ brannoc:['Ice has a way of sharpening a fish\'s worth.','Let me weigh that properly. The scale doesn\'t lie.'],
+ cinda:['Ash and embers. Fish here are tough as nails.','Pay\'s better near the volcano. So is the danger.'],
+ kettle:['The spring\'s always simmering.','Steam vents are warm in the morning. Good for the bones.'],
+ oren:['My rods are forged in volcanic glass.','A legend needs a legendary rod.','Hold it by the grip, not the shaft. Show some respect.'],
+};
+
+/* ---------- state ---------- */
+function qState(){const s=state;if(!s.quests||typeof s.quests!=='object')s.quests={a:{},d:[]};if(!s.quests.a||typeof s.quests.a!=='object')s.quests.a={};if(!Array.isArray(s.quests.d))s.quests.d=[];
+ if(!Array.isArray(s.titles))s.titles=[];for(const[l,t]of LEVEL_TITLES)if(s.level>=l&&!s.titles.includes(t))s.titles.push(t);if(!s.titles.includes(s.title))s.title=s.titles[0]||'Novice Angler';return s.quests;}
+function qStatus(q){const Q=qState();if(Q.d.includes(q.id))return'done';if(q.id in Q.a)return Q.a[q.id]>=q.goal.n?'ready':'active';if((q.req||[]).every(r=>Q.d.includes(r)))return'offer';return'locked';}
+function npcQuests(id){return QUESTS.filter(q=>q.npc===id);}
+function currentQuest(id){const list=npcQuests(id);return list.find(q=>{const s=qStatus(q);return s==='ready'||s==='active';})||list.find(q=>qStatus(q)==='offer')||null;}
+function activeQuests(){const Q=qState();return Object.keys(Q.a).map(id=>QM[id]).filter(Boolean);}
+function goalText(q){const g=q.goal,n=g.n;const where=g.zone?' in '+ZONES[g.zone].n:'';
+ if(g.t==='catch'){let s=`Catch ${n} ${g.r!=null?RAR[g.r].n+'+ ':''}${g.mut===true?'mutated ':g.mut?MUTS[g.mut].n+' ':''}fish`;if(n===1)s=s.replace('fish','fish');if(g.w)s+=` over ${g.w} kg`;if(g.night)s+=' at night';if(g.sea)s+=' from your boat at sea';if(g.ev)s+=' during a big event';return s+where;}
+ if(g.t==='sell')return `Sell ${fmt(n)} coins' worth of fish`;if(g.t==='visit')return `Visit ${ZONES[g.zone].n}`;if(g.t==='relic')return 'Find a Tide Relic';if(g.t==='rod')return 'Buy a new rod';return '';}
+function rewardText(rw){const p=[];if(rw.c)p.push(fmt(rw.c)+' coins');if(rw.xp)p.push(rw.xp+' XP');if(rw.bait)p.push(rw.bait[1]+'× '+BAITM[rw.bait[0]].n);if(rw.title)p.push('Title: '+rw.title);return p.join(' · ');}
+
+/* ---------- progress ---------- */
+function questEvent(type,d={}){const Q=qState();let changed=false;
+ for(const id in Q.a){const q=QM[id];if(!q)continue;const g=q.goal;if(Q.a[id]>=g.n)continue;let inc=0;
+  if(g.t==='catch'&&type==='catch'){if(g.zone&&d.zone!==g.zone&&d.isl!==g.zone)continue;if(g.r!=null&&d.r<g.r)continue;if(g.mut===true&&!d.mut)continue;if(typeof g.mut==='string'&&d.mut!==g.mut)continue;if(g.w&&d.w<g.w)continue;if(g.night&&!d.night)continue;if(g.sea&&!d.sea)continue;if(g.ev&&!d.ev)continue;inc=1;}
+  else if(g.t==='sell'&&type==='sell')inc=d.v||0;else if(g.t==='visit'&&type==='visit'&&d.zone===g.zone)inc=1;else if(g.t==='relic'&&type==='relic')inc=1;else if(g.t==='rod'&&type==='rod')inc=1;
+  if(inc){const was=Q.a[id];Q.a[id]=Math.min(g.n,was+inc);changed=true;if(Q.a[id]>=g.n&&was<g.n){toast(`Quest complete: ${q.n}. Return to ${NPCM[q.npc].name}.`,'gold');AU.level();}}}
+ if(changed){save();renderHotbar();}return changed;}
+function catchQuestInfo(){const a=activeQuests().filter(q=>q.goal.t==='catch');if(!a.length)return '';const q=a[0],v=qState().a[q.id];return `<div class="cc-q">${esc(q.n)} · ${Math.min(v,q.goal.n)}/${q.goal.n}</div>`;}
+function grantTitle(t){if(!state.titles.includes(t)){state.titles.push(t);toast(`New title unlocked: ${t}`,'gold');}}
+function checkLevelTitles(){for(const[l,t]of LEVEL_TITLES)if(state.level>=l)grantTitle(t);}
+
+/* ---------- NPC dialogue + quest card (rendered into every NPC panel) ---------- */
+const NPCM={};
+function initNpcIndex(){for(const n of NPCS){NPCM[n.id]=n;const extra=NPC_LINES[n.id];if(extra)n.lines=Array.from(new Set([...(n.lines||[]),...extra]));}}
+function questCard(n){const q=currentQuest(n.id);if(!q)return '';const s=qStatus(q),v=qState().a[q.id]||0,g=q.goal;
+ const bar=s==='offer'?'':`<div class="qbar"><i style="width:${Math.min(1,v/g.n)*100}%"></i></div><div class="muted">${g.t==='sell'?fmt(Math.min(v,g.n))+' / '+fmt(g.n)+' coins':Math.min(v,g.n)+' / '+g.n}</div>`;
+ const btn=s==='offer'?`<button class="btn mint" data-act="qaccept" data-id="${q.id}">Accept quest</button>`:s==='ready'?`<button class="btn" data-act="qturn" data-id="${q.id}">Turn in · ${esc(rewardText(q.rw))}</button>`:'';
+ return `<div class="qrow ${s==='ready'?'done':''}"><div class="row"><div class="grow"><h3>${s==='offer'?'New quest: ':''}${esc(q.n)}</h3><div class="muted">${esc(goalText(q))}</div></div>${btn}</div>${bar}${s!=='ready'?`<div class="qrew">Reward: ${esc(rewardText(q.rw))}</div>`:''}</div>`;}
+function npcDialogue(n){const q=currentQuest(n.id),s=q&&qStatus(q);const text=q?(s==='offer'?q.offer:s==='ready'?q.done:q.prog):pick(n.lines||['Hello there!']);
+ return `<div class="say"><span class="who">${esc(n.name)}</span>${esc(text)}</div>`;}
+/* the NPC shop panels put ${line} at the top; this object re-renders the dialogue and quest card every time */
+function npcSay(n){const fixed=pick(n.lines||['Hello there!']);return{toString(){const q=currentQuest(n.id);return (q?npcDialogue(n):`<div class="say"><span class="who">${esc(n.name)}</span>${esc(fixed)}</div>`)+questCard(n);}};}
+const QH={qaccept:id=>{const q=QM[id];if(!q||qStatus(q)!=='offer')return;const Q=qState();Q.a[id]=0;
+  if(q.goal.t==='visit'&&player.zone===q.goal.zone)Q.a[id]=1;if(q.goal.t==='rod'&&state.rods.length>1)Q.a[id]=0;
+  AU.ui();toast(`Quest accepted: ${q.n}`);save();renderHotbar();rerender();},
+ qturn:id=>{const q=QM[id];if(!q||qStatus(q)!=='ready')return;const Q=qState();delete Q.a[id];Q.d.push(id);const rw=q.rw;
+  if(rw.c){state.coins+=rw.c;state.earned+=rw.c;}if(rw.bait){state.bait[rw.bait[0]]=(state.bait[rw.bait[0]]||0)+rw.bait[1];if(!state.baitOn)state.baitOn=rw.bait[0];}if(rw.title)grantTitle(rw.title);
+  if(rw.xp)gainXP(rw.xp);AU.coin();toast(`${q.n} complete! ${rewardText(rw)}`,'gold');save();updateHUD();rerender();}};
+
+/* ---------- quest log ---------- */
+function openQuests(){if(JOIN.on)return;openPanel('Quests','Help the islanders and earn rewards',()=>{panelCtx.kind='quests';const act=activeQuests(),Q=qState();
+ const avail=NPCS.map(n=>({n,q:currentQuest(n.id)})).filter(o=>o.q&&qStatus(o.q)==='offer');
+ const row=q=>{const v=Q.a[q.id]||0,g=q.goal,done=v>=g.n;return `<div class="qrow ${done?'done':''}"><div class="row"><div class="grow"><h3>${esc(q.n)}</h3><div class="muted">${esc(goalText(q))} · ${esc(NPCM[q.npc].name)}, ${esc(ZONES[NPCM[q.npc].zone].n)}</div></div><span class="muted">${g.t==='sell'?fmt(Math.min(v,g.n))+'/'+fmt(g.n):Math.min(v,g.n)+'/'+g.n}</span></div><div class="qbar"><i style="width:${Math.min(1,v/g.n)*100}%"></i></div><div class="qrew">${done?'Ready to turn in to '+esc(NPCM[q.npc].name):'Reward: '+esc(rewardText(q.rw))}</div></div>`;};
+ body(`<div class="card"><h3>Active</h3>${act.length?`<div class="list">${act.map(row).join('')}</div>`:'<div class="muted">No active quests. Talk to the islanders: anyone with work for you will say so.</div>'}</div>
+  ${avail.length?`<div class="card"><h3>Islanders with work for you</h3><div class="list">${avail.map(o=>`<div class="statrow"><span>${esc(o.n.name)} · ${esc(ZONES[o.n.zone].n)}</span><span class="muted">${esc(o.q.n)}</span></div>`).join('')}</div></div>`:''}
+  <div class="card"><h3>Your title</h3><div class="muted">Shown under your name. ${Q.d.length} of ${QUESTS.length} quests complete.</div><div class="hats">${state.titles.map(t=>`<button class="hat ${state.title===t?'on':''}" data-act="title" data-id="${esc(t)}" style="color:${TITLE_COL[t]||'#fff'}">${esc(t)}</button>`).join('')}</div></div>`);
+ bindPanel({title:id=>{if(state.titles.includes(id)){state.title=id;save();rebuildPlayerTag();rerender();}}});});}

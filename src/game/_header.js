@@ -12,3 +12,5 @@ import { LuminosityHighPassShader } from 'three/addons/shaders/LuminosityHighPas
 import { mergeVertices, toCreasedNormals, mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 const THREE = Object.assign({}, THREE_NS, { EffectComposer, RenderPass, ShaderPass, UnrealBloomPass, OutputPass, GTAOPass, FXAAShader, CopyShader, LuminosityHighPassShader });
 const BGU = { mergeVertices, toCreasedNormals, mergeGeometries };
+/* Firebase project for online play, from Vercel / .env variables (see SETUP-MULTIPLAYER.md). Empty means solo play. */
+const FB_ENV={apiKey:import.meta.env.VITE_FIREBASE_API_KEY||'',authDomain:import.meta.env.VITE_FIREBASE_AUTH_DOMAIN||'',databaseURL:import.meta.env.VITE_FIREBASE_DATABASE_URL||'',projectId:import.meta.env.VITE_FIREBASE_PROJECT_ID||'',appId:import.meta.env.VITE_FIREBASE_APP_ID||''};

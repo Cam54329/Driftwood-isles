@@ -239,7 +239,7 @@ class RemotePlayer{constructor(peer){this.peer=peer;this.rig=null;this.anim=null
   this.name=name;this.color=color;this.level=clamp(Math.round(num(p.lv,1)),1,999);this.zone=ZONES[p.zn]?p.zn:'sea';
   const lk=[color,hc,sk,hat].join('|');if(lk!==this.lookKey){this.lookKey=lk;const old=this.rig;const pos=old?old.root.position.clone():null;disposeRig(old);
    this.rig=makeChar({skin:sk,shirt:color,pants:'#3f4a6a',hat:hc,hatType:hat});scene.add(this.rig.root);this.anim=new CharAnim(this.rig);if(pos)this.rig.root.position.copy(pos);this.label=null;this.labelKey='';this.rodKey='';if(this.held){this.rig.root.add(this.held);}}
-  const lbk=name+'|'+color;if(lbk!==this.labelKey){this.labelKey=lbk;if(this.label)this.rig.root.remove(this.label);this.label=labelSprite(name,null,color);this.label.position.set(0,HEAD_TOP+.75,0);this.rig.root.add(this.label);}
+  this.title=ALL_TITLES.includes(p.ti)?p.ti:'Novice Angler';const lbk=name+'|'+this.level+'|'+this.title;if(lbk!==this.labelKey){this.labelKey=lbk;if(this.label)this.rig.root.remove(this.label);this.label=tagSprite('Level '+this.level,name,this.title,TITLE_COL[this.title]);this.label.position.set(0,HEAD_TOP+.45,0);this.rig.root.add(this.label);}
   const rk=(RODM[p.rd]?p.rd:'drift')+'|'+(ENCH[p.en]?p.en:'');if(rk!==this.rodKey){this.rodKey=rk;if(this.rod)this.rod.g.parent&&this.rod.g.parent.remove(this.rod.g);this.rod=buildRod(RODM[p.rd]||RODM.drift,ENCH[p.en]?p.en:null);this.rig.aR.hand.add(this.rod.g);}
   const ts=num(p.ts,0,1e15);if(ts>0&&Number.isFinite(p.x)&&Number.isFinite(p.z)){const est=Date.now()-ts;this.off=this.off==null?est:Math.min(est,this.off+.5);
    const snap={t:ts,x:num(p.x,0,2000),y:num(p.y,0,100),z:num(p.z,0,2000),r:num(p.r,0,100),by:num(p.by,0,100),b:p.b?1:0};const last=this.buf[this.buf.length-1];
@@ -276,6 +276,6 @@ class RemotePlayer{constructor(peer){this.peer=peer;this.rig=null;this.anim=null
    else this.bob.position.set(this.fx+Math.sin(this.sT*9)*.3,tgtY-.35,this.fz+Math.cos(this.sT*7)*.3);
    if(this.rod){this.rod.tip.getWorldPosition(_v);drawLine(this.line,_v,this.bob.position,this.s==='r'?.05:this.s==='t'?.2:1.1);}}
   if(this.bubbleT>0){this.bubbleT-=dt;if(this.bubbleT<=0&&this.bubble){R.remove(this.bubble);this.bubble=null;}}
-  const d=camera.position.distanceTo(R.position);const show=d<260;R.visible=show;if(this.label){this.label.visible=state.settings.tags&&d<150;const sc=clamp(d/18,1,2.6);this.label.scale.set(3.6*sc,3.6*sc*(this.label.material.map.image.height/512),1);}
+  const d=camera.position.distanceTo(R.position);const show=d<260;R.visible=show;if(this.label){this.label.visible=state.settings.tags&&d<150;const sc=clamp(d/18,1,2.6);this.label.scale.set(3.4*sc,3.4*sc*(this.label.material.map.image.height/512),1);}
   this.fade=Math.min(1,this.fade+dt*2);R.scale.setScalar(.6+.4*this.fade);}
  dispose(){disposeRig(this.rig);disposeHeld(this.held);if(this.boat)scene.remove(this.boat);scene.remove(this.bob);scene.remove(this.line);}}

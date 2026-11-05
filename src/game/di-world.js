@@ -337,7 +337,7 @@ function buildWorld(){LEAFK=TT().leaf;
  for(const key of ISL){const I=ZONES[key];const tm=buildTerrain(I,key);scene.add(tm);
   for(const p of I.ponds){const PZ=ZONES[p.key];const pm=new THREE.Mesh(new THREE.CircleGeometry(p.r*1.42,64),new THREE.MeshStandardMaterial({color:PZ.col,roughness:.04,metalness:0,normalMap:waterNrm,normalScale:new THREE.Vector2(.25,.25),transparent:true,opacity:.92}));
    pm.rotation.x=-Math.PI/2;pm.position.set(p.x,p.y,p.z);pm.receiveShadow=true;pm.userData.noAO=true;scene.add(pm);p.mesh=pm;
-   const lb=labelSprite(PZ.n,'Pond · '+SPECIES.filter(s=>s.zone===p.key).length+' species');lb.position.set(p.x,p.y+3.2,p.z);scene.add(lb);p.label=lb;}
+   const lb=tagSprite(null,PZ.n,'Pond · '+SPECIES.filter(s=>s.zone===p.key).length+' species','#9fe6ff');lb.position.set(p.x,p.y+3.2,p.z);scene.add(lb);p.label=lb;}
   const sb=new Builder(),fb=new Builder(),gl=new Builder(),lv=new Builder();const r=rng(key.length*31+7);
   const dockTh=key==='cove'?-.25:Math.atan2(-I.z,-I.x);I.dockTh=dockTh;const reserved=world.reserved[key]=[];
   const Rd=islandR(I,dockTh)*.78,cx=Math.cos(dockTh),sz=Math.sin(dockTh);const dx0=I.x+cx*Rd,dz0=I.z+sz*Rd,len=Math.round(I.R*.3),w=3.2,dh=1.25;
@@ -366,7 +366,7 @@ function buildWorld(){LEAFK=TT().leaf;
     house(sb,gl,hx,groundH(hx,hz)-.15,hz,toC,n.house,{stilt:n.stilt,snow:n.house.snow});world.colliders.push({x:hx,z:hz,r:4.4});reserved.push({x:hx,z:hz,r:8});
     nx=hx+Math.sin(toC)*5.6;nz=hz+Math.cos(toC)*5.6;face=toC;}
    const rig=makeChar(n.look);rig.root.position.set(nx,groundH(nx,nz),nz);rig.root.rotation.y=face;scene.add(rig.root);
-   const lbl=labelSprite(n.name,n.title);lbl.position.set(0,HEAD_TOP+.65,0);rig.root.add(lbl);
+   const lbl=tagSprite(null,n.name,n.title,'#f2c14e');lbl.position.set(0,HEAD_TOP+.45,0);rig.root.add(lbl);
    const npc={def:n,rig,anim:new CharAnim(rig),x:nx,z:nz,face,label:lbl};world.npcs.push(npc);world.colliders.push({x:nx,z:nz,r:.7});reserved.push({x:nx,z:nz,r:4});
    world.inter.push({x:nx,z:nz,r:4.2,label:'Talk to '+n.name,kind:'Talk',act:()=>openNPC(n)});}
   if(key==='moss'){const ay=groundH(I.x,I.z);sb.M(TL.cobble);sb.add(G.cyl6,'#8a8a90',I.x,ay+.3,I.z,2.8,.7,2.8);sb.add(G.cyl6,'#9a9aa2',I.x,ay+.9,I.z,1.9,.6,1.9);
