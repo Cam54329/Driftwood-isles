@@ -84,6 +84,7 @@ function drawWorldMap(cv,cx0,cz0,mPerPx,opt={}){const x=cv.getContext('2d'),W=cv
  if(BIG.whales.length&&BIG.active==='leviathan')for(const w of BIG.whales){if(!w.g.visible)continue;x.fillStyle='rgba(30,40,56,.8)';x.beginPath();x.ellipse(toX(w.g.position.x),toY(w.g.position.z),6,3,-w.a,0,TAU);x.fill();}
  if(boat&&player.mode!=='boat'){x.fillStyle='#7a5a3a';x.beginPath();x.arc(toX(boat.pos.x),toY(boat.pos.z),3.5,0,TAU);x.fill();}
  for(const r of Net.remotes.values()){if(!r.rig)continue;x.fillStyle=r.color;x.strokeStyle='#000';x.lineWidth=1.5;x.beginPath();x.arc(toX(r.pos.x),toY(r.pos.z),4.5,0,TAU);x.fill();x.stroke();}
+ if(typeof drawExtraMap==='function')drawExtraMap(x,toX,toY,S,opt);
  const yaw=player.mode==='boat'?boat.yaw:player.face,px=toX(player.pos.x),py=toY(player.pos.z),sz=opt.labels?11:13,fx=Math.sin(yaw),fy=Math.cos(yaw);
  x.fillStyle='#fff';x.strokeStyle='#111';x.lineWidth=2.5;x.beginPath();x.moveTo(px+fx*sz,py+fy*sz);x.lineTo(px-fx*sz*.6-fy*sz*.6,py-fy*sz*.6+fx*sz*.6);x.lineTo(px-fx*sz*.25,py-fy*sz*.25);x.lineTo(px-fx*sz*.6+fy*sz*.6,py-fy*sz*.6-fx*sz*.6);x.closePath();x.stroke();x.fill();
  if(opt.edge){for(const k of ISL){const I=ZONES[k],dx=I.x-cx0,dz=I.z-cz0,d=Math.hypot(dx,dz);if(d<(W/2)*mPerPx+I.R*.6)continue;const a=Math.atan2(dz,dx),rr=W/2-16;

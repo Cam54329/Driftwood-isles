@@ -41,7 +41,10 @@ async function makeFirebaseBackend(cfg){
   on(topic,cb){const seen=new Set();const h=s=>{const v=s.val();if(!v||v.u===uid||!v.i||seen.has(v.i))return;if(typeof v.t==='number'&&v.t<Date.now()+skew-15000)return;seen.add(v.i);cb({data:v,isMe:false,peer:v.u,by:v.u});};
    onChildAdded(ref(D,'live/'+topic),h);onChildChanged(ref(D,'live/'+topic),h);},
   onConnection(cb){onValue(ref(D,'.info/connected'),s=>{const c=!!s.val();if(c){onDisconnect(me).remove();Net.err='';}cb(c);});}};
- return{kind:'firebase',rate:.2,project:cfg.projectId||'',use:async k=>({user,db,room})[k]};}
+ /* owner access: the database rules accept admins/<uid> only when its code matches config/devCode, which only the owner can set */
+ const admin={claim:code=>set(ref(D,'admins/'+uid),{code:String(code).slice(0,80),at:serverTimestamp()}),check:async()=>{try{return (await get(ref(D,'admins/'+uid))).exists();}catch(e){return false;}},
+  clearChat:()=>set(ref(D,'meta/chatClear'),serverTimestamp()),onChatClear(cb){onValue(ref(D,'meta/chatClear'),s=>cb(Number(s.val())||0),()=>{});}};
+ return{kind:'firebase',rate:.2,project:cfg.projectId||'',use:async k=>({user,db,room,admin})[k]};}
 
 /* ---------- local test transport: several tabs of the same browser share the isles ---------- */
 function makeLocalBackend(){const bc=new BroadcastChannel('driftwood-isles-mp');let uid;try{uid=sessionStorage.getItem('mp-uid');if(!uid){uid='local-'+Math.random().toString(36).slice(2,9);sessionStorage.setItem('mp-uid',uid);}}catch(e){uid='local-'+Math.random().toString(36).slice(2,9);}
@@ -51,11 +54,13 @@ function makeLocalBackend(){const bc=new BroadcastChannel('driftwood-isles-mp');
  bc.onmessage=e=>{const m=e.data||{};if(m.type==='pres'&&m.uid!==uid){L.peers.set(m.uid,Date.now());L.cbPeers&&L.cbPeers({peers:[{peer:m.uid,isMe:false,kind:'viewer',presence:m.p,by:m.uid}],left:[]});}
   else if(m.type==='leave'){L.peers.delete(m.uid);L.cbPeers&&L.cbPeers({peers:[],left:[{peer:m.uid}]});}
   else if(m.type==='emit'&&m.uid!==uid){const cb=L.topics[m.topic];cb&&cb({data:m.data,isMe:false,peer:m.uid,by:m.uid});}
-  else if(m.type==='doc'){fire(m.base);}};
+  else if(m.type==='doc'){fire(m.base);}
+  else if(m.type==='clear'){L.clear&&L.clear(m.t);}};
  setInterval(()=>{const now=Date.now();for(const[k,t]of L.peers)if(now-t>22000){L.peers.delete(k);L.cbPeers&&L.cbPeers({peers:[],left:[{peer:k}]});}},2000);
  addEventListener('pagehide',()=>bc.postMessage({type:'leave',uid}));
  const user={id:async()=>uid,can:async()=>true};
  const db={doc(p){const path=pathOf(p);return{async get(){const v=store.get(path);return{exists:v!=null,data:()=>v};},async set(d){store.set(path,d);const base=path.split('/')[0];bc.postMessage({type:'doc',base});fire(base);}};},
   collection(name){const api={orderBy(){return api;},limit(){return api;},onSnapshot(cb){L.snaps[name]=cb;setTimeout(()=>fire(name),50);}};return api;}};
  const room={presence:async p=>{bc.postMessage({type:'pres',uid,p});},onPeers(cb){L.cbPeers=cb;},emit:async(topic,data)=>{bc.postMessage({type:'emit',topic,data,uid});},on(topic,cb){L.topics[topic]=cb;},onConnection(cb){setTimeout(()=>cb(true),50);}};
- return{kind:'local',rate:.1,use:async k=>({user,db,room})[k]};}
+ const admin={claim:async()=>{store.set('admin-'+uid,1);},check:async()=>!!store.get('admin-'+uid),clearChat:async()=>{const t=Date.now();store.set('chatClear',t);bc.postMessage({type:'clear',t});L.clear&&L.clear(t);},onChatClear(cb){L.clear=cb;setTimeout(()=>cb(store.get('chatClear')||0),60);}};
+ return{kind:'local',rate:.1,use:async k=>({user,db,room,admin})[k]};}

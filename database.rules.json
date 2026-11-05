@@ -47,6 +47,23 @@
           ".validate": "newData.child('x').isString() && newData.child('x').val().length <= 140 && newData.child('i').isString() && newData.child('t').val() === now && (!data.exists() || now - data.child('t').val() > 800)"
         }
       }
+    },
+    "config": {
+      ".read": false,
+      ".write": false
+    },
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && root.child('config/devCode').exists() && newData.child('code').val() === root.child('config/devCode').val()"
+      }
+    },
+    "meta": {
+      ".read": "auth != null",
+      "chatClear": {
+        ".write": "auth != null && root.child('config/devCode').exists() && root.child('admins/' + auth.uid + '/code').val() === root.child('config/devCode').val()",
+        ".validate": "newData.val() === now"
+      }
     }
   }
 }

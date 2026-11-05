@@ -34,7 +34,10 @@ const RAR=[
 /* catch odds by rarity (percent). Luck moves the odds from BASE toward CAP with diminishing returns, so
    commons stay the everyday catch and legendaries stay special even with the best gear (see rarityOdds) */
 const RAR_BASE=[62,24,9.5,3.3,.95,.22,.04],RAR_CAP=[30,30,22.5,11,4.6,1.5,.4];
-function rarityOdds(L){const k=1-Math.exp(-Math.max(0,L)/1.6);const w=RAR_BASE.map((b,i)=>lerp(b,RAR_CAP[i],k));const t=w.reduce((a,b)=>a+b,0);return w.map(v=>v/t);}
+/* Rare and above are three times harder to find than the base table; the odds they lose go to commons and uncommons */
+const RARE_SCARCITY=3;
+function rarityOdds(L){const k=1-Math.exp(-Math.max(0,L)/1.6);const w=RAR_BASE.map((b,i)=>lerp(b,RAR_CAP[i],k));const t=w.reduce((a,b)=>a+b,0);const o=w.map(v=>v/t);
+ let cut=0;for(let i=2;i<o.length;i++){const n=o[i]/RARE_SCARCITY;cut+=o[i]-n;o[i]=n;}const lo=o[0]+o[1];o[0]+=cut*o[0]/lo;o[1]+=cut*o[1]/lo;return o;}
 const MUTS={
  shiny:{n:'Shiny',m:1.5,w:34,c:'#fff3b8'}, albino:{n:'Albino',m:2,w:22,c:'#ffe6ec'}, glowing:{n:'Glowing',m:2.5,w:16,c:'#c8ffb0'},
  frozen:{n:'Frozen',m:3,w:12,c:'#c6ecff'}, shadow:{n:'Shadow',m:4,w:8,c:'#d6c6ff'}, golden:{n:'Golden',m:5,w:5,c:'#ffd970'}, prismatic:{n:'Prismatic',m:8,w:2,c:'#ffc4ee'}
@@ -50,12 +53,16 @@ const ZONES={
  dune:{n:'Duneveil',tag:'Desert oasis',x:1090,z:-170,R:100,H:3.2,hill:1.5,p1:.6,p2:3.7,price:200000,mesa:true,grass:'#d0a464',grass2:'#c09254',sand:'#e4c890',rock:'#b4643c'},
  glim:{n:'Glimmerholt',tag:'Crystal highlands',x:-560,z:860,R:98,H:4.4,hill:2,p1:1.9,p2:4.4,price:400000,tor:true,grass:'#4e6a60',grass2:'#445e58',sand:'#aaa6b8',rock:'#5c5672'},
  sea:{n:'Open Waters',tag:'Deep sea'},
+ well:{n:'Tide Well',tag:'A whirling well that opens at sea'},
+ hollow:{n:'The Drowned Hollow',tag:'A secret cave beneath the sea',x:-1350,z:-1050,R:72,H:2.2,hill:1.3,p1:1.1,p2:2.7,price:0,grass:'#34424a',grass2:'#2c3a42',sand:'#4a5258',rock:'#2a3038',cave:true},
  pond_cove:{n:'Willow Pond',tag:'Pebble Cove pond',pond:'cove',col:'#3e5c52'},pond_moss:{n:'Murk Pool',tag:'Mossreach pond',pond:'moss',col:'#34422c'},
  pond_frost:{n:'Frozen Tarn',tag:'Frostmere pond',pond:'frost',col:'#56788a'},pond_ember:{n:'Ash Spring',tag:'Emberkey hot spring',pond:'ember',col:'#4e605c'},
  pond_atoll:{n:'Blue Lagoon',tag:'Sunken Atoll lagoon',pond:'atoll',col:'#2f8e9a'},pond_amber:{n:'Maple Mere',tag:'Amberglen pond',pond:'amber',col:'#4a5a3a'},
- pond_petal:{n:'Mirror Pool',tag:'Petalshore koi pond',pond:'petal',col:'#3a6a66'},pond_dune:{n:'Oasis Spring',tag:'Duneveil oasis',pond:'dune',col:'#1f8a8e'},pond_glim:{n:'Starwell',tag:'Glimmerholt spring',pond:'glim',col:'#2a3668'}
+ pond_petal:{n:'Mirror Pool',tag:'Petalshore koi pond',pond:'petal',col:'#3a6a66'},pond_dune:{n:'Oasis Spring',tag:'Duneveil oasis',pond:'dune',col:'#1f8a8e'},pond_glim:{n:'Starwell',tag:'Glimmerholt spring',pond:'glim',col:'#2a3668'},pond_hollow:{n:'Lantern Pool',tag:'Drowned Hollow pool',pond:'hollow',col:'#164a58'}
 };
 const ISL=['cove','moss','frost','ember','atoll','amber','petal','dune','glim'];
+/* every piece of land, including the secret cave (which has no chart and no harbor) */
+const LANDS=[...ISL,'hollow'];
 const SPECIES=[
  ['pebble_perch','Pebble Perch','cove',0,.2,1.2,12,'fish','#8fbf5a','#f0e6a8'],
  ['skipper_minnow','Skipper Minnow','cove',0,.05,.3,9,'fish','#6aa8d8','#e8f2f8'],
@@ -125,14 +132,20 @@ const SPECIES=[
  ['crystal_leviathan','Crystal Leviathan','glim',5,120,450,30000,'shark','#b8c8ff','#5a4ad8','fog'],['heart_of_holt','Heart of the Holt','glim',6,150,500,80000,'tall','#ff8af0','#ffffff','night','lure'],
  ['star_guppy','Star Guppy','pond_glim',0,.05,.3,82,'fish','#f8f0a8','#5a6ad8'],['void_loach','Void Loach','pond_glim',1,.3,1.5,300,'eel','#1a1a3a','#8a7aff'],['moonstone_koi','Moonstone Koi','pond_glim',2,2,8,1100,'tall','#e8e8ff','#8ab8ff','night'],['nebula_angel','Nebula Angel','pond_glim',3,1,4,5200,'tall','#6a3ab8','#ff8ad8'],['astral_wyrm','Astral Wyrm','pond_glim',5,5,22,34000,'eel','#2a1a5a','#ffd8ff','night'],
  ['sun_mola','Sunfish Mola','sea',1,20,120,260,'tall','#a8a8b0','#e8e8e8','day'],['silverback_tuna','Silverback Tuna','sea',2,10,60,700,'fish','#4a6a9a','#e0e8f0'],['ghost_jelly','Ghost Jelly','sea',3,.5,3,2200,'squid','#e8f0ff','#a8d8ff','night'],['swordfin','Swordfin','sea',4,30,150,6000,'long','#3a5a8a','#d8e8f8',null,'sail'],['storm_eel','Storm Eel','sea',5,8,40,15000,'eel','#2a3a5a','#f0f080','rain'],
+ ['wellspring_eel','Wellspring Eel','well',2,2,9,500,'eel','#3ad8e8','#e8fbff'],['tidewell_koi','Tidewell Koi','well',3,4,16,1000,'tall','#e8f4ff','#3a8ae8'],['whirlfin_carp','Whirlfin Carp','well',3,6,22,1100,'fish','#5ab8e8','#f0e8a8'],
+ ['whirlwing_ray','Whirlwing Ray','well',4,30,140,1000,'ray','#2a5a9a','#a8f0ff'],['vortex_marlin','Vortex Marlin','well',5,60,240,1000,'long','#1a3a7a','#7ad8ff',null,'sail'],['well_keeper','The Well Keeper','well',6,200,700,1000,'tall','#0a1a3a','#7affff',null,'lure'],
+ ['gloom_perch','Gloom Perch','hollow',0,.3,1.6,40,'fish','#3a4a5a','#a8c8d8'],['blind_cavefish','Blind Cavefish','hollow',0,.1,.8,36,'fish','#e8d8d8','#ffffff'],['lantern_jaw','Lanternjaw','hollow',1,1,5,100,'tall','#1a2a3a','#7affd0',null,'lure'],['drip_eel','Drip Eel','hollow',1,.6,3,100,'eel','#4a5a6a','#b8e8f8'],
+ ['echo_loach','Echo Loach','hollow',2,1,4,100,'eel','#6a5a8a','#d8c8ff'],['stalactite_gar','Stalactite Gar','hollow',3,8,30,100,'long','#8a9aa8','#e8f0f8'],['abyss_angler','Abyss Angler','hollow',3,4,18,100,'tall','#14182a','#ffd86a','night','lure'],['pale_sturgeon','Pale Sturgeon','hollow',4,40,160,100,'long','#d8dce0','#ffffff'],
+ ['hollow_leviathan','Hollow Leviathan','hollow',5,200,700,100,'shark','#1a2a3a','#5affd8'],['drowned_king','The Drowned King','hollow',6,400,1200,100,'tall','#0a1418','#7affb8',null,'whisk'],
+ ['glowmote','Glowmote','pond_hollow',0,.05,.3,40,'fish','#7affd8','#ffffff'],['pearl_tetra','Pearl Tetra','pond_hollow',1,.1,.6,100,'fish','#f0f0f8','#d8e8ff'],['sapphire_eel','Sapphire Eel','pond_hollow',3,2,9,100,'eel','#2a4ad8','#a8c8ff'],['lantern_queen','Lantern Queen','pond_hollow',5,8,30,100,'tall','#1a1a3a','#ffe08a',null,'lure'],
 ].map(a=>({id:a[0],name:a[1],zone:a[2],r:a[3],minW:a[4],maxW:a[5],price:a[6],shape:a[7],c1:a[8],c2:a[9],cond:a[10]||null,feat:a[11]||null}));
 /* fish value: every island has a base price for its commons, and each rarity is a fixed multiple of it, so each
    island pays more than the one before it and rarer always means richer. The authored prices above only set
    how species of the same rarity on the same island compare with each other. Ponds pay 15% more than their island. */
-const ZONE_BASE={cove:9,moss:14,atoll:20,frost:28,petal:38,amber:66,ember:80,dune:110,glim:150,sea:14},RAR_LADDER=[1,3,9,30,80,200,600];
+const ZONE_BASE={cove:9,moss:14,atoll:20,frost:28,petal:38,amber:66,ember:80,dune:110,glim:150,sea:14,well:80,hollow:130},RAR_LADDER=[1,3,18,60,160,400,1200];/* rare and above pay double */
 {const nice=v=>{if(v<20)return Math.max(1,Math.round(v));const q=Math.pow(10,Math.floor(Math.log10(v))-1);return Math.round(v/q)*q;},grp={};
  SPECIES.forEach(s=>{const k=s.zone+'|'+s.r;(grp[k]=grp[k]||[]).push(s.price);});
- SPECIES.forEach(s=>{const pond=s.zone.startsWith('pond_'),base=ZONE_BASE[pond?s.zone.slice(5):s.zone]*(pond?1.15:1),g=grp[s.zone+'|'+s.r],mean=g.reduce((a,b)=>a+b,0)/g.length;
+ SPECIES.forEach(s=>{const pond=s.zone.startsWith('pond_'),base=(ZONE_BASE[pond?s.zone.slice(5):s.zone]||20)*(pond?1.15:1),g=grp[s.zone+'|'+s.r],mean=g.reduce((a,b)=>a+b,0)/g.length;
   s.price=nice(base*RAR_LADDER[s.r]*Math.pow(s.price/mean,.6));});}
 const SPM={};SPECIES.forEach(s=>SPM[s.id]=s);
 const COND={day:'Daytime',night:'Night only',rain:'While raining',fog:'In fog'};
@@ -171,15 +184,17 @@ const BAITS=[
 ];
 const BAITM={};BAITS.forEach(b=>BAITM[b.id]=b);
 const BOATS=[
- {id:'dinghy',n:'Driftwood Dinghy',price:0,speed:18,turn:1.4,storage:0,fx:{luck:5,d:'+5% luck while fishing from the boat'},m:{L:5.6,W:1.22,H:.78,D:-.42,hull:'#d6d0c4',bottom:'#5a4036',type:'row'}},
- {id:'skiff',n:'Reed Skiff',price:7500,speed:20,turn:1.65,storage:10,fx:{wait:.85,d:'Bites come 15% faster from the boat'},m:{L:6.6,W:1.05,H:.62,D:-.38,hull:'#7a6a54',bottom:'#4a3c30',stripe:'#5a4a3a',type:'skiff'}},
- {id:'sloop',n:'Gull Sloop',price:32000,speed:21,turn:1.3,storage:20,fx:{luck:20,d:'+20% luck from the boat'},m:{L:7.6,W:1.5,H:.9,D:-.6,hull:'#dcd7cc',bottom:'#2e3e4c',stripe:'#3e5468',type:'sail'}},
- {id:'cruiser',n:'Tidewatch Cruiser',price:70000,speed:24,turn:1.25,storage:30,fx:{drain:.65,bar:1.1,cond:'rain',d:'Reeling is 35% easier in rain and storms'},m:{L:8.6,W:1.8,H:1.05,D:-.7,hull:'#cfd1cd',bottom:'#4a2e2a',stripe:'#2e4052',type:'cabin'}},
- {id:'runner',n:'Abyss Runner',price:180000,speed:28,turn:1.15,storage:40,fx:{luck:35,cond:'deep',d:'+35% luck for rare fish in open water'},m:{L:9.6,W:1.9,H:1.1,D:-.75,hull:'#2e3a44',bottom:'#1c242a',stripe:'#8a2e2a',type:'runner'}},
- {id:'outrigger',n:'Reef Outrigger',price:18000,speed:23,turn:1.8,storage:12,fx:{luck:12,wait:.9,d:'+12% luck and bites 10% faster from the boat'},m:{L:6.8,W:.9,H:.6,D:-.36,hull:'#a8704a',bottom:'#5a3a26',stripe:'#e0b060',type:'outrigger'}},
- {id:'catamaran',n:'Seabreeze Catamaran',price:120000,speed:25,turn:1.35,storage:35,fx:{bar:1.15,luck:15,d:'Line tension builds 15% slower and +15% luck from the boat'},m:{L:8.8,W:1.1,H:.85,D:-.55,hull:'#eae6dc',bottom:'#2e5a6a',stripe:'#3a8ab0',type:'catamaran'}},
- {id:'speedster',n:'Gullwing Speedster',price:260000,speed:34,turn:1.5,storage:25,fx:{luck:25,wait:.85,d:'+25% luck and bites 15% faster from the boat'},m:{L:8.2,W:1.6,H:.9,D:-.55,hull:'#c8402e',bottom:'#1e2228',stripe:'#f2efe8',type:'speedster'}},
- {id:'trawler',n:'Ironkeel Trawler',price:400000,speed:22,turn:.95,storage:70,fx:{mut:.08,wt:.15,d:'+8% mutation chance and +15% weight from the boat'},m:{L:11.5,W:2.3,H:1.4,D:-.95,hull:'#5e3a30',bottom:'#2a2422',stripe:'#d6d0c4',type:'trawler'}},
+ {id:'dinghy',seats:2,n:'Driftwood Dinghy',price:0,speed:18,turn:1.4,storage:0,fx:{luck:5,d:'+5% luck while fishing from the boat'},m:{L:5.6,W:1.22,H:.78,D:-.42,hull:'#d6d0c4',bottom:'#5a4036',type:'row'}},
+ {id:'skiff',seats:2,n:'Reed Skiff',price:7500,speed:20,turn:1.65,storage:10,fx:{wait:.85,d:'Bites come 15% faster from the boat'},m:{L:6.6,W:1.05,H:.62,D:-.38,hull:'#7a6a54',bottom:'#4a3c30',stripe:'#5a4a3a',type:'skiff'}},
+ {id:'sloop',seats:4,n:'Gull Sloop',price:32000,speed:21,turn:1.3,storage:20,fx:{luck:20,d:'+20% luck from the boat'},m:{L:7.6,W:1.5,H:.9,D:-.6,hull:'#dcd7cc',bottom:'#2e3e4c',stripe:'#3e5468',type:'sail'}},
+ {id:'cruiser',seats:4,n:'Tidewatch Cruiser',price:70000,speed:24,turn:1.25,storage:30,fx:{drain:.65,bar:1.1,cond:'rain',d:'Reeling is 35% easier in rain and storms'},m:{L:8.6,W:1.8,H:1.05,D:-.7,hull:'#cfd1cd',bottom:'#4a2e2a',stripe:'#2e4052',type:'cabin'}},
+ {id:'runner',seats:3,n:'Abyss Runner',price:180000,speed:28,turn:1.15,storage:40,fx:{luck:35,cond:'deep',d:'+35% luck for rare fish in open water'},m:{L:9.6,W:1.9,H:1.1,D:-.75,hull:'#2e3a44',bottom:'#1c242a',stripe:'#8a2e2a',type:'runner'}},
+ {id:'outrigger',seats:2,n:'Reef Outrigger',price:18000,speed:23,turn:1.8,storage:12,fx:{luck:12,wait:.9,d:'+12% luck and bites 10% faster from the boat'},m:{L:6.8,W:.9,H:.6,D:-.36,hull:'#a8704a',bottom:'#5a3a26',stripe:'#e0b060',type:'outrigger'}},
+ {id:'catamaran',seats:6,n:'Seabreeze Catamaran',price:120000,speed:25,turn:1.35,storage:35,fx:{bar:1.15,luck:15,d:'Line tension builds 15% slower and +15% luck from the boat'},m:{L:8.8,W:1.1,H:.85,D:-.55,hull:'#eae6dc',bottom:'#2e5a6a',stripe:'#3a8ab0',type:'catamaran'}},
+ {id:'speedster',seats:2,n:'Gullwing Speedster',price:260000,speed:34,turn:1.5,storage:25,fx:{luck:25,wait:.85,d:'+25% luck and bites 15% faster from the boat'},m:{L:8.2,W:1.6,H:.9,D:-.55,hull:'#c8402e',bottom:'#1e2228',stripe:'#f2efe8',type:'speedster'}},
+ {id:'pontoon',seats:8,n:'Sunset Pontoon',price:150000,speed:19,turn:1.1,storage:40,fx:{xp:.2,luck:10,d:'Party boat for 8: +20% XP and +10% luck from the deck'},m:{L:9,W:1.9,H:.95,D:-.5,hull:'#d8dcdc',bottom:'#5a6a74',stripe:'#e8a03a',type:'pontoon'}},
+ {id:'jetski',seats:2,n:'Wavecutter Jet Ski',price:90000,speed:40,turn:2.3,storage:0,fx:{wait:.9,d:'The fastest thing on the water, with room for one friend. Bites 10% faster'},m:{L:3.6,W:.7,H:.55,D:-.3,hull:'#f2f2f0',bottom:'#1e2a34',stripe:'#e84a3a',type:'jetski'}},
+ {id:'trawler',seats:6,n:'Ironkeel Trawler',price:400000,speed:22,turn:.95,storage:70,fx:{mut:.08,wt:.15,d:'+8% mutation chance and +15% weight from the boat'},m:{L:11.5,W:2.3,H:1.4,D:-.95,hull:'#5e3a30',bottom:'#2a2422',stripe:'#d6d0c4',type:'trawler'}},
 ];
 const BOATM={};BOATS.forEach(b=>BOATM[b.id]=b);
 const BUFFS=[
@@ -262,12 +277,16 @@ const NPCS=[
  {id:'corvin',name:'Corvin',title:'Harbormaster',role:'harbor',zone:'glim',look:{skin:'#d8b090',shirt:'#3a3a5a',pants:'#2a2a2a',hat:'#2a2a3a',hatType:'top'},lines:['Few sail this far. Fewer sail back without a story.']},
  {id:'aster',name:'Aster',title:'Starsmith',role:'rods',zone:'glim',dth:-1.1,look:{skin:'#f0d8c8',shirt:'#8a6ab8',pants:'#2a2238',hat:'#f0e0a0',hatType:'cap'},house:{wall:'#d4cee0',roof:'#6a5a9a',trim:'#ece8f4'},lines:['I set crystals into rods. They hum when a big one is near.']},
  {id:'vesper',name:'Vesper',title:'Moon Apothecary',role:'buffs',zone:'glim',dth:2.4,look:{skin:'#e0c0d0',shirt:'#3a5a6a',pants:'#2a2a3a',hat:'#5a7a8a',hatType:'sunhat'},house:{wall:'#c8d0d8',roof:'#3a5a6a',trim:'#e4e8ec'},lines:['Starlight steeps slowly. My brews are worth the wait.']},
+ {id:'lou',name:'Lucky Lou',title:'Tidewater Casino',role:'casino',zone:'cove',dth:2.1,look:{skin:'#e0b090',shirt:'#c8303a',pants:'#1e1e24',hat:'#1e1e24',hatType:'top'},house:{wall:'#2a2430',roof:'#c8a040',trim:'#f0d070'},lines:['Feeling lucky? The house always has a little edge, so bet what you can lose.','Slots, the Wheel of Tides, or High or Low. Pick your poison!']},
  {id:'isolde',name:'Isolde',title:'Cartographer',role:'sage',zone:'cove',dth:-2.1,look:{skin:'#e8c0a0',shirt:'#3a6a8a',pants:'#5a4a3a',hat:'#8a5a3a',hatType:'top'},house:{wall:'#d8d0c0',roof:'#3a5a7a',trim:'#ece6dc'},lines:['Three new isles on my charts and not a soul has mapped them properly.','A map is just a promise that the world goes on.']},
 ];
 const SHIRTS=['#a8604e','#b88452','#b89c58','#6c8558','#4f7f7a','#4f6a8c','#6a6188','#8e5e78','#d6d0c2','#3e4a5c'];
 const SKINS=['#f6d3b3','#eab894','#d39b72','#a8714d','#7a4e33'];
 const HATS=[{id:'bucket',n:'Bucket hat'},{id:'cap',n:'Cap'},{id:'beanie',n:'Beanie'},{id:'sunhat',n:'Sun hat'},{id:'top',n:'Top hat'},{id:'none',n:'No hat'}];
 const EMOTES={wave:{n:'Wave',d:2.6},dance:{n:'Dance',d:6},cheer:{n:'Cheer',d:3},show:{n:'Show off',d:4.5}};
+
+/* developer tools state (the dev bar unlocks only for the server owner, or on localhost) */
+const DEV={on:false,open:false,fast:false,rar:null,ev:null};
 
 /* ================= STATE / SAVE ================= */
 /* The save key never changes between updates: new versions read the same save and fill in anything new.
@@ -380,11 +399,12 @@ const AU={ctx:null,
   cl.connect(cd);cd.connect(ca.gain);co.connect(cf);cf.connect(ca);const cg=c.createGain();cg.gain.value=0;ca.connect(cg);cg.connect(this.bus.amb);co.start();cl.start();this.amb.crickets=cg;this.amb.cricketAmp=ca;
   this.swellT=0;this.birdT=4;this.owlT=20;this.gullT=8;this.dripT=0;this.windT=0;this.chirpOn=0;},
  updAmb(dt,p){if(!this.ctx||!this.amb)return;const c=this.ctx,t=c.currentTime,A=this.amb;
+  if(p.zone==='hollow'){this.dripT=(this.dripT||0)-dt;if(this.dripT<=0){this.dripT=rand(.3,1.4);const f=rand(900,2400);this.o(f,.12,{vol:.025,bus:'amb',pan:rand(-.9,.9),slide:-f*.4});this.o(f*.5,.5,{vol:.008,bus:'amb',delay:.18,slide:-f*.2});}}
   if(p.zone==='glim'){this.chimeT=(this.chimeT||3)-dt;if(this.chimeT<=0){this.chimeT=rand(3,8)*(p.day>.5?1.8:1);this.chime();}}
   this.swellT-=dt;if(this.swellT<=0){const s=rand(3.5,7.5);this.swellT=s;const peak=(p.boat?.42:.3)*(p.shore+.35);A.waves.g.gain.cancelScheduledValues(t);A.waves.g.gain.setTargetAtTime(peak,t,s*.22);A.waves.g.gain.setTargetAtTime(peak*.35,t+s*.45,s*.3);
    A.wash.g.gain.cancelScheduledValues(t);A.wash.g.gain.setTargetAtTime(.05*p.shore,t+s*.3,.6);A.wash.g.gain.setTargetAtTime(.008,t+s*.55,.8);}
   this.windT-=dt;if(this.windT<=0){this.windT=rand(2,4.5);A.wind.f.frequency.setTargetAtTime(rand(380,900),t,1.5);}
-  const windLvl=.03+(p.boat?.05:0)+p.cloud*.04+p.fog*.03+(p.zone==='frost'?.05:p.zone==='dune'?.045:0);A.wind.g.gain.setTargetAtTime(windLvl,t,1.2);
+  const windLvl=.03+(p.boat?.05:0)+p.cloud*.04+p.fog*.03+(p.zone==='frost'?.05:p.zone==='dune'?.045:0)-(p.zone==='hollow'?.03:0);A.wind.g.gain.setTargetAtTime(windLvl,t,1.2);
   A.rain.g.gain.setTargetAtTime(p.rain*.22,t,.8);A.lava.g.gain.setTargetAtTime(p.zone==='ember'?.25:0,t,1.5);
   A.engine.g.gain.setTargetAtTime(p.boat?.02+Math.min(Math.abs(p.speed)/19,1)*.06:0,t,.3);A.engine.o.frequency.setTargetAtTime(42+Math.abs(p.speed)*2.2,t,.3);
   const crick=(1-p.day)*(1-p.rain)*(p.zone!=='sea'&&p.zone!=='frost'?.035:.008);A.crickets.gain.setTargetAtTime(crick*(Math.sin(t*.7)>-.3?1:.15),t,.4);
@@ -403,10 +423,11 @@ const Music={on:false,step:0,next:0,mode:'day',ci:0,deg:4,timer:null,
  /* island themes for the three far isles: pentatonic plucks on Petalshore, a hand drum on Duneveil, glassy bells on Glimmerholt */
  ZONE:{petal:{bpm:70,ch:[[50,57,62,64,69],[45,52,57,62,64],[47,54,59,62,66],[43,50,55,62,64]],sc:[62,64,66,69,71,74,76,78,81,83],bass:[38,33,35,31],cut:1200,inst:'koto'},
   dune:{bpm:80,ch:[[52,59,64,65,71],[50,57,62,65,69],[48,55,60,64,67],[47,54,59,63,66]],sc:[64,65,68,69,71,72,74,76,77,80],bass:[40,38,36,35],cut:1000,inst:'koto',drum:true},
+  hollow:{bpm:50,ch:[[45,52,57,60,64],[43,50,55,58,62],[41,48,53,57,60],[40,47,52,55,59]],sc:[57,60,62,64,67,69,72,74,76],bass:[33,31,29,28],cut:700,inst:'mbox'},
   glim:{bpm:58,ch:[[48,55,59,62,66],[50,57,62,66,69],[52,59,64,67,71],[47,54,59,62,66]],sc:[60,62,64,66,67,69,71,72,74,76,78],bass:[36,38,40,35],cut:900,inst:'mbox'}},
  zone:'cove',
  start(){if(this.on||!AU.ctx)return;this.on=true;this.next=AU.ctx.currentTime+.3;this.timer=setInterval(()=>this.tick(),60);},
- cur(){const Z=this.ZONE[this.zone];if(Z&&(this.mode==='day'||this.zone==='glim'))return Z;return this.mode==='day'?this.DAY:this.NIGHT;},
+ cur(){const Z=this.ZONE[this.zone];if(Z&&(this.mode==='day'||this.zone==='glim'||this.zone==='hollow'))return Z;return this.mode==='day'?this.DAY:this.NIGHT;},
  tick(){const c=AU.ctx;if(!c||c.state!=='running')return;const P=this.cur();const spb=60/(P.bpm*(state.settings.chill?.92:1))/2;
   while(this.next<c.currentTime+.3){this.play(this.next,spb);this.next+=spb;this.step++;}},
  play(t,spb){const s=this.step%32,beat=s%8;let P=this.cur();

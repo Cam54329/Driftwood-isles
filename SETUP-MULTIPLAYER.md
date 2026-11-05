@@ -73,3 +73,24 @@ see the other angler, chat and compare leaderboards.
 ## Free tier limits
 The free Spark plan allows 100 players connected at once and 10 GB of downloads a month, which is plenty
 for a group of friends. Each player sends a small update about five times a second while moving.
+
+## Owner tools: the dev bar and clearing chat for everyone
+
+The dev bar (coins, levels, unlocks, teleport, time, weather, events, Tide Wells) and **Clear chat for everyone**
+only unlock for the server owner. Your Firebase database checks a secret owner code that only you know. The code
+is never stored in this repository, so it stays secret even though the repository is public.
+
+One-time setup:
+
+1. Paste the latest `database.rules.json` into **Realtime Database → Rules** and click **Publish**.
+2. Open **Realtime Database → Data**. Hover the top line (the database name), click **+**, and add:
+   - Key: `config`, then click **+** on `config` and add Key: `devCode`, Value: a secret word of your choice (for example `kraken-2041`).
+   - Click **Add**.
+3. In the game, open **Settings → Developer**, type the same code and press **Unlock**.
+
+The game remembers the unlock on that browser. Press **`** (the key left of 1) or tap **DEV** at the top right to open the dev bar.
+To change the code, edit `config/devCode` in Firebase. Old unlocks stop working for chat clearing straight away.
+
+Anyone can clear chat on their own screen with the bin button in the chat box, or by typing `/clear`.
+As the owner, `/clearall` in chat (or the dev bar button) clears it for everyone.
+Coins, levels and items granted from the dev bar keep that save off the leaderboard.

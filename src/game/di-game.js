@@ -28,6 +28,7 @@ addEventListener('keydown',e=>{const k=e.code;if(typing()){if(k==='Escape')docum
  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k))e.preventDefault();AU.init();
  if(e.repeat){keys[k]=true;return;}keys[k]=true;
  if(MENU.on){if(k==='Escape')closePanel();else menuKey(k);return;}
+ if(k==='Backquote'&&DEV.on){toggleDev();return;}
  if(k==='Escape'){if(PHOTO.on)togglePhoto(false);else if(!$('#panelWrap').hidden)closePanel();else if(PAUSE.on)closePause();else if(!$('#emoteMenu').hidden)hideEmotes();else if(!JOIN.on)openPause();return;}
  if(PHOTO.on){if(k==='KeyP')togglePhoto(false);return;}
  if(uiBlocked())return;
@@ -71,7 +72,7 @@ const rcUp=e=>{if(rcP&&e.pointerId!==rcP.id)return;rcP=null;if(F.reel)F.reel.tou
 function readInput(dt){let x=0,y=0,rot=camBtn;if(!typing()){if(keys.KeyD)x+=1;if(keys.KeyA)x-=1;if(keys.KeyW||keys.ArrowUp)y+=1;if(keys.KeyS||keys.ArrowDown)y-=1;if(keys.ArrowLeft)rot+=1;if(keys.ArrowRight)rot-=1;}
  x+=joy.x;y+=joy.y;const m=Math.hypot(x,y);if(m>1){x/=m;y/=m;}input.x=x;input.y=y;input.rot=clamp(rot,-1,1);
  if(input.rot){cam.yaw+=input.rot*2.3*dt;cam.goal=null;cam.manualT=0;}else if(cam.goal!=null){const d=cam.goal-cam.yaw;cam.yaw+=d*(1-Math.exp(-8*dt));if(Math.abs(d)<.002)cam.goal=null;}cam.manualT+=dt;}
-function doJump(){if(uiBlocked()||PHOTO.on||player.mode!=='walk'||!player.onGround)return;if(['reeling','caught','bite'].includes(F.st))return;if(F.st!=='idle')cancelFishing();stopEmote();player.vy=11.5;player.onGround=false;AU.jump();}
+function doJump(){if(!uiBlocked()&&!PHOTO.on&&player.mode==='boat'&&F.st==='idle'){const w=wellPrompt();if(w){w.act();return;}}if(uiBlocked()||PHOTO.on||player.mode!=='walk'||!player.onGround)return;if(['reeling','caught','bite'].includes(F.st))return;if(F.st!=='idle')cancelFishing();stopEmote();player.vy=11.5;player.onGround=false;AU.jump();}
 
 /* ---------- environment ---------- */
 const env={t:.3,dayLen:600,weather:'clear',wTimer:90,rain:0,fog:0,cloud:0,wet:0,event:null,eventT:0,nextEvent:150,day:1,dusk:0,flash:0,boltT:3,rainbow:0,snowK:0};
@@ -85,7 +86,7 @@ function isNight(){return env.day<.35;}
 const evIs=id=>!!(env.event&&env.event.id===id);
 const FORCE_EV=(()=>{const m=/[?&]event=([a-z]+)/.exec(location.search);return m&&BIG_EVENTS.find(e=>e.id===m[1])||null;})();
 /* the big-event clock: every BIG_CYCLE seconds one big event runs for BIG_LEN seconds, picked the same way on every device */
-function bigSchedule(){const now=Date.now()/1000,k=Math.floor(now/BIG_CYCLE),ph=now-k*BIG_CYCLE,pickK=i=>BIG_EVENTS[((i*2654435761)>>>0)%BIG_EVENTS.length];
+function bigSchedule(){if(DEV.ev&&Date.now()<DEV.ev.until)return{ev:DEV.ev.ev,left:(DEV.ev.until-Date.now())/1000};const now=Date.now()/1000,k=Math.floor(now/BIG_CYCLE),ph=now-k*BIG_CYCLE,pickK=i=>BIG_EVENTS[((i*2654435761)>>>0)%BIG_EVENTS.length];
  if(FORCE_EV)return{ev:FORCE_EV,left:BIG_LEN-((now-FORCE_T)%BIG_LEN)};
  if(ph>=BIG_START&&ph<BIG_START+BIG_LEN)return{ev:pickK(k),left:BIG_START+BIG_LEN-ph};
  return ph<BIG_START?{soon:pickK(k),warn:BIG_START-ph}:{soon:pickK(k+1),warn:BIG_CYCLE-ph+BIG_START};}
@@ -106,7 +107,7 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  const fw=state.settings.weather;if(fw&&fw!=='auto'){if(env.weather!==fw)setWeather(fw);}else{env.wTimer-=dt;if(env.wTimer<=0){setWeather(pickWeather(env.weather));env.wTimer=rand(120,240);}}
  const k=1-Math.exp(-dt*.35),wt=wxTarget(env.weather);env.rain=lerp(env.rain,wt.rain,k);env.fog=lerp(env.fog,wt.fog,k);env.cloud=lerp(env.cloud,wt.cloud,k);
  env.wet=clamp(env.wet+(env.rain>.4?dt/25:-dt/60),0,1);env.flash=Math.max(0,env.flash-dt*4.5);if(env.rainbow>0)env.rainbow-=dt;
- if(env.weather==='storm'&&env.rain>.8){env.boltT-=dt;if(env.boltT<=0){env.boltT=rand(4,11);const d=strikeBolt();env.flash=1;AU.thunder(d);}}
+ if(env.weather==='storm'&&env.rain>.8&&!(env.cave>.5)){env.boltT-=dt;if(env.boltT<=0){env.boltT=rand(4,11);const d=strikeBolt();env.flash=1;AU.thunder(d);}}
  tickEvents(dt);
  // waves build up in rain and storms and settle in fog
  WAVE.ampT=WAVE_W[env.weather]||1;if(evIs('swell'))WAVE.ampT=Math.max(WAVE.ampT,3.4);WAVE.amp=lerp(WAVE.amp,WAVE.ampT,1-Math.exp(-dt*.08));
@@ -163,6 +164,17 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  if(world.altarCrystal){const c=world.altarCrystal;c.rotation.y+=dt*.8;c.position.y=world.altarY+Math.sin(WIND.uTime.value*1.6)*.25;}
  // refresh the captured sky (reflections + lighting) every so often, sooner after a lightning flash
  updateBigFx(dt);
+ /* inside the Drowned Hollow the cave takes over the lighting */
+ {const H=ZONES.hollow,hk=1-smooth(H.R*1.6,H.R*1.85,Math.hypot(cp.x-H.x,cp.z-H.z));env.cave=hk;waterU.uCave.value=hk;if(hk>0){
+  _c1.set('#0a262c');scene.fog.color.lerp(_c1,hk);scene.fog.near=lerp(scene.fog.near,4,hk);scene.fog.far=lerp(scene.fog.far,150,hk);
+  sun.intensity*=1-hk*.94;hemi.intensity=lerp(hemi.intensity,.9,hk);hemi.color.lerp(_c2.set('#4ad8d0'),hk);hemi.groundColor.lerp(_c3.set('#101a22'),hk);
+  scene.environmentIntensity*=1-hk*.8;renderer.toneMappingExposure=lerp(renderer.toneMappingExposure,1.5,hk);
+  waterU.uFogC.value.lerp(_c1,hk);waterU.uFogN.value=scene.fog.near;waterU.uFogF.value=scene.fog.far;waterU.uSunCol.value.multiplyScalar(1-hk);waterU.uSpark.value*=1-hk;
+  waterU.uDeep.value.lerp(_c2.set('#03141a'),hk);waterU.uShal.value.lerp(_c3.set('#0a4a50'),hk);waterU.uBio.value=Math.max(waterU.uBio.value,hk*.4);waterU.uAmb.value.multiplyScalar(1-hk*.7);
+  glowMat.color.setScalar(lerp(glowMat.color.r,3.4,hk));starU.uA.value*=1-hk;moon.material.opacity*=1-hk;moonHalo.material.opacity*=1-hk;
+  if(GFX.rays)GFX.rays.material.uniforms.uK.value*=1-hk;if(GFX.bloom)GFX.bloom.strength=lerp(GFX.bloom.strength,.42,hk);
+  for(const h of world.halos)if(h.userData.always)h.material.opacity=Math.max(h.material.opacity,hk*.4);
+  if(world.caveExit){world.caveExit.ring.rotation.z+=dt*.6;}}}
  ENV.t-=dt;if(ENV.t<=0||(env.flash>.9&&ENV.t<ENV.every-.1)){ENV.t=ENV.every;updateEnvMap();}}
 
 /* ---------- stats & rolls ---------- */
@@ -180,13 +192,14 @@ function stats(detail){const r=RODM[state.rod],e=state.ench[state.rod],b=state.b
  if(player&&player.mode==='boat'){const bs=boatStats();applyFx(S,bs.B.fx,'Boat: '+bs.B.n);if(bs.sonar)applyFx(S,{luck:bs.sonar*6,d:'+'+bs.sonar*6+'% luck'},'Sonar level '+bs.sonar);}
  for(const k in state.buffs){const B=BUFFM[k];if(B&&state.buffs[k]>0)applyFx(S,B.fx,B.n);}
  const ev=env.event&&env.event.id;if(ev){if(ev==='surge'||ev==='starfall'){S.mut*=ev==='surge'?3:2;if(detail)S.src.push(['Event: Mutation Surge','Mutation chance ×3']);}else applyFx(S,Object.assign({d:env.event.d},EVFX[ev]),'Event: '+env.event.n);}
+ if(F.inSchool&&F.st!=='idle'){S.luck+=40;S.wait*=.5;if(detail)S.src.push(['Fish school','+40% luck, bites twice as fast']);}
  S.luck/=100;return S;}
-function fishValue(f){const sp=SPM[f.sp];const avg=(sp.minW+sp.maxW)/2;return Math.max(1,Math.round(sp.price*Math.pow(f.w/avg,.85)*(f.mut?MUTS[f.mut].m:1)*stats().sell));}
+function fishValue(f){const sp=SPM[f.sp];const avg=(sp.minW+sp.maxW)/2;return Math.max(1,Math.round(sp.price*Math.pow(f.w/avg,.85)*(f.mut?MUTS[f.mut].m:1)*(f.vk||1)*stats().sell));}
 function rollWeight(sp,wt){const r=Math.pow(Math.random(),1.7);let w=(sp.minW+(sp.maxW-sp.minW)*r)*wt;if(Math.random()<.02)w*=1.6;return Math.round(w*100)/100;}
 function rollMutation(){const gold=env.event&&env.event.id==='golden';const ks=Object.keys(MUTS);let tot=0;const ws=ks.map(k=>{let w=MUTS[k].w;if(k==='golden'&&gold)w*=8;if((k==='glowing'||k==='prismatic')&&evIs('starfall'))w*=5;if(k==='frozen'&&zoneAt(player.pos.x,player.pos.z)==='frost')w*=2.5;tot+=w;return w;});let r=Math.random()*tot;for(let i=0;i<ks.length;i++){r-=ws[i];if(r<=0)return ks[i];}return 'shiny';}
 function condOK(s){if(!s.cond)return true;if(s.cond==='night')return isNight()||evIs('aurora');if(s.cond==='day')return !isNight();if(s.cond==='rain')return env.weather==='rain';if(s.cond==='fog')return env.weather==='fog';return true;}
-function rollCatch(zone){const st=stats();if(Math.random()<.012*(1+st.luck*.4))return{relic:true,r:3};
- const pool=SPECIES.filter(s=>s.zone===zone&&condOK(s));const ws=rarityOdds(st.luck);let x=Math.random(),r=0;for(let i=0;i<ws.length;i++){x-=ws[i];if(x<=0){r=i;break;}}
+function rollCatch(zone){const st=stats();if(DEV.rar==null&&zone!=='well'&&Math.random()<.012*(1+st.luck*.4))return{relic:true,r:3};
+ const pool=SPECIES.filter(s=>s.zone===zone&&condOK(s));const ws=rarityOdds(st.luck);let x=Math.random(),r=0;for(let i=0;i<ws.length;i++){x-=ws[i];if(x<=0){r=i;break;}}if(DEV.rar!=null){r=DEV.rar;DEV.rar=null;if(DEV.open)renderDev();}if(zone==='well')r=[2,2,3,4,5,6,6][r];
  let cands=[];for(let rr=r;rr>=0;rr--){cands=pool.filter(s=>s.r===rr);if(cands.length)break;}if(!cands.length)cands=pool.length?pool:SPECIES.filter(s=>s.zone==='cove'&&s.r===0);
  const sp=pick(cands);return{sp,w:rollWeight(sp,st.wt),mut:Math.random()<st.mut?rollMutation():null,r:sp.r};}
 function isNotable(r,mut){return r>=3||(mut&&['golden','prismatic','shadow'].includes(mut))||(r>=2&&!!mut);}
@@ -197,7 +210,7 @@ function isNotable(r,mut){return r>=3||(mut&&['golden','prismatic','shadow'].inc
    climbs into the red (or the line snaps), and pull against the fish's runs to tire it out. */
 const F={st:'idle',t:0,power:0,dir:new V3(),from:new V3(),to:new V3(),flight:.8,arc:4,wait:0,nibT:0,nib:0,twT:0,twK:0,ripT:0,catch:null,reel:null,held:null,retFrom:new V3(),flyFrom:new V3(),zone:'cove',lastCatch:null,hookWin:1};
 const SC={idle:'i',charging:'c',casting:'t',waiting:'w',bite:'b',reeling:'r',caught:'k',retract:'x'};
-function canStartCast(){return F.st==='idle'&&!uiBlocked()&&!PHOTO.on&&!(player.mode==='boat'&&Math.abs(boat.speed)>1.5);}
+function canStartCast(){return F.st==='idle'&&!uiBlocked()&&!PHOTO.on&&!(player.mode==='boat'&&Math.abs(boat.speed)>1.5)&&!(player.mode==='ride'&&((hostOf(RIDE&&RIDE.uid)||{}).spd||0)>1.5);}
 function castDown(){if(uiBlocked()||PHOTO.on)return;hideEmotes();if(F.st==='caught'){finishCatch();return;}if(F.st==='bite'){setHook();return;}if(F.st==='reeling'){reelHold(true);return;}if(F.st==='waiting'){cancelFishing();return;}
  if(canStartCast())startCharge();else if(player.mode==='boat'&&F.st==='idle')toast('Slow the boat down to cast.');}
 function castUp(){if(F.st==='reeling'){reelHold(false);return;}if(F.st==='charging')releaseCast();}
@@ -205,7 +218,7 @@ function castUp(){if(F.st==='reeling'){reelHold(false);return;}if(F.st==='chargi
 function fishPress(on){if(on){if(F.st==='bite')setHook();else if(F.st==='reeling')reelHold(true);else if(F.st==='waiting')twitch();}else if(F.st==='reeling')reelHold(false);}
 function startCharge(){if(state.inv.length>=maxInv()){toast('Your bag is full. Sell some fish at a merchant.');return;}stopEmote();F.st='charging';F.t=0;F.power=0;$('#power').hidden=false;AU.charge();}
 function camFwd(){return new V3(-Math.sin(cam.yaw),0,-Math.cos(cam.yaw));}
-function releaseCast(){$('#power').hidden=true;const dir=camFwd();const base=player.mode==='boat'?boat.pos:player.pos;let dist=4+F.power*16,ok=false;
+function releaseCast(){$('#power').hidden=true;F.inSchool=false;const dir=camFwd();const base=player.mode==='boat'?boat.pos:player.pos;let dist=4+F.power*16,ok=false;
  for(let d=dist;d>=3;d-=.8){const x=base.x+dir.x*d,z=base.z+dir.z*d;if(groundH(x,z)<-.45&&!world.seaRocks.some(r=>Math.hypot(r.x-x,r.z-z)<r.r)){dist=d;ok=true;break;}}
  player.face=Math.atan2(dir.x,dir.z);if(!ok){F.st='idle';toast('Face the water and get closer to the edge to cast.');return;}
  setTackle(bobber,TACKLE[state.baitOn||'none']||'classic');F.dir.copy(dir);rodObj.tip.getWorldPosition(F.from);F.to.set(base.x+dir.x*dist,0,base.z+dir.z*dist);F.flight=.55+F.power*.45;F.arc=2.5+F.power*4.5;F.st='casting';F.t=0;AU.cast(F.power);bobber.visible=true;fline.visible=true;}
@@ -282,11 +295,12 @@ function loseFish(msg,snapped){endFightUI();F.st='retract';F.t=0;F.retFrom.copy(
 function landCatch(){endFightUI();const c=F.catch;AU.catch(c.relic?3:c.r);buzz(c.r>=3?[30,50,30,50,60]:40);camShake(c.r>=3?.3:.16);splash(bobber.position,22,6);F.flyFrom.copy(bobber.position);if(c.r>=3||c.relic)catchBeam(bobber.position,c.relic?'#9eeaff':c.r===6?'#e8e0ff':RAR[c.r].c);addRipple(bobber.position.x,bobber.position.z,1.5);bobber.visible=false;fline.visible=false;
  let held,card;const id=rid();
  if(c.relic){state.relics++;questEvent('relic');held=buildRelic();held.scale.setScalar(.8);card=`<div class="cc-new">TIDE RELIC</div><div class="cc-name">Tide Relic</div><div class="cc-tags"><span class="pill" style="--c:#c6f4ff">Enchant item</span></div><div class="muted">Offer it at the Tide Altar on Mossreach to enchant your rod.</div>`;gainXP(80);F.lastCatch={i:id,sp:'relic',m:null,w:0};$('#catchCard').style.setProperty('--rc','#9eeaff');}
- else{const f={id:state.uid++,sp:c.sp.id,w:c.w,mut:c.mut,lock:false};state.inv.push(f);const dx=state.dex[c.sp.id]||(state.dex[c.sp.id]={n:0,best:0,muts:[]});const isNew=dx.n===0;dx.n++;dx.best=Math.max(dx.best,c.w);if(c.mut&&!dx.muts.includes(c.mut))dx.muts.push(c.mut);if(Math.random()<stats().dbl&&state.inv.length<maxInv()){state.inv.push({id:state.uid++,sp:c.sp.id,w:rollWeight(c.sp,stats().wt),mut:c.mut,lock:false});dx.n++;setTimeout(()=>toast('Double catch! A second '+c.sp.name+' came up too.','gold'),600);}
+ else{const f={id:state.uid++,sp:c.sp.id,w:c.w,mut:c.mut,lock:false};if(c.sp.zone==='well'&&F.wellIsl)f.vk=Math.round(ZONE_BASE[F.wellIsl]/WELL_REF*100)/100;state.inv.push(f);const dx=state.dex[c.sp.id]||(state.dex[c.sp.id]={n:0,best:0,muts:[]});const isNew=dx.n===0;dx.n++;dx.best=Math.max(dx.best,c.w);if(c.mut&&!dx.muts.includes(c.mut))dx.muts.push(c.mut);if(Math.random()<stats().dbl&&state.inv.length<maxInv()){state.inv.push({id:state.uid++,sp:c.sp.id,w:rollWeight(c.sp,stats().wt),mut:c.mut,lock:false});dx.n++;setTimeout(()=>toast('Double catch! A second '+c.sp.name+' came up too.','gold'),600);}
   held=buildFish(c.sp,c.mut);held.scale.setScalar(fishScale(c.sp,c.w));
   card=`${isNew?'<div class="cc-new">NEW SPECIES</div>':''}<div class="cc-name">${c.mut?MUTS[c.mut].n+' ':''}${esc(c.sp.name)}</div><div class="cc-tags">${rarPill(c.r)}${c.mut?mutPill(c.mut):''}</div><div class="cc-stats"><span><b>${fmtW(c.w)} kg</b>Weight</span><span><b>${fmt(fishValue(f))}c</b>Value</span></div>`;
   const avg=(c.sp.minW+c.sp.maxW)/2;gainXP(RAR[c.r].xp*(c.mut?1.5:1)*clamp(c.w/avg,.6,2));F.lastCatch={i:id,sp:c.sp.id,m:c.mut||null,w:c.w};$('#catchCard').style.setProperty('--rc',RAR[c.r].c);
   {const pz=pondAt(F.to.x,F.to.z);questEvent('catch',{sp:c.sp.id,w:c.w,mut:c.mut,r:c.r,zone:F.zone,isl:pz?pz.isl:zoneAt(F.to.x,F.to.z),night:isNight(),sea:player.mode==='boat'&&zoneAt(player.pos.x,player.pos.z)==='sea',ev:!!(env.event&&env.event.big)});card+=catchQuestInfo();}
+  if(F.inSchool)F.inSchool=false;
   if(isNotable(c.r,c.mut)){addFeed(profileOr().name,c.sp,c.mut,c.w,profileOr().color,true,id);if(typeof netOnMyCatch==='function')netOnMyCatch(c,id);}}
  const cc=$('#catchCard');cc.innerHTML=card;cc.hidden=false;cc.onclick=()=>finishCatch();
  F.held=held;prig.root.add(held);prig.root.updateMatrixWorld(true);prig.root.worldToLocal(F.flyFrom);held.position.copy(F.flyFrom);rodObj.g.visible=false;player.face=cam.yaw;F.st='caught';F.t=0;save();updateHUD();}
@@ -302,8 +316,8 @@ const tipPos=new V3();
 function updateFishing(dt){F.t+=dt;const T=WIND.uTime.value;
  if(F.st==='charging'){const p=(F.t/1.15)%2;F.power=p>1?2-p:p;re('powFill').style.width=(F.power*100)+'%';re('powTxt').textContent=Math.round(F.power*100)+'%';const d=camFwd();player.face=Math.atan2(d.x,d.z);}
  else if(F.st==='casting'){const k=clamp(F.t/F.flight,0,1);const wy=surfY(F.to.x,F.to.z,T);bobber.position.set(lerp(F.from.x,F.to.x,k),lerp(F.from.y,wy,k)+Math.sin(k*Math.PI)*F.arc,lerp(F.from.z,F.to.z,k));
-  if(k>=1){F.st='waiting';F.t=0;{const pd=pondAt(F.to.x,F.to.z);F.zone=pd?pd.key:zoneAt(F.to.x,F.to.z);if(pd){ringAt(F.to.x,pd.y+.03,F.to.z,1.2,1.4);if(!state.tips['p_'+pd.key]){state.tips['p_'+pd.key]=1;toast(`You're fishing in ${ZONES[pd.key].n}. Its fish live nowhere else.`);}}}
-   F.wait=rand(8,16)*stats().wait;F.nibT=rand(2,4);F.nib=0;F.twT=0;F.twK=0;F.ripT=1.5;AU.splash(.8);AU.plop();splash(bobber.position,12,4);addRipple(F.to.x,F.to.z,1.2);useBait();
+  if(k>=1){F.st='waiting';F.t=0;{const pd=pondAt(F.to.x,F.to.z);F.zone=pd?pd.key:zoneAt(F.to.x,F.to.z);{const w=!pd&&wellAt(F.to.x,F.to.z);F.wellIsl=w?w.isl:null;if(w){F.zone='well';if(!state.tips.well){state.tips.well=1;toast('You\'re fishing in a Tide Well! Only rare fish bite here, and they live nowhere else.','gold');}}}if(pd){ringAt(F.to.x,pd.y+.03,F.to.z,1.2,1.4);if(!state.tips['p_'+pd.key]){state.tips['p_'+pd.key]=1;toast(`You're fishing in ${ZONES[pd.key].n}. Its fish live nowhere else.`);}}}
+   if(onCastLanded())return;F.wait=rand(8,16)*stats().wait;F.nibT=rand(2,4);F.nib=0;F.twT=0;F.twK=0;F.ripT=1.5;AU.splash(.8);AU.plop();splash(bobber.position,12,4);addRipple(F.to.x,F.to.z,1.2);useBait();
    if(!state.tips.strike){state.tips.strike=1;toast('Twitch the lure to tempt a fish. When the float dives under, strike!');}}}
  else if(F.st==='waiting'){F.twT-=dt;F.twK=Math.max(0,F.twK-dt*5);F.nib=Math.max(0,F.nib-dt);const dip=F.nib>0?Math.sin(F.nib/.5*Math.PI)*.2:0;
   bobber.position.set(F.to.x,surfY(F.to.x,F.to.z,T)+Math.sin(T*3)*.05-dip-F.twK*.12,F.to.z);F.wait-=dt;F.ripT-=dt;if(F.ripT<=0){F.ripT=rand(1.8,3);addRipple(F.to.x,F.to.z,.45);}
@@ -343,11 +357,12 @@ function updateClockHUD(){const h=env.t*24,hh=Math.floor(h),mm=Math.floor((h-hh)
 
 /* ---------- interaction ---------- */
 let curInter=null,disembarkSpot=null,disTimer=0;
-function findDisembark(){const p=boat.pos;let best=null,bd=1e9;for(let a=0;a<20;a++){for(const r of[3,4.5,6,7.5]){const x=p.x+Math.cos(a/20*TAU)*r,z=p.z+Math.sin(a/20*TAU)*r;const g=groundH(x,z);if(g>.35&&r<bd&&!world.colliders.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+.6)){bd=r;best={x,z,g};}}}return best;}
+function findDisembark(p=boat.pos){let best=null,bd=1e9;for(let a=0;a<20;a++){for(const r of[3,4.5,6,7.5]){const x=p.x+Math.cos(a/20*TAU)*r,z=p.z+Math.sin(a/20*TAU)*r;const g=groundH(x,z);if(g>.35&&r<bd&&!world.colliders.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+.6)){bd=r;best={x,z,g};}}}return best;}
 function updateInteract(dt){let it=null;
  if(!uiBlocked()&&!PHOTO.on&&F.st==='idle'){
-  if(player.mode==='boat'){disTimer-=dt;if(disTimer<=0){disembarkSpot=findDisembark();disTimer=.3;}if(disembarkSpot&&Math.abs(boat.speed)<4)it={label:'Leave the boat',kind:'Leave',act:disembark};}
-  else{let bd=1e9;for(const o of world.inter){const d=Math.hypot(o.x-player.pos.x,o.z-player.pos.z);if(d<o.r&&d<bd){bd=d;it=o;}}const db=Math.hypot(boat.pos.x-player.pos.x,boat.pos.z-player.pos.z);if(db<5.5&&db<bd)it={label:'Board the boat',kind:'Board',act:board};}}
+  if(player.mode==='ride'){it={label:`Hop off ${RIDE?RIDE.name+'\'s':'the'} boat`,kind:'Leave',act:()=>stopRide(false)};}
+  else if(player.mode==='boat'){it=wellPrompt();if(!it){disTimer-=dt;if(disTimer<=0){disembarkSpot=findDisembark();disTimer=.3;}if(disembarkSpot&&Math.abs(boat.speed)<4)it={label:'Leave the boat',kind:'Leave',act:disembark};}}
+  else{let bd=1e9;for(const o of world.inter){const d=Math.hypot(o.x-player.pos.x,o.z-player.pos.z);if(d<o.r&&d<bd){bd=d;it=o;}}const db=Math.hypot(boat.pos.x-player.pos.x,boat.pos.z-player.pos.z);if(db<5.5&&db<bd)it={label:'Board the boat',kind:'Board',act:board};{const rp=ridePrompt();if(rp&&(!it||rp.d<Math.min(bd,db)))it=rp;}}}
  curInter=it;const pr=$('#prompt'),ab=$('#actBtn');
  if(it){pr.hidden=false;const html=(isTouch?'':'<kbd>E</kbd>')+esc(it.label);if(pr.dataset.h!==html){pr.innerHTML=html;pr.dataset.h=html;}ab.hidden=!isTouch;ab.textContent=it.kind||'Use';}else{pr.hidden=true;pr.dataset.h='';ab.hidden=true;}}
 function doInteract(){if(uiBlocked()||PHOTO.on)return;if(curInter){AU.ui();curInter.act();}}
@@ -379,7 +394,7 @@ function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].in
  if(player.mode==='walk'){const mag=Math.hypot(ix,iy);
   if(mag>.08){if(['charging','casting','waiting'].includes(F.st))cancelFishing();stopEmote();}
   const fwd=camFwd(),right=new V3(Math.cos(cam.yaw),0,-Math.sin(cam.yaw));const mv=fwd.multiplyScalar(iy).add(right.multiplyScalar(ix));
-  const run=!!(keys.ShiftLeft||keys.ShiftRight)||Math.hypot(joy.x,joy.y)>.95;player.speed=damp(player.speed,(run?12.5:7)*mag,run?10:18,dt);
+  const run=!!(keys.ShiftLeft||keys.ShiftRight)||Math.hypot(joy.x,joy.y)>.95;player.speed=damp(player.speed,(run?12.5:7)*mag*(DEV.fast?3:1),run?10:18,dt);
   if(mag>.08){player.face=Math.atan2(mv.x,mv.z);const st=player.speed*dt/mag,nx=player.pos.x+mv.x*st,nz=player.pos.z+mv.z*st;const ok=(x,z)=>{const g=groundH(x,z);return g>.1&&g<player.pos.y+.95;};
    if(ok(nx,nz)){player.pos.x=nx;player.pos.z=nz;}else if(ok(nx,player.pos.z))player.pos.x=nx;else if(ok(player.pos.x,nz))player.pos.z=nz;
    for(const c of world.colliders){const dx=player.pos.x-c.x,dz=player.pos.z-c.z,rr=c.r+.55,d2=dx*dx+dz*dz;if(d2<rr*rr&&d2>1e-6){const d=Math.sqrt(d2);const px=c.x+dx/d*rr,pz=c.z+dz/d*rr;if(ok(px,pz)){player.pos.x=px;player.pos.z=pz;}}}}
@@ -387,7 +402,8 @@ function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].in
   if(player.pos.y<=g){player.pos.y=g;player.vy=0;player.onGround=true;if(!was){AU.step('grass');if(player.zone!=='sea'&&!onDock(player.pos.x,player.pos.z))for(let i=0;i<3;i++)spawnPuff(player.pos.x,player.pos.y,player.pos.z,player.zone==='frost'?'#f4f8ff':'#d8d0b0');}}else if(player.onGround&&player.pos.y-g<.6&&player.vy<=0){player.pos.y=g;player.vy=0;}else player.onGround=false;
   if(g<-1){const sp=world.spawn[zoneAt(player.pos.x,player.pos.z)]||world.spawn.cove;player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);}
   R.position.copy(player.pos);
- }else{const th=iy,steer=ix;const bs=boatStats();boat.speed=damp(boat.speed,th*(th<0?bs.speed*.35:bs.speed),1.3,dt);const tk=clamp(Math.abs(boat.speed)/5,.35,1)*(boat.speed<-.3?-1:1);boat.yaw-=steer*bs.turn*dt*tk;
+ }else if(player.mode==='ride'){updateRide(dt);R.position.copy(player.pos);}
+ else{const th=iy,steer=ix;const bs=boatStats();boat.speed=damp(boat.speed,th*(th<0?bs.speed*.35:bs.speed)*(DEV.fast?2.5:1),1.3,dt);const tk=clamp(Math.abs(boat.speed)/5,.35,1)*(boat.speed<-.3?-1:1);boat.yaw-=steer*bs.turn*dt*tk;
   if(Math.abs(th)>.1&&['charging','casting','waiting'].includes(F.st))cancelFishing();
   const fx=Math.sin(boat.yaw),fz=Math.cos(boat.yaw);const nx=boat.pos.x+fx*boat.speed*dt,nz=boat.pos.z+fz*boat.speed*dt;const sg=boat.speed>=0?1:-1;const bl=boat.g.userData.len||2.8;const bx=nx+fx*bl*sg,bz=nz+fz*bl*sg;
   if(groundH(bx,bz)>-.9||world.seaRocks.some(r=>Math.hypot(r.x-bx,r.z-bz)<r.r)){if(Math.abs(boat.speed)>4){splash(new V3(bx,0,bz),8,3);AU.splash(.4);}boat.speed*=-.3;}else{boat.pos.x=nx;boat.pos.z=nz;}
@@ -400,7 +416,7 @@ function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].in
  if(player.emote){player.emT+=dt;if(player.emote==='dance')player.face+=dt*1.2;if(player.emT>EMOTES[player.emote].d)stopEmote();}
  const pry=R.rotation.y;R.rotation.y+=angDiff(R.rotation.y,player.face)*(1-Math.exp(-20*dt));player.turn=damp(player.turn||0,angDiff(pry,R.rotation.y)/Math.max(dt,1e-3),8,dt);
  const fs=F.st==='caught'||player.emote==='show'?'caught':F.st;
- panim.update(dt,{spd:player.mode==='walk'?player.speed:0,ground:player.onGround,vy:player.vy,turn:player.mode==='walk'?player.turn:0,sit:player.mode==='boat',fish:fs,fishT:F.t,power:F.power,hold:F.st==='reeling'&&F.reel&&F.reel.hold,tens:F.reel?F.reel.tens:0,steer:F.reel?F.reel.steer:0,yank:F.reel?F.reel.yank:0,tw:F.twK,row:player.mode==='boat'?clamp(Math.abs(boat.speed)/12,0,1):0,oars:player.mode==='boat'&&(BOATM[state.boat]||BOATS[0]).m.type==='row',steerB:player.mode==='boat'?input.x:0,big:F.st==='caught'&&F.catch&&(F.catch.r>=3||!!F.catch.relic),emote:player.emote,emT:player.emT});
+ panim.update(dt,{spd:player.mode==='walk'?player.speed:0,ground:player.onGround,vy:player.vy,turn:player.mode==='walk'?player.turn:0,sit:player.mode==='boat'||player.mode==='ride',fish:fs,fishT:F.t,power:F.power,hold:F.st==='reeling'&&F.reel&&F.reel.hold,tens:F.reel?F.reel.tens:0,steer:F.reel?F.reel.steer:0,yank:F.reel?F.reel.yank:0,tw:F.twK,row:player.mode==='boat'?clamp(Math.abs(boat.speed)/12,0,1):0,oars:player.mode==='boat'&&(BOATM[state.boat]||BOATS[0]).m.type==='row',steerB:player.mode==='boat'?input.x:0,big:F.st==='caught'&&F.catch&&(F.catch.r>=3||!!F.catch.relic),emote:player.emote,emT:player.emT});
  if(rodObj){const rg=rodObj.g,R=F.reel;const bend=F.st==='reeling'&&R?clamp(R.tens*1.1+(R.run>0?.12:0),0,1.2)+Math.sin(F.t*26)*.03*R.tens:F.st==='bite'?.35+Math.sin(F.t*30)*.1:F.st==='waiting'?F.twK*.35+(F.nib>0?.14:0):0;
   rodObj.bend=damp(rodObj.bend||0,bend,16,dt);setRodBend(rodObj,rodObj.bend);rg.rotation.x=Math.PI/2;if(rodObj.crank&&F.st==='reeling'&&R&&R.hold)rodObj.crank.rotation.x-=dt*R.reelSpd*5;
   if(rg.userData.ench){rg.userData.ench.rotation.y+=dt*3;rg.userData.ench.scale.setScalar(1+Math.sin(WIND.uTime.value*5)*.2);}}
@@ -451,7 +467,7 @@ function updateLife(dt){const T=WIND.uTime.value,cp=camera.position;updateFishSh
  waterNrm.offset.set(T*.012,T*.008);
  for(const s of splashPool){if(s.life<=0)continue;s.life-=dt;s.v.y-=18*dt;s.m.position.addScaledVector(s.v,dt);s.m.scale.setScalar(Math.max(s.life*1.6,.01));if(s.life<=0)s.m.visible=false;}
  const tier=TT();
- const rv=Math.min(env.rain,1.3)*(1-env.snowK);if(rv>.02){rain.visible=true;rain.material.opacity=Math.min(.36*rv,.45);const a=rain.geometry.attributes.position.array;const cnt=Math.floor(Math.min(rain.userData.N,tier.rain)*Math.min(rv,1));rain.geometry.setDrawRange(0,cnt*2);
+ const rv=Math.min(env.rain,1.3)*(1-env.snowK)*(1-(env.cave||0));if(rv>.02){rain.visible=true;rain.material.opacity=Math.min(.36*rv,.45);const a=rain.geometry.attributes.position.array;const cnt=Math.floor(Math.min(rain.userData.N,tier.rain)*Math.min(rv,1));rain.geometry.setDrawRange(0,cnt*2);
   for(let i=0;i<cnt;i++){const o=i*6;let y=a[o+1]-44*dt;if(y<cp.y-20){y=cp.y+22+Math.random()*10;const x=cp.x+rand(-40,40),z=cp.z+rand(-40,40);a[o]=x;a[o+2]=z;a[o+3]=x+.16+(env.weather==='storm'?.5:0);a[o+5]=z;}a[o+1]=y;a[o+4]=y-.95;}rain.geometry.attributes.position.needsUpdate=true;
   if(Math.random()<dt*34*rv){const ang=Math.random()*TAU,d=rand(1,16),x=player.pos.x+Math.cos(ang)*d,z=player.pos.z+Math.sin(ang)*d,g=groundH(x,z);if(g>.2)ringAt(x,g+.05,z,.7,.35+Math.random()*.3);}}
  else rain.visible=false;

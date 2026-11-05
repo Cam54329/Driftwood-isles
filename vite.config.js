@@ -5,7 +5,7 @@ import path from 'node:path';
 // The game is written as a set of plain scripts that share one scope (di-core → di-ui).
 // This plugin concatenates them, in order, behind a header that imports three.js and
 // exposes it as the `THREE` namespace the scripts expect. Vite then bundles and minifies it.
-const ORDER = ['_header', 'di-core', 'di-gfx', 'di-world', 'di-actors', 'di-game', 'di-events', 'di-quests', 'di-menu', 'di-net', 'di-ui'];
+const ORDER = ['_header', 'di-core', 'di-gfx', 'di-world', 'di-actors', 'di-game', 'di-events', 'di-extra', 'di-quests', 'di-menu', 'di-net', 'di-ui'];
 const VID = 'virtual:driftwood-game';
 
 function driftwoodGame() {

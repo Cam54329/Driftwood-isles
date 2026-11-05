@@ -138,16 +138,16 @@ function dockH(x,z){for(const d of world.docks){const dx=x-d.x,dz=z-d.z;const u=
 function onDock(x,z){return dockH(x,z)>-1;}
 function pondAt(x,z){for(const p of world.ponds)if(Math.hypot(x-p.x,z-p.z)<p.r*1.02)return p;return null;}
 function surfY(x,z,t){const p=pondAt(x,z);return p?p.y+Math.sin(t*1.3+x*.7)*.025:waveH(x,z,t);}
-function groundH(x,z){if(world.ponds.length&&pondAt(x,z))return -60;let h=-60;for(const k of ISL){const t=terrainH(ZONES[k],x,z);if(t>h)h=t;}return Math.max(h,dockH(x,z));}
-function zoneAt(x,z){for(const k of ISL){const I=ZONES[k];if(Math.hypot(x-I.x,z-I.z)<I.R*2.1)return k;}return 'sea';}
+function groundH(x,z){if(world.ponds.length&&pondAt(x,z))return -60;let h=-60;for(const k of LANDS){const t=terrainH(ZONES[k],x,z);if(t>h)h=t;}return Math.max(h,dockH(x,z));}
+function zoneAt(x,z){for(const k of LANDS){const I=ZONES[k];if(Math.hypot(x-I.x,z-I.z)<I.R*2.1)return k;}return 'sea';}
 /* waves calm down over the shallows around each island (matches the water vertex shader) */
-function shoreDamp(x,z){let d=1;for(const k of ISL){const I=ZONES[k],dx=x-I.x,dz=z-I.z,dd=Math.hypot(dx,dz);if(dd>I.R*1.9)continue;const f=dd/islandR(I,Math.atan2(dz,dx));d=Math.min(d,lerp(.28,1,smooth(.92,1.75,f)));}return d;}
+function shoreDamp(x,z){let d=1;for(const k of LANDS){const I=ZONES[k],dx=x-I.x,dz=z-I.z,dd=Math.hypot(dx,dz);if(dd>I.R*1.9)continue;const f=dd/islandR(I,Math.atan2(dz,dx));d=Math.min(d,lerp(.28,1,smooth(.92,1.75,f)));}return d;}
 function waveH(x,z,t){return waveRaw(x,z,t)*WAVE.amp*shoreDamp(x,z);}
-const TERR_GROUND={cove:TL.grass,moss:TL.grass,frost:TL.snow,ember:TL.dirt,atoll:TL.grass,amber:TL.grass,petal:TL.grass,dune:TL.sand,glim:TL.grass};
+const TERR_GROUND={hollow:TL.dirt,cove:TL.grass,moss:TL.grass,frost:TL.snow,ember:TL.dirt,atoll:TL.grass,amber:TL.grass,petal:TL.grass,dune:TL.sand,glim:TL.grass};
 function segDist(px,pz,a,b){const dx=b.x-a.x,dz=b.z-a.z,l2=dx*dx+dz*dz||1;const t=clamp(((px-a.x)*dx+(pz-a.z)*dz)/l2,0,1);return Math.hypot(px-a.x-dx*t,pz-a.z-dz*t);}
 function buildTerrain(I,key){const fs=[];for(let f=0;f<1.42;){fs.push(f);f+=f<.06&&I.volcano?.014:f<.4?(I.volcano&&f<.36?.024:.036):f<.7?.03:f<1.1?.02:.05;}fs.push(1.42);const paths=I.paths||[];
  const NS=GFX.tier==='low'?150:180,nv=1+(fs.length-1)*NS;const pos=new Float32Array(nv*3),col=new Float32Array(nv*3),spl=new Float32Array(nv*4),F=new Float32Array(nv);
- const cs=new THREE.Color(I.sand),cu=new THREE.Color(I.sand).multiplyScalar(.7),cg=new THREE.Color(I.grass),cg2=new THREE.Color(I.grass2),cr=new THREE.Color(I.rock),cd=new THREE.Color(key==='ember'?'#3a3330':key==='moss'?'#4a4034':key==='frost'?'#9aa3aa':key==='atoll'?'#d8c8a0':key==='amber'?'#6a5236':key==='dune'?'#b87a4a':key==='glim'?'#4a4458':key==='petal'?'#7a6450':'#6a5a44');
+ const cs=new THREE.Color(I.sand),cu=new THREE.Color(I.sand).multiplyScalar(.7),cg=new THREE.Color(I.grass),cg2=new THREE.Color(I.grass2),cr=new THREE.Color(I.rock),cd=new THREE.Color(key==='ember'?'#3a3330':key==='moss'?'#4a4034':key==='frost'?'#9aa3aa':key==='atoll'?'#d8c8a0':key==='amber'?'#6a5236':key==='hollow'?'#2a2a30':key==='dune'?'#b87a4a':key==='glim'?'#4a4458':key==='petal'?'#7a6450':'#6a5a44');
  const set=(i,x,z,f)=>{pos[i*3]=x;pos[i*3+1]=profile(I,f,x,z);pos[i*3+2]=z;F[i]=f;};
  set(0,I.x,I.z,0);let i=1;for(let r=1;r<fs.length;r++)for(let j=0;j<NS;j++){const jt=(hashI(r,j,5)-.5)*.55,th=(j+jt*(fs[r]<1.3?1:0))/NS*TAU,R=islandR(I,th),d=(fs[r]+(fs[r]>.05&&fs[r]<1.3?(hashI(r,j,9)-.5)*.012:0))*R;set(i++,I.x+Math.cos(th)*d,I.z+Math.sin(th)*d,fs[r]);if(fs[r]<.78)pos[(i-1)*3+1]+=(hashI(r,j,13)-.5)*.12;}
  const idx=[];for(let j=0;j<NS;j++)idx.push(0,1+(j+1)%NS,1+j);
@@ -179,16 +179,16 @@ function addRipple(x,z,s=1){const v=RIP.arr[RIP.i];v.set(x,z,WIND.uTime.value,s)
 const waterU={uT:WIND.uTime,uAmp:{value:1},uNorm:{value:waterTex},uRefl:{value:null},uTexMat:{value:GFX.texMat},uSky:{value:null},
  uSunDir:{value:new THREE.Vector3(.3,1,.2)},uSunCol:{value:new THREE.Color(1,1,1)},uAmb:{value:new THREE.Color(.5,.6,.7)},uDeep:{value:new THREE.Color('#06283a')},uShal:{value:new THREE.Color('#1c7c80')},uScatter:{value:new THREE.Color('#2fb6a0')},
  uFogC:{value:new THREE.Color()},uFogN:{value:80},uFogF:{value:380},uFoamK:{value:0},uSpark:{value:1},
- uIsl:{value:ISL.map(k=>new THREE.Vector4(ZONES[k].x,ZONES[k].z,ZONES[k].R,ZONES[k].p1))},uIsl2:{value:ISL.map(k=>new THREE.Vector2(ZONES[k].p2,0))},uSand:{value:ISL.map(k=>new THREE.Color(ZONES[k].sand))},uRip:{value:RIP.arr},uRain:{value:0},uBio:{value:0}};
-const GLSL_SHORE=`float shoreDamp(vec2 p){float d=1.;for(int i=0;i<${ISL.length};i++){vec2 o=p-uIsl[i].xy;float th=atan(o.y,o.x);float R=uIsl[i].z*(1.+.09*sin(3.*th+uIsl[i].w)+.05*sin(5.*th+uIsl2[i].x));d=min(d,mix(.28,1.,smoothstep(.92,1.75,length(o)/R)));}return d;}`;
+ uIsl:{value:LANDS.map(k=>new THREE.Vector4(ZONES[k].x,ZONES[k].z,ZONES[k].R,ZONES[k].p1))},uIsl2:{value:LANDS.map(k=>new THREE.Vector2(ZONES[k].p2,0))},uSand:{value:LANDS.map(k=>new THREE.Color(ZONES[k].sand))},uRip:{value:RIP.arr},uRain:{value:0},uBio:{value:0},uCave:{value:0}};
+const GLSL_SHORE=`float shoreDamp(vec2 p){float d=1.;for(int i=0;i<${LANDS.length};i++){vec2 o=p-uIsl[i].xy;float th=atan(o.y,o.x);float R=uIsl[i].z*(1.+.09*sin(3.*th+uIsl[i].w)+.05*sin(5.*th+uIsl2[i].x));d=min(d,mix(.28,1.,smoothstep(.92,1.75,length(o)/R)));}return d;}`;
 const waterMat=new THREE.ShaderMaterial({uniforms:waterU,fog:false,
- vertexShader:`uniform float uT;uniform float uAmp;uniform vec4 uIsl[${ISL.length}];uniform vec2 uIsl2[${ISL.length}];varying vec3 vW;varying float vDamp;varying float vH;
+ vertexShader:`uniform float uT;uniform float uAmp;uniform vec4 uIsl[${LANDS.length}];uniform vec2 uIsl2[${LANDS.length}];varying vec3 vW;varying float vDamp;varying float vH;
   ${GLSL_WAVES}
   ${GLSL_SHORE}
   void main(){vec4 w=modelMatrix*vec4(position,1.);float dm=shoreDamp(w.xz);vDamp=dm;float h=wvH(w.xz,uT)*uAmp*dm;vH=h;w.y+=h;vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
  fragmentShader:`uniform float uT;uniform float uAmp;uniform sampler2D uNorm;uniform sampler2D uRefl;uniform mat4 uTexMat;uniform samplerCube uSky;uniform vec3 uSunDir;uniform vec3 uSunCol;uniform vec3 uAmb;
   uniform vec3 uDeep;uniform vec3 uShal;uniform vec3 uScatter;uniform vec3 uFogC;uniform float uFogN;uniform float uFogF;uniform float uFoamK;uniform float uSpark;
-  uniform vec4 uIsl[${ISL.length}];uniform vec2 uIsl2[${ISL.length}];uniform vec3 uSand[${ISL.length}];uniform vec4 uRip[8];uniform float uRain;uniform float uBio;varying vec3 vW;varying float vDamp;varying float vH;
+  uniform vec4 uIsl[${LANDS.length}];uniform vec2 uIsl2[${LANDS.length}];uniform vec3 uSand[${LANDS.length}];uniform vec4 uRip[8];uniform float uRain;uniform float uBio;uniform float uCave;varying vec3 vW;varying float vDamp;varying float vH;
   ${GLSL_WAVES}
   float hsh(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
   void main(){vec2 p=vW.xz;float t=uT;float dist=length(cameraPosition-vW);float near=1.-smoothstep(25.,200.,dist);float A=uAmp*vDamp;
@@ -199,9 +199,9 @@ const waterMat=new THREE.ShaderMaterial({uniforms:waterU,fog:false,
    if(uRain>.01&&near>0.){vec2 cp=p*.55;vec2 cl=floor(cp);vec2 fr=fract(cp)-.5;float h=hsh(cl);vec2 off=(vec2(hsh(cl+3.1),hsh(cl+7.7))-.5)*.5;float ph=fract(t*.85+h);float rr=length(fr-off)*2.;float ring=exp(-pow((rr-ph*.95)*12.,2.))*(1.-ph)*uRain*near;dd+=normalize(fr-off+1e-4)*ring*.3;foamR+=ring*.22;}
    vec3 nD=normalize(n+vec3(dd.x,0.,dd.y));
    float dep=100.;vec3 sandC=vec3(.8,.7,.55);
-   for(int i=0;i<${ISL.length};i++){vec2 o=p-uIsl[i].xy;float th=atan(o.y,o.x);float R=uIsl[i].z*(1.+.09*sin(3.*th+uIsl[i].w)+.05*sin(5.*th+uIsl2[i].x));float f=length(o)/R;if(f<1.45){float h=f<.8?.6:(f<1.?mix(.6,-.4,(f-.8)/.2):mix(-.4,-7.,clamp((f-1.)/.4,0.,1.)));float d=vW.y-h;if(d<dep){dep=d;sandC=uSand[i];}}}
+   for(int i=0;i<${LANDS.length};i++){vec2 o=p-uIsl[i].xy;float th=atan(o.y,o.x);float R=uIsl[i].z*(1.+.09*sin(3.*th+uIsl[i].w)+.05*sin(5.*th+uIsl2[i].x));float f=length(o)/R;if(f<1.45){float h=f<.8?.6:(f<1.?mix(.6,-.4,(f-.8)/.2):mix(-.4,-7.,clamp((f-1.)/.4,0.,1.)));float d=vW.y-h;if(d<dep){dep=d;sandC=uSand[i];}}}
    vec3 v=normalize(cameraPosition-vW);float NdV=max(dot(nD,v),0.);float F=.02+.98*pow(1.-NdV,5.);F=min(F,mix(.3,.58,near));
-   vec3 rd=reflect(-v,nD);rd.y=max(abs(rd.y),.12+.1*(1.-near));rd=normalize(rd);vec3 refl=textureCube(uSky,rd).rgb;
+   vec3 rd=reflect(-v,nD);rd.y=max(abs(rd.y),.12+.1*(1.-near));rd=normalize(rd);vec3 refl=textureCube(uSky,rd).rgb*(1.-uCave*.94);
    #ifdef PLANAR
     vec4 pc=uTexMat*vec4(vW.x,0.,vW.z,1.);pc.xy+=nD.xz*pc.w*.07;vec3 rc=texture2DProj(uRefl,pc).rgb;refl=mix(refl,rc,.92);
    #endif
@@ -373,16 +373,16 @@ function labelSprite(name,sub,dot){const t=nameTex(name,sub,dot);const s=new THR
 /* ---------- world build ---------- */
 const solidMeshes=[];
 function buildWorld(){LEAFK=TT().leaf;
- for(const key of ISL){const I=ZONES[key];const dT=key==='cove'?-.25:Math.atan2(-I.z,-I.x);const th=dT+Math.PI+(key==='moss'?.5:key==='dune'?.6:0),f=I.volcano?.52:I.mesa?.52:key==='moss'?.32:key==='glim'?.38:.24,R=islandR(I,th);const px=I.x+Math.cos(th)*R*f,pz=I.z+Math.sin(th)*R*f;
-  const pr=I.volcano?5.5:key==='atoll'?13:key==='dune'?11:key==='petal'?10:7.5;let rim=1e9;for(let a=0;a<16;a++){const rx=px+Math.cos(a/16*TAU)*pr*1.4,rz=pz+Math.sin(a/16*TAU)*pr*1.4;const dd=Math.hypot(rx-I.x,rz-I.z),ta=Math.atan2(rz-I.z,rx-I.x);rim=Math.min(rim,profile(I,dd/islandR(I,ta),rx,rz));}
+ for(const key of LANDS){const I=ZONES[key];const dT=key==='cove'?-.25:Math.atan2(-I.z,-I.x);const th=dT+Math.PI+(key==='moss'?.5:key==='dune'?.6:0),f=I.volcano?.52:I.mesa?.52:key==='moss'?.32:key==='glim'?.38:.24,R=islandR(I,th);const px=I.x+Math.cos(th)*R*f,pz=I.z+Math.sin(th)*R*f;
+  const pr=I.volcano?5.5:key==='hollow'?9:key==='atoll'?13:key==='dune'?11:key==='petal'?10:7.5;let rim=1e9;for(let a=0;a<16;a++){const rx=px+Math.cos(a/16*TAU)*pr*1.4,rz=pz+Math.sin(a/16*TAU)*pr*1.4;const dd=Math.hypot(rx-I.x,rz-I.z),ta=Math.atan2(rz-I.z,rx-I.x);rim=Math.min(rim,profile(I,dd/islandR(I,ta),rx,rz));}
   const p={x:px,z:pz,r:pr,y:Math.max(rim-.35,1.3),key:'pond_'+key,isl:key};I.ponds=[p];world.ponds.push(p);}
- for(const key of ISL){const I=ZONES[key];const dockTh=key==='cove'?-.25:Math.atan2(-I.z,-I.x),cx=Math.cos(dockTh),sz=Math.sin(dockTh),Rd=islandR(I,dockTh)*.78;
+ for(const key of LANDS){const I=ZONES[key];const dockTh=key==='cove'?-.25:Math.atan2(-I.z,-I.x),cx=Math.cos(dockTh),sz=Math.sin(dockTh),Rd=islandR(I,dockTh)*.78;
   const base=V(I.x+cx*Rd,0,I.z+sz*Rd),sp=V(I.x+cx*islandR(I,dockTh)*.58,0,I.z+sz*islandR(I,dockTh)*.58);I.paths=[[base,sp]];let hi=0;
   for(const n of NPCS.filter(n=>n.zone===key&&!['harbor','shipwright','altar'].includes(n.role))){const th=dockTh+n.dth,Rh=islandR(I,th)*(I.volcano?.56:.4),hx=I.x+Math.cos(th)*Rh,hz=I.z+Math.sin(th)*Rh,toC=Math.atan2(I.x-hx,I.z-hz);
    const door=V(hx+Math.sin(toC)*4.4,0,hz+Math.cos(toC)*4.4),mid=sp.clone().lerp(door,.5).add(V((hashI(hi,1,3)-.5)*8,0,(hashI(hi,2,3)-.5)*8));hi++;I.paths.push([sp,mid],[mid,door]);}
   if(key==='moss')I.paths.push([sp,V(I.x,0,I.z)]);
   if(key==='cove'){const lt=dockTh+2.5,lr=islandR(I,lt)*.6;I.lh=V(I.x+Math.cos(lt)*lr,0,I.z+Math.sin(lt)*lr);I.paths.push([sp,sp.clone().lerp(I.lh,.5).add(V(6,0,-5))],[sp.clone().lerp(I.lh,.5).add(V(6,0,-5)),I.lh]);}}
- for(const key of ISL){const I=ZONES[key];const tm=buildTerrain(I,key);scene.add(tm);
+ for(const key of LANDS){const I=ZONES[key];const tm=buildTerrain(I,key);scene.add(tm);
   for(const p of I.ponds){const PZ=ZONES[p.key];const pm=new THREE.Mesh(new THREE.CircleGeometry(p.r*1.42,64),new THREE.MeshStandardMaterial({color:PZ.col,roughness:.04,metalness:0,normalMap:waterNrm,normalScale:new THREE.Vector2(.25,.25),transparent:true,opacity:.92}));
    pm.rotation.x=-Math.PI/2;pm.position.set(p.x,p.y,p.z);pm.receiveShadow=true;pm.userData.noAO=true;scene.add(pm);p.mesh=pm;
    const lb=tagSprite(null,PZ.n,'Pond · '+SPECIES.filter(s=>s.zone===p.key).length+' species','#9fe6ff');lb.position.set(p.x,p.y+3.2,p.z);scene.add(lb);p.label=lb;}
@@ -402,7 +402,7 @@ function buildWorld(){LEAFK=TT().leaf;
   world.boatDock[key]={x:dx0+cx*(len-3)+sz*4.2,z:dz0+sz*(len-3)-cx*4.2,yaw:Math.atan2(cx,sz)};
   const spx=I.x+cx*islandR(I,dockTh)*.58,spz=I.z+sz*islandR(I,dockTh)*.58;world.spawn[key]={x:spx,z:spz,yaw};
   reserved.push({x:spx,z:spz,r:6});for(let u=-4;u<len;u+=4)reserved.push({x:dx0+cx*u,z:dz0+sz*u,r:4});
-  for(let i=0;i<4;i++){const a=dockTh+(i-1.5)*.5,rr=I.R*1.45;addFloater('buoy',I.x+Math.cos(a)*rr,I.z+Math.sin(a)*rr);}
+  if(!I.cave)for(let i=0;i<4;i++){const a=dockTh+(i-1.5)*.5,rr=I.R*1.45;addFloater('buoy',I.x+Math.cos(a)*rr,I.z+Math.sin(a)*rr);}
   for(const n of NPCS.filter(n=>n.zone===key)){let nx,nz,face;
    if(n.role==='harbor'){const Rr=islandR(I,dockTh)*.74;nx=I.x+cx*Rr-sz*3.2;nz=I.z+sz*Rr+cx*3.2;face=yaw+Math.PI*.5;const hy=groundH(nx,nz);
     const kx=nx-sz*1.5,kz=nz+cx*1.5;sb.M(TL.wood);sb.add(G.box,'#a87e50',kx,hy+.5,kz,1.7,1,.9,0,yaw);sb.add(G.box,'#8a6842',kx,hy+1.05,kz,1.9,.1,1.05,0,yaw);sb.add(G.cyl,'#6a4a32',kx,hy+1.6,kz,.07,3.2,.07);
@@ -452,9 +452,9 @@ function buildWorld(){LEAFK=TT().leaf;
   place(12,.2,.85,(x,y,z)=>{const s=.6+r()*1.1;rock(sb,x,y,z,s,I.rock,key==='moss'?'#5a7a3c':key==='frost'?'#eef3f8':key==='cove'||key==='petal'?'#6a7a48':key==='glim'?'#4e6a60':null);world.colliders.push({x,z,r:s*.9});},1.4);
   place(18,.82,.95,(x,y,z)=>{rock(sb,x,y-.1,z,.2+r()*.25,key==='ember'?'#3a3434':'#b8b2a6');},.3);
   // shoreline: driftwood, shells, seaweed
-  if(key!=='ember'&&key!=='glim'){place(10,.84,.93,(x,y,z)=>driftLog(sb,x,y,z,.8+r()*.5,r),1.2);place(26,.86,.95,(x,y,z)=>shell(sb,x,y,z,r),.2);}
+  if(key!=='ember'&&key!=='glim'&&key!=='hollow'){place(10,.84,.93,(x,y,z)=>driftLog(sb,x,y,z,.8+r()*.5,r),1.2);place(26,.86,.95,(x,y,z)=>shell(sb,x,y,z,r),.2);}
   const bushC={cove:['#4f7a3a','#5a8442','#46703a'],moss:['#3e5e30','#486a36','#557a3e'],frost:['#6e8a7a','#7e968a','#e8eef2'],ember:['#4a4434','#55503e','#3e382e'],atoll:['#3e8a3a','#4aa048','#357a34'],amber:['#a8602a','#c8882a','#8a7a3a','#b8482a'],petal:['#5a8a44','#6a9a4a','#e8a8c0'],dune:['#8a8a4a','#9a9050','#7a7a40'],glim:['#3e5e58','#4a6a6a','#5a5a8a']}[key];
-  place(key==='frost'?12:key==='ember'?8:key==='dune'?10:38,.12,.78,(x,y,z)=>{bush(fb,x,y,z,.8+r()*.7,bushC,r,(key==='cove'||key==='atoll'||key==='petal')&&r()<.45?pick(key==='atoll'||key==='petal'?['#f06a9a','#f0c040','#ffffff']:['#f2e6a0','#f0b8c8','#e8e8f0']):null);world.colliders.push({x,z,r:.5});},1);
+  place(key==='frost'?12:key==='ember'?8:key==='dune'?10:key==='hollow'?0:38,.12,.78,(x,y,z)=>{bush(fb,x,y,z,.8+r()*.7,bushC,r,(key==='cove'||key==='atoll'||key==='petal')&&r()<.45?pick(key==='atoll'||key==='petal'?['#f06a9a','#f0c040','#ffffff']:['#f2e6a0','#f0b8c8','#e8e8f0']):null);world.colliders.push({x,z,r:.5});},1);
   if(key==='cove'||key==='moss'||key==='amber'||key==='petal'||key==='glim')place(key==='moss'?44:22,.15,.75,(x,y,z)=>fern(fb,x,y,z,.8+r()*.6,key==='moss'?'#4e7a38':key==='amber'?'#a8782a':key==='glim'?'#3e6a62':'#5e8a42',r),.6);
   if(key==='moss')place(8,.2,.7,(x,y,z)=>{driftLog(sb,x,y,z,1.2,r);},1.5);
   if(key==='atoll'){place(30,.12,.84,(x,y,z)=>{palm(sb,fb,x,y,z,.9+r()*.35,r);world.colliders.push({x,z,r:.5});});
@@ -486,6 +486,20 @@ function buildWorld(){LEAFK=TT().leaf;
    {const a=I.dockTh+Math.PI*.6,sx=I.x+Math.cos(a)*I.R*.42,sz=I.z+Math.sin(a)*I.R*.42;if(groundH(sx,sz)>.5){standingStones(sb,gl,sx,0,sz,6.5,r);reserved.push({x:sx,z:sz,r:9});}}
    for(let i=0;i<6;i++){const a=r()*TAU,d=I.R*(.25+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;floatRock(sb,gl,x,groundH(x,z)+9+r()*7,z,.8+r()*.8,r);}
    {const cy=groundH(I.x,I.z);gemCluster(sb,gl,I.x,cy-.4,I.z,3.2,'#b08aff',r);halo(I.x,cy+4,I.z,9,0xb8a0ff).userData.always=true;world.colliders.push({x:I.x,z:I.z,r:3});reserved.push({x:I.x,z:I.z,r:8});}}
+  if(key==='hollow'){/* the Drowned Hollow: an air pocket under the sea, lit by crystals, glowing fungus and drifting motes */
+   place(26,.1,.85,(x,y,z)=>{gemCluster(sb,gl,x,y,z,.7+r()*1.1,pick(['#3ae8d0','#5aa8ff','#8a6aff','#3affa0']),r);world.colliders.push({x,z,r:.8});},1.4);
+   place(16,.12,.7,(x,y,z)=>{const s=.7+r()*1;mushroom(sb,gl,x,y,z,s,pick(['#2ab8a8','#3a6ad8','#6a3ad8']));world.colliders.push({x,z,r:.4*s});});
+   place(14,.15,.8,(x,y,z)=>{sb.M(TL.rock);const h=2+r()*4;sb.add(G.cone,'#2e343c',x,y+h/2-.2,z,.5+r()*.4,h,.5+r()*.4,0,r()*3,0);sb.M(0);world.colliders.push({x,z,r:.7});},1.2);
+   place(10,.84,.95,(x,y,z)=>coral(sb,x,y-.2,z,.6+r()*.6,r),.6);
+   const dome=new THREE.Mesh(new THREE.IcosahedronGeometry(I.R*1.85,3),new THREE.MeshStandardMaterial({color:'#1c2228',roughness:.95,flatShading:true,side:THREE.BackSide}));
+   {const pa=dome.geometry.attributes.position;for(let i=0;i<pa.count;i++){const k=1+(hashI(Math.round(pa.getX(i)*4)+Math.round(pa.getZ(i)*4)*131,Math.round(pa.getY(i)*4),9)-.5)*.12;pa.setXYZ(i,pa.getX(i)*k,pa.getY(i)*k*.55,pa.getZ(i)*k);}dome.geometry.computeVertexNormals();}
+   dome.position.set(I.x,-6,I.z);dome.userData.noAO=true;scene.add(dome);world.caveDome=dome;
+   const st=new Builder();st.M(TL.rock);for(let i=0;i<70;i++){const a=r()*TAU,d=Math.sqrt(r())*I.R*1.6,x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=-6+Math.sqrt(Math.max(0,1-(d/(I.R*1.85))**2))*I.R*1.85*.55,h=4+r()*12;st.add(G.cone,'#262c34',x,top-h/2,z,.6+r()*1.2,h,.6+r()*1.2,Math.PI,r()*3,0);if(r()<.35)gl.add(G.oct,pick(['#3ae8d0','#5aa8ff']),x,top-h-.3,z,.25,.5,.25);}
+   const sm=st.mesh(worldMat);scene.add(sm);
+   for(let i=0;i<8;i++){const a=i/8*TAU+r(),d=I.R*(.2+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;halo(x,groundH(x,z)+2,z,6,0x5affe0).userData.always=true;world.lamps.push(V(x,groundH(x,z)+2,z));}
+   /* the way back up: a ring of light by the landing */
+   {const sp=world.spawn[key],ex=lerp(sp.x,I.x,.12),ez=lerp(sp.z,I.z,.12),ey=groundH(ex,ez);const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.14,10,40),new THREE.MeshBasicMaterial({color:new THREE.Color(.7,1.8,2)}));ring.position.set(ex,ey+1.9,ez);ring.rotation.y=Math.atan2(I.x-sp.x,I.z-sp.z);scene.add(ring);world.caveExit={x:ex,z:ez,ring};
+    halo(ex,ey+1.9,ez,3.2,0x9ffcff).userData.always=true;world.inter.push({x:ex,z:ez,r:4,label:'Swim back to the surface',kind:'Surface',act:()=>{if(typeof surfaceFromHollow==='function')surfaceFromHollow();}});}}
   if(key==='cove'){place(4,.3,.55,(x,y,z)=>bench(sb,x,y,z,r()*TAU),1.5);place(1,.32,.5,(x,y,z)=>{campfire(sb,gl,x,y,z);world.colliders.push({x,z,r:1});for(let i=0;i<3;i++){const a=i/3*TAU+.5;driftLog(sb,x+Math.cos(a)*2,y,z+Math.sin(a)*2,.9,()=>.5);}},4);
    for(const sg of I.paths.slice(1).filter((_,i)=>i%2))if(r()<.7){const a=sg[1],d=V(sg[1].x-sg[0].x,0,sg[1].z-sg[0].z).normalize(),pp=V(-d.z,0,d.x);const p0=a.clone().addScaledVector(pp,3.2).addScaledVector(d,-6),p1=p0.clone().addScaledVector(d,5);p0.y=groundH(p0.x,p0.z);p1.y=groundH(p1.x,p1.z);if(p0.y>.6&&p1.y>.6)fence(sb,p0,p1);}}
   if(key==='moss'){const ay=groundH(I.x,I.z);for(let i=0;i<7;i++){const a=i/7*TAU+.2,px=I.x+Math.cos(a)*10,pz=I.z+Math.sin(a)*10;pillar(sb,px,groundH(px,pz),pz,2.4+r()*1.6,i%3===1,r);world.colliders.push({x:px,z:pz,r:.8});}place(1,.3,.55,(x,y,z)=>{campfire(sb,gl,x,y,z);world.colliders.push({x,z,r:1});},4);}
@@ -494,7 +508,7 @@ function buildWorld(){LEAFK=TT().leaf;
   // dock-side life
   {const dk=world.docks[world.docks.length-1];crabPot(sb,dk.x+dk.cx*6-dk.sz*1.2,dk.h,dk.z+dk.sz*6+dk.cx*1.2,r);crabPot(sb,dk.x+dk.cx*6.9-dk.sz*1.15,dk.h,dk.z+dk.sz*6.9+dk.cx*1.15,r);
    const rx=dk.x-dk.cx*4+dk.sz*5,rz=dk.z-dk.sz*4-dk.cx*5,ry=groundH(rx,rz);if(ry>.4){dryRack(sb,rx,ry,rz,Math.atan2(dk.cx,dk.sz),r);world.colliders.push({x:rx,z:rz,r:1.3});}}
-  if(key!=='ember')for(let i=0;i<9;i++){const th=r()*TAU,f=.2+r()*.38,R=islandR(I,th),x=I.x+Math.cos(th)*R*f,z=I.z+Math.sin(th)*R*f;if(!ok(x,z,1.2))continue;addPuddle(x,groundH(x,z),z,1.1+r()*1.4);}
+  if(key!=='ember'&&key!=='hollow')for(let i=0;i<9;i++){const th=r()*TAU,f=.2+r()*.38,R=islandR(I,th),x=I.x+Math.cos(th)*R*f,z=I.z+Math.sin(th)*R*f;if(!ok(x,z,1.2))continue;addPuddle(x,groundH(x,z),z,1.1+r()*1.4);}
   const pm=sb.mesh(worldMat);pm.castShadow=true;pm.receiveShadow=true;scene.add(pm);solidMeshes.push(pm);
   if(fb.p.length){const fm=fb.mesh(worldMatS,true);fm.castShadow=true;fm.receiveShadow=true;scene.add(fm);}
   if(gl.p.length){const gm=gl.mesh(glowMat);gm.userData.noAO=true;scene.add(gm);}if(lv.p.length){const lm=lv.mesh(lavaMat);lm.userData.noAO=true;scene.add(lm);}}

@@ -33,7 +33,7 @@ function bindPanel(h){const all=Object.assign({},QH,h);$('#pBody').onclick=e=>{c
 const lockH=id=>{const f=state.inv.find(x=>x.id==id);if(f){f.lock=!f.lock;save();rerender();}};
 function openBag(){if(JOIN.on)return;openPanel('Your bag',`${state.inv.length} of ${maxInv()} fish · ${state.relics} Tide Relic${state.relics===1?'':'s'}`,()=>{const tot=state.inv.reduce((s,f)=>s+fishValue(f),0);
  body(`<div class="row"><div class="grow muted">Bag value <span class="big">${fmt(tot)}c</span><br>Locked fish are never sold by Sell all.</div></div><div class="list">${fishRows('bag',sortedInv())}</div>`);bindPanel({lock:lockH});});}
-function openNPC(n){if(n.role==='merchant')openMerchant(n);else if(n.role==='rods')openRods(n);else if(n.role==='appraiser')openAppraiser(n);else if(n.role==='harbor')openHarbor(n);else if(n.role==='altar')openAltar(n);else if(n.role==='shipwright')openShipwright(n);else if(n.role==='buffs')openBuffs(n);else openTalk(n);}
+function openNPC(n){if(n.role==='merchant')openMerchant(n);else if(n.role==='rods')openRods(n);else if(n.role==='appraiser')openAppraiser(n);else if(n.role==='harbor')openHarbor(n);else if(n.role==='altar')openAltar(n);else if(n.role==='shipwright')openShipwright(n);else if(n.role==='buffs')openBuffs(n);else if(n.role==='casino')openCasino(n);else openTalk(n);}
 function openTalk(n){const line=npcSay(n);openPanel(n.name,n.title,()=>{panelCtx.kind='talk';body(`${line}`);bindPanel({});});}
 function openMerchant(n){const line=npcSay(n);openPanel(n.name,n.title,()=>{const un=state.inv.filter(f=>!f.lock);const tot=un.reduce((s,f)=>s+fishValue(f),0);
  body(`${line}<div class="row"><div class="grow muted">${un.length} unlocked fish worth <span class="big">${fmt(tot)}c</span></div><button class="btn mint" data-act="all" ${un.length?'':'disabled'}>Sell all · ${fmt(tot)}c</button></div><div class="list">${fishRows('sell',sortedInv())}</div>`);
@@ -72,11 +72,14 @@ function openAltar(n){let result='';openPanel('Tide Altar','Mossreach',()=>{cons
  bindPanel({ench:()=>{if(!state.relics)return;state.relics--;const k=pick(Object.keys(ENCH).filter(k=>k!==state.ench[state.rod]));state.ench[state.rod]=k;equipRodModel();AU.enchant();
   if(world.altarCrystal)splash(world.altarCrystal.position,30,7);result=`<div class="card eq"><b>The altar flares!</b><span class="muted">Your ${esc(r.n)} is now <span class="ench" style="--c:${ENCH[k].c}">${ENCH[k].n}</span> · ${ENCH[k].d}</span></div>`;save();updateHUD();rerender();}});});}
 function openDex(){if(JOIN.on)return;let tab=player.zone&&ZONES[player.zone]?player.zone:'cove';openPanel('Bestiary','',()=>{const got=SPECIES.filter(s=>state.dex[s.id]&&state.dex[s.id].n).length;$('#pSub').textContent=`${got} of ${SPECIES.length} species caught`;
- const zs=[...ISL,'sea',...ISL.map(k=>'pond_'+k)];const list=SPECIES.filter(s=>s.zone===tab);const cnt=z=>SPECIES.filter(s=>s.zone===z&&state.dex[s.id]&&state.dex[s.id].n).length;
+ const zs=[...ISL,'sea',...ISL.map(k=>'pond_'+k),'well','hollow','pond_hollow'];const list=SPECIES.filter(s=>s.zone===tab);const cnt=z=>SPECIES.filter(s=>s.zone===z&&state.dex[s.id]&&state.dex[s.id].n).length;
  body(`<div class="tabs">${zs.map(z=>`<button class="tab ${tab===z?'on':''}" data-act="tab" data-id="${z}">${ZONES[z].n} ${cnt(z)}/${SPECIES.filter(s=>s.zone===z).length}</button>`).join('')}</div>
  <div class="dex">${list.map(s=>{const d=state.dex[s.id];const c=d&&d.n;return `<div class="dcard ${c?'':'no'}">${fishSVG(s,null,!c)}<b>${esc(s.name)}</b>${rarPill(s.r)}<small>${ZONES[s.zone].n}${s.cond?' · '+COND[s.cond]:''}<br>${fmtW(s.minW)}–${fmtW(s.maxW)} kg · base ${fmt(s.price)}c<br>${c?`Caught ×${d.n} · best ${fmtW(d.best)} kg${d.muts&&d.muts.length?'<br>Mutations: '+d.muts.map(m=>MUTS[m].n).join(', '):''}`:'Not caught yet'}</small></div>`;}).join('')}</div>`);
  bindPanel({tab:id=>{tab=id;rerender();}});});}
 function vol(id,label,v){return `<label class="slider" for="${id}"><span>${label}</span><input type="range" id="${id}" min="0" max="1" step="0.01" value="${v}" style="--p:${v*100}%"><span>${Math.round(v*100)}</span></label>`;}
+let devMsg='';
+function devCard(){return `<div class="card"><h3>Developer</h3>${DEV.on?`<div class="muted">Developer tools are on for this device. Press <kbd>\`</kbd> or tap <b>DEV</b> at the top right.</div><button class="btn sky sm" data-act="devopen" style="align-self:flex-start">Open developer tools</button>`:
+ `<div class="muted">For the server owner. Enter the owner code you set in Firebase (see SETUP-MULTIPLAYER.md).</div><div class="row" style="gap:8px"><input id="devCode" type="password" autocomplete="off" placeholder="Owner code" style="flex:1;min-width:0;background:var(--slot);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:8px;font:700 13px var(--hud)"><button class="btn sm" data-act="devunlock">Unlock</button></div>`}${devMsg?`<div class="muted" style="color:var(--gold2)">${esc(devMsg)}</div>`:''}</div>`;}
 /* ---------- your save: backups, save file and save code (move progress to another device or browser) ---------- */
 let saveUI={load:false,msg:'',restore:null};
 function saveCode(){const j=JSON.stringify(state);return 'DI3:'+btoa(unescape(encodeURIComponent(j)));}
@@ -105,10 +108,11 @@ function openSettings(){if(JOIN.on&&!MENU.on)return;let confirmReset=false;openP
  <div class="card"><div class="row"><div class="grow"><h3>Your angler</h3><span class="muted">${esc(profileOr().name)} · ${HATS.find(h=>h.id===profileOr().hat).n}</span></div><button class="btn sky sm" data-act="look">Change look</button></div></div>
  <div class="card"><h3>Controls</h3>${vol('vSens','Camera speed',(s.sens??1)/2)}<button class="toggle ${s.invY?'on':''}" data-act="invy"><span class="sw"></span><span class="grow"><b>Invert camera up and down</b></span></button><button class="btn ghost sm" data-act="keys" style="align-self:flex-start">View all controls</button></div>
  ${saveCard()}
+ ${devCard()}
  <div class="card"><div class="row"><div class="grow"><h3>Reset progress</h3><span class="muted">${confirmReset?'This erases coins, fish, rods and the Bestiary. There is no undo.':'Start over from scratch.'}</span></div><button class="btn rose sm" data-act="reset">${confirmReset?'Yes, erase everything':'Reset'}</button></div></div>`);
  const sl=(id,key)=>{const el=$('#'+id);el.oninput=()=>{s[key]=Number(el.value);el.style.setProperty('--p',(s[key]*100)+'%');el.nextElementSibling.textContent=Math.round(s[key]*100);AU.applyVol();};el.onchange=()=>save();};sl('vMusic','music');sl('vSfx','sfx');sl('vAmb','amb');{const el=$('#vSens');el.oninput=()=>{s.sens=Number(el.value)*2;el.style.setProperty('--p',(el.value*100)+'%');el.nextElementSibling.textContent=Math.round(s.sens*100);};el.onchange=()=>save();el.nextElementSibling.textContent=Math.round((s.sens??1)*100);}
  bindPanel({gfx:id=>{s.gfx=id;s.gfxAuto=false;GFX.tier=id;applyTier();save();rerender();},wx:id=>{s.weather=id;if(id!=='auto')setWeather(id);save();rerender();},chill:()=>{s.chill=!s.chill;save();updateGear();rerender();toast(s.chill?'Chill mode on. Take it easy.':'Chill mode off.');},
-  ...saveHandlers(),
+  ...saveHandlers(),devopen:()=>{closePanel();toggleDev(true);},devunlock:async()=>{const el=$('#devCode');devMsg=await devUnlock(el&&el.value);rerender();},
   tags:()=>{s.tags=!s.tags;save();rerender();},invy:()=>{s.invY=!s.invY;save();rerender();},keys:()=>openControls(),look:()=>{closePanel();openJoin(true);},
   reset:()=>{if(!confirmReset){confirmReset=true;rerender();return;}backupSave('Before resetting progress');const keep=state.settings,prof=state.profile;state=freshState();state.settings=keep;state.profile=prof;state.tips.intro=1;onStateReplaced();const sp=world.spawn.cove;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);placeBoatAt('cove');save();closePanel();toast('Progress reset. Welcome back to Pebble Cove!');}});});}
 function openIntro(){openPanel('Welcome, '+profileOr().name,'A cozy island fishing adventure',()=>{
@@ -141,9 +145,55 @@ function joinCamera(dt){JOIN.t+=dt;const R=prig.root;const tgt=R.position.clone(
 /* ---------- chat + feed ---------- */
 const CHAT={idleT:0,unread:0};
 function inkName(c){return '#'+new THREE.Color(isHex(c)?c:'#9db4d8').lerp(new THREE.Color('#33405a'),.5).getHexString();}
-function addChat(m){if(m.id){if(Net.seen.has(m.id))return false;Net.seen.add(m.id);}Net.log.push(m);Net.log.sort((a,b)=>a.t-b.t);if(Net.log.length>80)Net.log.splice(0,Net.log.length-80);renderChatLog();
+function addChat(m){if(!m.sys&&m.t<=Math.max(Net.chatClearAt,Net.localCut))return false;if(m.id){if(Net.seen.has(m.id))return false;Net.seen.add(m.id);}Net.log.push(m);Net.log.sort((a,b)=>a.t-b.t);if(Net.log.length>80)Net.log.splice(0,Net.log.length-80);renderChatLog();
  if(!m.hist){CHAT.idleT=0;$('#chat').classList.remove('idle');if(!isTouch||!$('#chat').classList.contains('open')){if(!m.me&&isTouch){$('#chatBadge').hidden=false;}}}return true;}
 function sysLine(text){addChat({id:rid(),t:Date.now(),sys:true,text});}
+/* ---------- clearing chat: on your own screen (anyone), or for everyone (server owner) ---------- */
+function clearMyChat(){Net.localCut=Date.now();try{localStorage.setItem('driftwood-chat-cut',String(Net.localCut));}catch(e){}Net.log=[];renderChatLog();sysLine('Chat cleared on your screen.');}
+function clearAllChat(){if(!Net.adm||!Net.admin){toast('Only the server owner can clear chat for everyone.');return;}Net.adm.clearChat().then(()=>toast('Chat cleared for everyone.')).catch(()=>toast('The server refused. Check the owner code in Firebase (see SETUP-MULTIPLAYER.md).'));}
+function applyChatClear(t){if(!t||t<=Net.chatClearAt)return;const first=!Net.chatClearAt;Net.chatClearAt=t;Net.log=Net.log.filter(m=>m.t>t);const n=Net.myChat.length;Net.myChat=Net.myChat.filter(m=>m.t>t);if(Net.myChat.length!==n)persistChat();renderChatLog();if(!first||Date.now()-t<15000)sysLine('The chat was cleared by the server owner.');}
+$('#chatClear').addEventListener('click',()=>{AU.ui();clearMyChat();});
+
+/* ---------- developer tools ---------- */
+const DEV_HOST=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)||MP_LOCAL;
+function devAvailable(){DEV.on=true;if(!$('#devBtn')){const b=document.createElement('button');b.className='ib dev';b.id='devBtn';b.type='button';b.textContent='DEV';b.title='Developer tools (`)';b.setAttribute('aria-label','Developer tools');b.onclick=()=>{AU.ui();toggleDev();};$('#tr').prepend(b);}}
+function toggleDev(on){if(!DEV.on)return;DEV.open=on==null?!DEV.open:on;$('#devBar').hidden=!DEV.open;if(DEV.open)renderDev();}
+function devGrant(){state.devUsed=true;save();cloudTick(true);updateHUD();}
+function renderDev(){const el=$('#devBar');if(el.hidden)return;const opt=(arr,sel)=>arr.map(([v,t])=>`<option value="${v}" ${sel===v?'selected':''}>${esc(t)}</option>`).join('');
+ el.innerHTML=`<div class="dv-h"><b>Developer</b><span id="dvFps"></span><button type="button" data-dev="close" aria-label="Close">✕</button></div>
+ <div class="dv-s"><h4>Coins and level</h4><div class="dv-r"><button data-dev="c" data-v="10000">+10k</button><button data-dev="c" data-v="100000">+100k</button><button data-dev="c" data-v="1000000">+1M</button></div><div class="dv-r"><button data-dev="lv" data-v="1">+1 level</button><button data-dev="lv" data-v="5">+5 levels</button><button data-dev="relic">+3 relics</button></div></div>
+ <div class="dv-s"><h4>Unlock</h4><div class="dv-r"><button data-dev="isl">All islands</button><button data-dev="rods">All rods</button><button data-dev="boats">All boats</button><button data-dev="bait">Bait ×99</button></div></div>
+ <div class="dv-s"><h4>Teleport</h4><div class="dv-r"><select id="dvIsl">${opt(LANDS.map(k=>[k,ZONES[k].n]),player.zone)}</select><button data-dev="tp">Go</button></div></div>
+ <div class="dv-s"><h4>World</h4><div class="dv-r">${[['.27','Dawn'],['.5','Noon'],['.73','Dusk'],['.95','Night']].map(t=>`<button data-dev="time" data-v="${t[0]}">${t[1]}</button>`).join('')}</div><div class="dv-r">${['clear','rain','storm','fog'].map(w=>`<button data-dev="wx" data-v="${w}">${WX[w]}</button>`).join('')}</div>
+  <div class="dv-r"><select id="dvEv">${opt([...BIG_EVENTS,...EVENTS].map(e=>[e.id,e.n]))}</select><button data-dev="ev">Start</button><button data-dev="evoff">Stop</button></div><div class="dv-r"><button data-dev="wells">Open Tide Wells</button><button data-dev="little">Spawn sea event</button></div></div>
+ <div class="dv-s"><h4>Fishing</h4><div class="dv-r"><button data-dev="bite">Bite now</button><select id="dvRar"><option value="">Next catch: normal odds</option>${RAR.map((R,i)=>`<option value="${i}" ${DEV.rar===i?'selected':''}>Next catch: ${R.n}</option>`).join('')}</select></div></div>
+ <div class="dv-s"><h4>Player</h4><div class="dv-r"><button data-dev="fast" class="${DEV.fast?'on':''}">Fast travel: ${DEV.fast?'on':'off'}</button></div></div>
+ <div class="dv-s"><h4>Chat</h4><div class="dv-r"><button data-dev="chatme">Clear my chat</button>${Net.admin?'<button data-dev="chatall" class="warn">Clear chat for everyone</button>':''}</div>${Net.admin?'':'<small>Clearing chat for everyone needs owner access (see SETUP-MULTIPLAYER.md).</small>'}</div>
+ <div class="dv-s"><small>Player ID ${esc(Net.uid||'offline')}${Net.admin?' · owner':''} · position ${Math.round(player.pos.x)}, ${Math.round(player.pos.z)}<br>Progress granted here stays off the leaderboard.</small></div>`;
+ const rs=$('#dvRar');rs.onchange=()=>{DEV.rar=rs.value===''?null:Number(rs.value);toast(DEV.rar==null?'Normal catch odds.':'Your next catch will be '+RAR[DEV.rar].n+'.');};}
+function devAct(a,v){
+ if(a==='close')toggleDev(false);
+ else if(a==='c'){const n=Number(v);state.coins+=n;state.earned+=n;devGrant();toast('+'+fmt(n)+' coins','gold');AU.coin();}
+ else if(a==='lv'){state.level+=Number(v);state.xp=0;checkLevelTitles();devGrant();toast('Level '+state.level,'gold');AU.level();}
+ else if(a==='relic'){state.relics+=3;devGrant();}
+ else if(a==='isl'){state.unlocked=ISL.slice();devGrant();toast('Every island chart unlocked.');}
+ else if(a==='rods'){state.rods=RODS.map(r=>r.id);devGrant();toast('Every rod added. Equip them from a rodmaker or the hotbar.');}
+ else if(a==='boats'){state.boats=BOATS.map(b=>b.id);devGrant();toast('Every boat added. Pick one at a shipwright.');}
+ else if(a==='bait'){for(const b of BAITS)state.bait[b.id]=99;devGrant();toast('99 of every bait.');}
+ else if(a==='tp'){const k=$('#dvIsl').value,sp=world.spawn[k];if(!sp)return;if(F.st!=='idle')cancelFishing();if(!state.unlocked.includes(k))state.unlocked.push(k);player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;placeBoatAt(k);cam.yaw=sp.yaw+Math.PI;save();}
+ else if(a==='time'){env.t=Number(v);}
+ else if(a==='wx'){setWeather(v);}
+ else if(a==='ev'){const id=$('#dvEv').value,big=BIG_EVENTS.find(e=>e.id===id);if(big)DEV.ev={ev:big,until:Date.now()+BIG_LEN*1000};else{const e=EVENTS.find(x=>x.id===id);if(env.event&&env.event.big)return toast('Stop the big event first.');env.event=e;env.eventT=120;toast(e.n+'! '+e.d,'gold');}}
+ else if(a==='evoff'){DEV.ev=null;if(env.event&&!env.event.big){env.event=null;toast('Event stopped.');}}
+ else if(a==='bite'){if(F.st==='waiting')F.wait=0;else toast('Cast your line first.');}
+ else if(a==='fast'){DEV.fast=!DEV.fast;}
+ else if(a==='wells'){DEV.wellUntil=Date.now()+WELL_LEN*1000;}else if(a==='little'){spawnLittleEvent();}
+ else if(a==='chatme')clearMyChat();else if(a==='chatall')clearAllChat();
+ if(DEV.open)renderDev();}
+$('#devBar').addEventListener('click',e=>{const b=e.target.closest('[data-dev]');if(b){AU.ui();devAct(b.dataset.dev,b.dataset.v);}});
+function devUnlock(code){code=String(code||'').trim();if(!code)return Promise.resolve('Type the owner code first.');if(DEV_HOST){devAvailable();return Promise.resolve('');}
+ if(!Net.adm)return Promise.resolve('Owner access is checked by your Firebase server. Connect online play first.');
+ return Net.adm.claim(code).then(()=>{Net.admin=true;devAvailable();toast('Developer tools unlocked. Press ` or tap DEV.','gold');return '';}).catch(()=>'That code is not right, or the owner code has not been set in Firebase yet.');}
 function renderChatLog(){const el=$('#chatLog');el.innerHTML=Net.log.slice(-50).map(m=>m.sys?`<div class="cl sys">${esc(m.text)}</div>`:`<div class="cl ${m.feed?'feed':''}"><b style="color:${inkName(m.color)}">${esc(m.name)}</b>${esc(m.text)}</div>`).join('');el.scrollTop=el.scrollHeight;}
 function openChat(){if(JOIN.on)return;const c=$('#chat');if(isTouch)c.classList.add('open');$('#chatBadge').hidden=true;c.classList.remove('idle');CHAT.idleT=0;$('#chatIn').focus();}
 $('#chatBtn').addEventListener('click',()=>{AU.init();const c=$('#chat');if(c.classList.contains('open')){c.classList.remove('open');$('#chatIn').blur();}else openChat();});
@@ -159,7 +209,7 @@ function addFeed(name,sp,mut,w,color,mine,id){const txt=sp?feedText(sp,mut,w):'f
 function onRemoteCatch(r,k){if(k.sp==='relic'){addFeed(r.name,null,null,0,r.color,false,k.i);return;}const sp=SPM[k.sp];if(!sp)return;const mut=MUTS[k.m]?k.m:null;if(isNotable(sp.r,mut))addFeed(r.name,sp,mut,clamp(num(k.w,0),0,5000),r.color,false,k.i);}
 
 /* ---------- multiplayer ---------- */
-const Net={backend:'pending',err:'',project:'',rate:.1,pLast:0,room:null,db:null,user:null,uid:null,remotes:new Map(),peers:[],log:[],seen:new Set(),myChat:[],myChatLoaded:false,chatW:false,chatDirty:false,chatReady:false,canChat:true,canDb:true,lb:new Map(),lbW:false,lbLast:0,lbKey:'',pAcc:0,pKey:'',connected:false,lastSend:0,startT:Date.now()};
+const Net={backend:'pending',err:'',project:'',rate:.1,pLast:0,room:null,db:null,user:null,uid:null,remotes:new Map(),peers:[],log:[],seen:new Set(),myChat:[],myChatLoaded:false,chatW:false,chatDirty:false,chatReady:false,canChat:true,canDb:true,lb:new Map(),lbW:false,lbLast:0,lbKey:'',pAcc:0,pKey:'',connected:false,lastSend:0,startT:Date.now(),adm:null,admin:false,chatClearAt:0,localCut:(()=>{try{return Number(localStorage.getItem('driftwood-chat-cut'))||0;}catch(e){return 0;}})()};
 async function netInit(){let C=null;
  if(window.claude&&window.claude.use){C=window.claude;Net.backend='claude';}
  else if(MP_LOCAL){C=makeLocalBackend();Net.backend='local';Net.rate=C.rate;}
@@ -173,6 +223,7 @@ async function netInit(){let C=null;
  if(db&&Net.uid){try{const ref=db.doc('data/users/'+Net.uid+'/save');const snap=await ref.get();if(snap.exists){const d=snap.data();if(d&&typeof d.json==='string'){const s=sanitize(JSON.parse(d.json));const pc=progressOf(s),pl=progressOf(state);
   /* keep whichever save is further along (newest wins a tie); the other one is kept as a backup */
   if(pc>pl+1||(Math.abs(pc-pl)<=1&&(s.savedAt||0)>(state.savedAt||0)+2000)){backupSave('Before loading the cloud save');const prof=state.profile;state=s;if(!state.profile)state.profile=prof;onStateReplaced();toast('Cloud save loaded');}else if(pc>progressOf(freshState())+1&&pc<pl-1)backupSave('Older cloud save',d.json);}}cloudRef=ref;cloudPending=true;cloudTick(true);}catch(e){}}
+ {let adm=null;try{adm=await C.use('admin');}catch(e){}Net.adm=adm||null;if(adm&&Net.uid){try{adm.onChatClear(applyChatClear);}catch(e){}if(Net.backend==='local'||await adm.check()){Net.admin=true;devAvailable();}}}
  if(!room&&Net.backend==='claude')Net.err='Online play here needs you to be signed in to Claude and invited to this page (or a member of its organization).';
  if(room){room.onPeers(onPeers,()=>{Net.room=null;netStatus();});room.on('chat',onChatEvt,()=>{});room.onConnection(c=>{Net.connected=c;netStatus();},()=>{});}
  if(db){db.collection('chat').orderBy('u','desc').limit(40).onSnapshot(onChatSnap,()=>{});db.collection('lb').orderBy('u','desc').limit(300).onSnapshot(onLbSnap,()=>{});}
@@ -185,9 +236,9 @@ function onPeers(ch){Net.peers=ch.peers;for(const p of ch.peers){if(p.isMe||p.ki
 function buildPresence(){const p=profileOr(),pos=player.mode==='boat'?boat.pos:player.pos;const r2=v=>Math.round(v*100)/100;
  return{v:2,uid:Net.uid||'',n:p.name,c:p.color,hc:p.hatC,h:p.hat,sk:p.skin,lv:state.level,ti:state.title||'',zn:player.zone||'cove',rd:state.rod,en:state.ench[state.rod]||'',
   x:r2(pos.x),y:r2(player.mode==='boat'?0:pos.y),z:r2(pos.z),r:Math.round(prig.root.rotation.y*1000)/1000,b:player.mode==='boat'?1:0,by:Math.round(boat.yaw*1000)/1000,
-  s:SC[F.st]||'i',bt:state.boat,fx:r2(F.to.x),fz:r2(F.to.z),k:F.lastCatch,e:player.emId?{i:player.emId,t:player.emType||'wave',f:player.emFish||null}:null};}
+  rb:RIDE?RIDE.uid:null,sk:RIDE?RIDE.seat:null,s:SC[F.st]||'i',bt:state.boat,fx:r2(F.to.x),fz:r2(F.to.z),k:F.lastCatch,e:player.emId?{i:player.emId,t:player.emType||'wave',f:player.emFish||null}:null};}
 function netTick(dt){if(!Net.room||JOIN.on||!state.tips.joined)return;Net.pAcc+=dt;if(Net.pAcc<Net.rate)return;Net.pAcc=0;const p=buildPresence();const key=JSON.stringify(p),now=Date.now();if(key===Net.pKey&&now-Net.pLast<15000)return;Net.pKey=key;Net.pLast=now;p.ts=now;Net.room.presence(p).catch(()=>{});}
-function sendChat(raw){const text=cleanText(raw,140);if(!text)return;const now=Date.now();if(now-Net.lastSend<900){toast('Slow down a little.');return;}Net.lastSend=now;const me=profileOr(),msg={i:rid(),t:now,x:text};
+function sendChat(raw){const text=cleanText(raw,140);if(!text)return;if(/^\/clear$/i.test(text)){clearMyChat();return;}if(/^\/clearall$/i.test(text)){clearAllChat();return;}const now=Date.now();if(now-Net.lastSend<900){toast('Slow down a little.');return;}Net.lastSend=now;const me=profileOr(),msg={i:rid(),t:now,x:text};
  addChat({id:msg.i,t:now,name:me.name,color:me.color,text,me:true});showMyBubble(text);AU.chat();
  if(Net.room&&Net.canChat)Net.room.emit('chat',{i:msg.i,x:text,n:me.name,c:me.color}).catch(e=>{if(e&&e.code==='not_permitted'){Net.canChat=false;sysLine('Chat could not be sent right now. Try again in a moment.');}});
  else if(!Net.room&&Net.remotes.size===0&&!CHAT.soloNote){CHAT.soloNote=true;sysLine('No one else is here right now. Your messages stay on your screen until someone joins.');}
@@ -209,7 +260,7 @@ function onLbSnap(snap){const m=new Map();for(const doc of snap.docs){const d=do
 function myLb(){const p=profileOr();let dx=0,hw=0,hs='',rr=0,rs='',rm='';for(const id in state.dex){const d=state.dex[id];if(!d||!d.n||!SPM[id])continue;dx++;if(d.best>hw){hw=d.best;hs=id;}
   const sp=SPM[id],bm=(d.muts||[]).filter(m=>MUTS[m]).sort((a,b)=>MUTS[b].m-MUTS[a].m)[0]||'';const sc=sp.r*100+(bm?MUTS[bm].m*10:0);if(sc>rr){rr=sc;rs=id;rm=bm;}}
  return{n:p.name,c:p.color,h:p.hat,e:Math.round(state.earned),co:Math.round(state.coins),hw:Math.round(hw*100)/100,hs,rr,rs,rm,dx,lv:state.level};}
-function lbTick(){if(!Net.db||!Net.uid||!Net.canDb||Net.lbW||!state.tips.joined)return;const d=myLb();const key=JSON.stringify(d);if(key===Net.lbKey)return;const now=Date.now();if(now-Net.lbLast<15000)return;
+function lbTick(){if(!Net.db||!Net.uid||!Net.canDb||Net.lbW||!state.tips.joined||state.devUsed)return;const d=myLb();const key=JSON.stringify(d);if(key===Net.lbKey)return;const now=Date.now();if(now-Net.lbLast<15000)return;
  Net.lbW=true;Net.lbLast=now;d.u=now;Net.db.doc('lb/'+Net.uid).set(d).then(()=>{Net.lbKey=key;}).catch(e=>{if(e&&['invalid_argument','not_granted','revoked'].includes(e.code))Net.canDb=false;}).finally(()=>{Net.lbW=false;});}
 function openLeaderboard(){if(JOIN.on)return;let tab='coins';openPanel('Leaderboards','Every angler who has fished here',()=>{panelCtx.kind='lb';
  const me=myLb();const all=new Map(Net.lb);all.set(Net.uid||'me',{n:me.n,c:me.c,e:me.e,hw:me.hw,hs:me.hs,rr:me.rr,rs:me.rs,rm:me.rm,dx:me.dx,lv:me.lv});
@@ -235,13 +286,14 @@ function onStateReplaced(){GFX.tier=state.settings.gfx;qState();rebuildPlayerRig
 /* ---------- main loop ---------- */
 const clock={t:0,last:performance.now(),hud:0,save:0,fpsT:0,fpsN:0,fpsW:0,steps:0};
 function frame(now){requestAnimationFrame(frame);let dt=(now-clock.last)/1000;clock.last=now;if(dt>.05)dt=.05;if(dt<=0)return;clock.t+=dt;WIND.uTime.value+=dt;
- if(!MENU.on&&!PAUSE.on)readInput(dt);else{input.x=input.y=input.rot=0;}checkPendingPtrs();updateEnv(dt);updatePlayer(dt);updateBoat(dt);updateFishing(dt);updateNPCs(dt);updateInteract(dt);
+ if(!MENU.on&&!PAUSE.on)readInput(dt);else{input.x=input.y=input.rot=0;}checkPendingPtrs();updateEnv(dt);updatePlayer(dt);updateBoat(dt);updateFishing(dt);updateExtra(dt);updateNPCs(dt);updateInteract(dt);
  for(const r of Net.remotes.values())r.update(dt);
  if(MENU.on){menuCamera(dt);MENU.st=(MENU.st||0)-dt;if(MENU.st<=0){MENU.st=1;const ms=$('#menuStatus'),t=netLabel();if(ms.textContent!==t)ms.textContent=t;}}
  else if(JOIN.on)joinCamera(dt);else updateCamera(dt);updateLife(dt);if(!MENU.on)updateMiniHUD(dt);if(myTag)myTag.visible=state.settings.tags&&!MENU.on&&!JOIN.on&&!PHOTO.on;
  if(myBubbleT>0){myBubbleT-=dt;if(myBubbleT<=0&&myBubble){prig.root.remove(myBubble);myBubble=null;}}
  renderFrame();
- AU.updAmb(dt,{day:env.day,rain:env.rain,fog:env.fog,cloud:env.cloud,zone:player.zone||'cove',boat:player.mode==='boat',speed:boat.speed,shore:player.zone==='sea'?.35:1});
+ if(DEV.open){DEV.fT=(DEV.fT||0)+dt;DEV.fN=(DEV.fN||0)+1;if(DEV.fT>.5){const e=$('#dvFps');if(e)e.textContent=Math.round(DEV.fN/DEV.fT)+' fps';DEV.fT=0;DEV.fN=0;}}
+ AU.updAmb(dt,{day:env.day,rain:env.rain*(1-(env.cave||0)),fog:env.fog,cloud:env.cloud*(1-(env.cave||0)),zone:player.zone||'cove',boat:player.mode==='boat',speed:boat.speed,shore:player.zone==='sea'?.35:1});
  netTick(dt);lbTick();
  CHAT.idleT+=dt;if(CHAT.idleT>14&&document.activeElement!==$('#chatIn'))$('#chat').classList.add('idle');
  if(PHOTO.on){PHOTO.idle+=dt;if(PHOTO.idle>2.6)$('#photoBar').classList.add('dim');}
@@ -260,7 +312,7 @@ async function boot(data){loadStep(15,'Loading the islands…');const loaded=(da
  initWeather();loadStep(22,'Weathering the rocks…');await nextFrame();await genWorldTextures(TT().tex,async f=>{loadStep(22+f*24,'Weathering the rocks…');await nextFrame();});loadStep(48,'Growing palm trees…');await nextFrame();buildWorld();loadStep(75,'Filling the sea…');await nextFrame();initEnv();setupPlayer();applyTier();resize();WAVE.amp=WAVE_W[env.weather]||1;updateEnv(0);updateEnvMap();loadStep(90,'Lighting the sky…');await nextFrame();
  cam.yaw=player.face+Math.PI;cam.target.copy(player.pos).add(new V3(0,2.5,0));updateHUD();updateClockHUD();renderChatLog();loadStep(100,'Ready');
  requestAnimationFrame(t=>{clock.last=t;frame(t);});setTimeout(()=>{const l=$('#loading');l.classList.add('out');setTimeout(()=>l.remove(),900);},200);
- rebuildPlayerTag();if(/[?&]nomenu/.test(location.search)){if(!state.profile||!state.tips.joined)openJoin(false);else if(!state.tips.intro)openIntro();}else openMenu();
+ if(DEV_HOST)devAvailable();rebuildPlayerTag();if(/[?&]nomenu/.test(location.search)){if(!state.profile||!state.tips.joined)openJoin(false);else if(!state.tips.intro)openIntro();}else openMenu();
  const unlock=()=>{AU.init();removeEventListener('pointerdown',unlock,true);removeEventListener('keydown',unlock,true);};addEventListener('pointerdown',unlock,true);addEventListener('keydown',unlock,true);
  netInit();try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({state}));}catch(e){}}
 const HOTH=window.claude&&window.claude.hot;
@@ -275,7 +327,7 @@ function boatBars(B,u){u=u||{};const sp=B.speed*(1+.08*(u.e||0)),tn=B.turn*(1+.0
  return `<div class="statg">${rows.map(r=>`<span>${r[0]}</span><div class="sbar" style="--c:#7f9db3"><i style="width:${clamp(r[1],.04,1)*100}%"></i></div><span>${r[2]}</span>`).join('')}</div>`;}
 function openShipwright(n){const line=npcSay(n);openPanel(n.name,n.title,()=>{
  body(`${line}<div class="muted">Your boat is moored at the end of the dock. Storage adds bag slots while you're on board.</div><div class="list">${BOATS.slice().sort((a,b)=>a.price-b.price).map(B=>{const own=state.boats.includes(B.id),eq=state.boat===B.id,u=state.bup[B.id]||{};
-  return `<div class="card ${eq?'eq':''}"><div class="row"><img class="thumb" src="${boatThumb(B)}" alt=""><div class="grow"><h3>${esc(B.n)}</h3><div class="muted">${esc(B.fx.d)}</div></div>${eq?'<span class="pill" style="--c:#d9e4dc">In use</span>':own?`<button class="btn sky sm" data-act="use" data-id="${B.id}">Use</button>`:`<button class="btn sm" data-act="buy" data-id="${B.id}" ${state.coins<B.price?'disabled':''}>${fmt(B.price)}c</button>`}</div>${boatBars(B,u)}
+  return `<div class="card ${eq?'eq':''}"><div class="row"><img class="thumb" src="${boatThumb(B)}" alt=""><div class="grow"><h3>${esc(B.n)}</h3><div class="muted">${esc(B.fx.d)} · ${B.seats||2} seats</div></div>${eq?'<span class="pill" style="--c:#d9e4dc">In use</span>':own?`<button class="btn sky sm" data-act="use" data-id="${B.id}">Use</button>`:`<button class="btn sm" data-act="buy" data-id="${B.id}" ${state.coins<B.price?'disabled':''}>${fmt(B.price)}c</button>`}</div>${boatBars(B,u)}
   ${own?UPG.map(([k,nm,d])=>{const lv=u[k]||0,c=upgCost(B,lv);return `<div class="row"><div class="grow"><b>${nm}</b> <span class="pips">${[0,1,2].map(i=>`<i class="${i<lv?'on':''}"></i>`).join('')}</span><div class="muted">${d}</div></div>${lv>=3?'<span class="muted">Max</span>':`<button class="btn sm" data-act="up" data-id="${B.id}:${k}" ${state.coins<c?'disabled':''}>${fmt(c)}c</button>`}</div>`;}).join(''):''}</div>`;}).join('')}</div>`);
  bindPanel({buy:id=>{const B=BOATM[id];if(state.coins<B.price)return;state.coins-=B.price;state.boats.push(id);state.boat=id;rebuildBoat();AU.coin();toast(`The ${B.n} is yours. It's moored at the dock.`,'gold');save();updateHUD();rerender();},
   use:id=>{state.boat=id;rebuildBoat();save();updateHUD();rerender();},
@@ -295,4 +347,4 @@ function renderBuffs(){const el=$('#buffBar');if(!el)return;const parts=[];for(c
 
 
 /* ---------- debug hook (only with ?debug in the URL) ---------- */
-if(/[?&]debug/.test(location.search))window.__DI={get state(){return state;},env,cam,camera,GFX,applyTier,get player(){return player;},get bobber(){return bobber;},setTackle,openSettings,backups,save,QUESTS,QM,QH,qState,questEvent,openNPC,NPCM,rarityOdds,get panelCtx(){return panelCtx;},setWeather,renderer,scene,world,ZONES,TT,clock,SKYJS,skyU,WAVE,sun,hemi,waterU,ENV,THREE,BIG,buildFish,makeWhale,makeChar,SPECIES,SPM,F,startBite,setHook,startFight,landCatch,finishCatch,fishPress};
+if(/[?&]debug/.test(location.search))window.__DI={get state(){return state;},env,cam,camera,GFX,applyTier,get player(){return player;},get bobber(){return bobber;},get boat(){return boat;},get RIDE(){return RIDE;},activeWells,diveWell,surfaceFromHollow,spawnLittleEvent,LE,collectLE,DEV,openCasino,startRide,Net,setTackle,openSettings,backups,save,QUESTS,QM,QH,qState,questEvent,openNPC,NPCM,rarityOdds,get panelCtx(){return panelCtx;},setWeather,renderer,scene,world,ZONES,TT,clock,SKYJS,skyU,WAVE,sun,hemi,waterU,ENV,THREE,BIG,buildFish,makeWhale,makeChar,SPECIES,SPM,F,startBite,setHook,startFight,landCatch,finishCatch,fishPress};
