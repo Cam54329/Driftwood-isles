@@ -41,14 +41,14 @@ const MUTS={
 };
 const ZONES={
  cove:{n:'Pebble Cove',tag:'Starter harbor',x:0,z:0,R:104,H:3.2,hill:1.4,p1:.7,p2:2.1,price:0,grass:'#6e8a4c',grass2:'#5e7a42',sand:'#cbb88c',rock:'#8a8c88'},
- moss:{n:'Mossreach',tag:'Misty bog isle',x:580,z:-310,R:94,H:2.6,hill:1.1,p1:2.3,p2:.4,price:1500,grass:'#566e3e',grass2:'#4a6136',sand:'#a99a74',rock:'#666b62'},
- frost:{n:'Frostmere',tag:'Frozen fjord',x:-540,z:-520,R:98,H:4,hill:1.9,p1:4.1,p2:1.2,price:6000,grass:'#e3e7ea',grass2:'#d2d9de',sand:'#b7bec4',rock:'#7c868f'},
- ember:{n:'Emberkey',tag:'Smoldering volcano',x:180,z:720,R:96,H:3.4,hill:1.1,p1:1.4,p2:3.3,price:18000,grass:'#4a413d',grass2:'#3f3734',sand:'#5f5650',rock:'#2f2c2b',volcano:true},
- atoll:{n:'Sunken Atoll',tag:'Coral lagoon',x:-720,z:280,R:92,H:2.2,hill:.7,p1:3.1,p2:1.7,price:3500,grass:'#5f9440',grass2:'#4f8438',sand:'#d8c094',rock:'#c88a84'},
- amber:{n:'Amberglen',tag:'Autumn highlands',x:800,z:420,R:100,H:4.6,hill:2.1,p1:5.2,p2:2.6,price:12000,grass:'#8a8a48',grass2:'#7a6e3c',sand:'#c4ae84',rock:'#7a7068'},
- petal:{n:'Petalshore',tag:'Blossom hills',x:-170,z:-880,R:96,H:3.6,hill:1.6,p1:2.8,p2:.9,price:9000,grass:'#7c9a50',grass2:'#6c8a46',sand:'#dccaa6',rock:'#9a9088'},
- dune:{n:'Duneveil',tag:'Desert oasis',x:1090,z:-170,R:100,H:3.2,hill:1.5,p1:.6,p2:3.7,price:26000,mesa:true,grass:'#d0a464',grass2:'#c09254',sand:'#e4c890',rock:'#b4643c'},
- glim:{n:'Glimmerholt',tag:'Crystal highlands',x:-560,z:860,R:98,H:4.4,hill:2,p1:1.9,p2:4.4,price:40000,tor:true,grass:'#4e6a60',grass2:'#445e58',sand:'#aaa6b8',rock:'#5c5672'},
+ moss:{n:'Mossreach',tag:'Misty bog isle',x:580,z:-310,R:94,H:2.6,hill:1.1,p1:2.3,p2:.4,price:6000,grass:'#566e3e',grass2:'#4a6136',sand:'#a99a74',rock:'#666b62'},
+ frost:{n:'Frostmere',tag:'Frozen fjord',x:-540,z:-520,R:98,H:4,hill:1.9,p1:4.1,p2:1.2,price:24000,grass:'#e3e7ea',grass2:'#d2d9de',sand:'#b7bec4',rock:'#7c868f'},
+ ember:{n:'Emberkey',tag:'Smoldering volcano',x:180,z:720,R:96,H:3.4,hill:1.1,p1:1.4,p2:3.3,price:110000,grass:'#4a413d',grass2:'#3f3734',sand:'#5f5650',rock:'#2f2c2b',volcano:true},
+ atoll:{n:'Sunken Atoll',tag:'Coral lagoon',x:-720,z:280,R:92,H:2.2,hill:.7,p1:3.1,p2:1.7,price:13000,grass:'#5f9440',grass2:'#4f8438',sand:'#d8c094',rock:'#c88a84'},
+ amber:{n:'Amberglen',tag:'Autumn highlands',x:800,z:420,R:100,H:4.6,hill:2.1,p1:5.2,p2:2.6,price:72000,grass:'#8a8a48',grass2:'#7a6e3c',sand:'#c4ae84',rock:'#7a7068'},
+ petal:{n:'Petalshore',tag:'Blossom hills',x:-170,z:-880,R:96,H:3.6,hill:1.6,p1:2.8,p2:.9,price:40000,grass:'#7c9a50',grass2:'#6c8a46',sand:'#dccaa6',rock:'#9a9088'},
+ dune:{n:'Duneveil',tag:'Desert oasis',x:1090,z:-170,R:100,H:3.2,hill:1.5,p1:.6,p2:3.7,price:200000,mesa:true,grass:'#d0a464',grass2:'#c09254',sand:'#e4c890',rock:'#b4643c'},
+ glim:{n:'Glimmerholt',tag:'Crystal highlands',x:-560,z:860,R:98,H:4.4,hill:2,p1:1.9,p2:4.4,price:400000,tor:true,grass:'#4e6a60',grass2:'#445e58',sand:'#aaa6b8',rock:'#5c5672'},
  sea:{n:'Open Waters',tag:'Deep sea'},
  pond_cove:{n:'Willow Pond',tag:'Pebble Cove pond',pond:'cove',col:'#3e5c52'},pond_moss:{n:'Murk Pool',tag:'Mossreach pond',pond:'moss',col:'#34422c'},
  pond_frost:{n:'Frozen Tarn',tag:'Frostmere pond',pond:'frost',col:'#56788a'},pond_ember:{n:'Ash Spring',tag:'Emberkey hot spring',pond:'ember',col:'#4e605c'},
@@ -126,60 +126,68 @@ const SPECIES=[
  ['star_guppy','Star Guppy','pond_glim',0,.05,.3,82,'fish','#f8f0a8','#5a6ad8'],['void_loach','Void Loach','pond_glim',1,.3,1.5,300,'eel','#1a1a3a','#8a7aff'],['moonstone_koi','Moonstone Koi','pond_glim',2,2,8,1100,'tall','#e8e8ff','#8ab8ff','night'],['nebula_angel','Nebula Angel','pond_glim',3,1,4,5200,'tall','#6a3ab8','#ff8ad8'],['astral_wyrm','Astral Wyrm','pond_glim',5,5,22,34000,'eel','#2a1a5a','#ffd8ff','night'],
  ['sun_mola','Sunfish Mola','sea',1,20,120,260,'tall','#a8a8b0','#e8e8e8','day'],['silverback_tuna','Silverback Tuna','sea',2,10,60,700,'fish','#4a6a9a','#e0e8f0'],['ghost_jelly','Ghost Jelly','sea',3,.5,3,2200,'squid','#e8f0ff','#a8d8ff','night'],['swordfin','Swordfin','sea',4,30,150,6000,'long','#3a5a8a','#d8e8f8',null,'sail'],['storm_eel','Storm Eel','sea',5,8,40,15000,'eel','#2a3a5a','#f0f080','rain'],
 ].map(a=>({id:a[0],name:a[1],zone:a[2],r:a[3],minW:a[4],maxW:a[5],price:a[6],shape:a[7],c1:a[8],c2:a[9],cond:a[10]||null,feat:a[11]||null}));
+/* fish value: every island has a base price for its commons, and each rarity is a fixed multiple of it, so each
+   island pays more than the one before it and rarer always means richer. The authored prices above only set
+   how species of the same rarity on the same island compare with each other. Ponds pay 15% more than their island. */
+const ZONE_BASE={cove:9,moss:14,atoll:20,frost:28,petal:38,amber:66,ember:80,dune:110,glim:150,sea:14},RAR_LADDER=[1,3,9,30,80,200,600];
+{const nice=v=>{if(v<20)return Math.max(1,Math.round(v));const q=Math.pow(10,Math.floor(Math.log10(v))-1);return Math.round(v/q)*q;},grp={};
+ SPECIES.forEach(s=>{const k=s.zone+'|'+s.r;(grp[k]=grp[k]||[]).push(s.price);});
+ SPECIES.forEach(s=>{const pond=s.zone.startsWith('pond_'),base=ZONE_BASE[pond?s.zone.slice(5):s.zone]*(pond?1.15:1),g=grp[s.zone+'|'+s.r],mean=g.reduce((a,b)=>a+b,0)/g.length;
+  s.price=nice(base*RAR_LADDER[s.r]*Math.pow(s.price/mean,.6));});}
 const SPM={};SPECIES.forEach(s=>SPM[s.id]=s);
 const COND={day:'Daytime',night:'Night only',rain:'While raining',fog:'In fog'};
 const RODS=[
  {id:'drift',n:'Driftwood Rod',price:0,luck:0,reel:1,ctrl:0,res:0,shaft:'#8a6a48',handle:'#4a3626',reelC:'#7a7a7a',len:2.4,perk:{xp:.05,d:'+5% XP'}},
- {id:'pine',n:'Sturdy Pine Rod',price:350,luck:10,reel:1.05,ctrl:.03,res:.08,shaft:'#b89a6a',handle:'#3f4a34',reelC:'#9a9a9a',len:2.5,perk:{shake:1.15,d:'Lure twitches tempt fish 15% more'}},
- {id:'bamboo',n:'Bamboo Flick',price:800,luck:14,reel:1.1,ctrl:.05,res:.05,shaft:'#c2ac6e',handle:'#5a4630',reelC:'#8a8478',len:2.6,wrap:'#6a4a30',perk:{wait:.9,d:'Bites come 10% faster'}},
- {id:'coral',n:'Coral Whip',price:1600,luck:20,reel:1.15,ctrl:.06,res:.1,shaft:'#a8705e',handle:'#d8cebf',reelC:'#b8a08a',len:2.6,perk:{mut:.03,d:'+3% mutation chance'}},
- {id:'reed',n:'Swampreed Rod',price:3800,luck:30,reel:1.12,ctrl:.05,res:.25,shaft:'#5e7a48',handle:'#3a2a1a',reelC:'#9a9a5a',len:2.7,perk:{wait:.8,cond:'rain',d:'Bites come 20% faster in rain'}},
- {id:'moss',n:'Mossline Rod',price:5600,luck:38,reel:1.16,ctrl:.07,res:.2,shaft:'#4a5e40',handle:'#2e2a24',reelC:'#6a7a5a',len:2.75,wrap:'#8aa070',glow:'#9fd08a',req:{sp:'glowgut_loach'},perk:{luck:30,cond:'night',d:'+30% luck at night'}},
- {id:'glacier',n:'Glacier Rod',price:9500,luck:50,reel:1.25,ctrl:.1,res:.2,shaft:'#9ab8c8',handle:'#2e4256',reelC:'#d8dde0',len:2.8,metal:.5,glow:'#bfe6f5',perk:{wt:.15,d:'Fish weigh 15% more'}},
- {id:'storm',n:'Stormcaller',price:15000,luck:62,reel:1.3,ctrl:.1,res:.3,shaft:'#4a5560',handle:'#22262a',reelC:'#8a96a0',len:2.85,metal:.6,wrap:'#c0a050',glow:'#cfe0ff',req:{lvl:15},perk:{luck:40,drain:.75,cond:'rain',d:'+40% luck and a steadier reel in rain or storms'}},
- {id:'magma',n:'Magma Caster',price:24000,luck:75,reel:1.4,ctrl:.1,res:.35,shaft:'#2a1e1a',handle:'#7a3a22',reelC:'#a8742a',len:2.9,metal:.3,glow:'#ff6a1a',perk:{sell:1.1,d:'Fish sell for 10% more'}},
- {id:'twin',n:'Twin-Hook Rod',price:34000,luck:85,reel:1.42,ctrl:.12,res:.35,shaft:'#5a4a3a',handle:'#2a2420',reelC:'#b0a080',len:2.95,metal:.4,wrap:'#b0a080',req:{lvl:20},perk:{dbl:.12,d:'12% chance of a double catch'}},
- {id:'sage',n:"Sage's Rod",price:46000,luck:95,reel:1.45,ctrl:.14,res:.38,shaft:'#6a5a7a',handle:'#2a2234',reelC:'#c8b8d8',len:3,glow:'#c8b0ff',req:{sp:'witchlight_angler'},perk:{xp:.4,d:'+40% XP'}},
- {id:'star',n:'Starweaver Rod',price:65000,luck:115,reel:1.5,ctrl:.15,res:.4,shaft:'#2a2e4a',handle:'#8a7a4a',reelC:'#a8a0c8',len:3,metal:.5,glow:'#c8a8ff',perk:{luck:25,mut:.03,cond:'night',d:'+25% luck and +3% mutations at night'}},
- {id:'lantern',n:'Abyssal Lantern',price:98000,luck:140,reel:1.58,ctrl:.17,res:.45,shaft:'#1e2a30',handle:'#3a3020',reelC:'#6a8a8a',len:3.1,metal:.7,wrap:'#c8a050',glow:'#ffd27a',req:{sp:'crowned_abyssfish'},perk:{mut:.08,d:'+8% mutation chance'}},
- {id:'spine',n:'Leviathan Spine',price:160000,luck:180,reel:1.7,ctrl:.2,res:.5,shaft:'#d8d0be',handle:'#1a2e2e',reelC:'#4ab8a0',len:3.2,glow:'#4affd0',req:{lvl:30},perk:{wt:.2,dbl:.05,d:'+20% weight and 5% double catch'}},
- {id:'blossom',deco:'petals',n:'Blossom Bough',price:12000,luck:56,reel:1.28,ctrl:.11,res:.25,shaft:'#c8909c',handle:'#4a2a2a',reelC:'#e8d8d0',len:2.85,wrap:'#e8a8b8',glow:'#ffb8d8',perk:{hook:.35,d:'Strike window 0.35 s longer'}},
- {id:'dune',deco:'sun',n:'Sunscorch Rod',price:28000,luck:80,reel:1.4,ctrl:.1,res:.4,shaft:'#c8964a',handle:'#5a3a1a',reelC:'#d8b060',len:2.9,metal:.3,wrap:'#2a8a8a',perk:{tire:1.3,cond:'day',d:'Fish tire 30% faster in daylight'}},
- {id:'amethyst',deco:'crystal',n:'Amethyst Wand',price:72000,luck:120,reel:1.52,ctrl:.16,res:.42,shaft:'#5a3a7a',handle:'#22182e',reelC:'#c8a8e8',len:3.05,metal:.5,wrap:'#a878e8',glow:'#c88aff',req:{lvl:25},perk:{mut:.05,luck:20,cond:'fog',d:'+5% mutation chance, +20% luck in fog'}},
+ {id:'pine',n:'Sturdy Pine Rod',price:1500,luck:10,reel:1.05,ctrl:.03,res:.08,shaft:'#b89a6a',handle:'#3f4a34',reelC:'#9a9a9a',len:2.5,perk:{shake:1.15,d:'Lure twitches tempt fish 15% more'}},
+ {id:'bamboo',n:'Bamboo Flick',price:3500,luck:14,reel:1.1,ctrl:.05,res:.05,shaft:'#c2ac6e',handle:'#5a4630',reelC:'#8a8478',len:2.6,wrap:'#6a4a30',perk:{wait:.9,d:'Bites come 10% faster'}},
+ {id:'coral',n:'Coral Whip',price:7500,luck:20,reel:1.15,ctrl:.06,res:.1,shaft:'#a8705e',handle:'#d8cebf',reelC:'#b8a08a',len:2.6,perk:{mut:.03,d:'+3% mutation chance'}},
+ {id:'reed',n:'Swampreed Rod',price:14000,luck:30,reel:1.12,ctrl:.05,res:.25,shaft:'#5e7a48',handle:'#3a2a1a',reelC:'#9a9a5a',len:2.7,perk:{wait:.8,cond:'rain',d:'Bites come 20% faster in rain'}},
+ {id:'moss',n:'Mossline Rod',price:20000,luck:38,reel:1.16,ctrl:.07,res:.2,shaft:'#4a5e40',handle:'#2e2a24',reelC:'#6a7a5a',len:2.75,wrap:'#8aa070',glow:'#9fd08a',req:{sp:'glowgut_loach'},perk:{luck:30,cond:'night',d:'+30% luck at night'}},
+ {id:'glacier',n:'Glacier Rod',price:32000,luck:50,reel:1.25,ctrl:.1,res:.2,shaft:'#9ab8c8',handle:'#2e4256',reelC:'#d8dde0',len:2.8,metal:.5,glow:'#bfe6f5',perk:{wt:.15,d:'Fish weigh 15% more'}},
+ {id:'storm',n:'Stormcaller',price:60000,luck:62,reel:1.3,ctrl:.1,res:.3,shaft:'#4a5560',handle:'#22262a',reelC:'#8a96a0',len:2.85,metal:.6,wrap:'#c0a050',glow:'#cfe0ff',req:{lvl:15},perk:{luck:40,drain:.75,cond:'rain',d:'+40% luck and a steadier reel in rain or storms'}},
+ {id:'magma',n:'Magma Caster',price:95000,luck:75,reel:1.4,ctrl:.1,res:.35,shaft:'#2a1e1a',handle:'#7a3a22',reelC:'#a8742a',len:2.9,metal:.3,glow:'#ff6a1a',perk:{sell:1.1,d:'Fish sell for 10% more'}},
+ {id:'twin',n:'Twin-Hook Rod',price:160000,luck:85,reel:1.42,ctrl:.12,res:.35,shaft:'#5a4a3a',handle:'#2a2420',reelC:'#b0a080',len:2.95,metal:.4,wrap:'#b0a080',req:{lvl:20},perk:{dbl:.12,d:'12% chance of a double catch'}},
+ {id:'sage',n:"Sage's Rod",price:200000,luck:95,reel:1.45,ctrl:.14,res:.38,shaft:'#6a5a7a',handle:'#2a2234',reelC:'#c8b8d8',len:3,glow:'#c8b0ff',req:{sp:'witchlight_angler'},perk:{xp:.4,d:'+40% XP'}},
+ {id:'star',n:'Starweaver Rod',price:280000,luck:115,reel:1.5,ctrl:.15,res:.4,shaft:'#2a2e4a',handle:'#8a7a4a',reelC:'#a8a0c8',len:3,metal:.5,glow:'#c8a8ff',perk:{luck:25,mut:.03,cond:'night',d:'+25% luck and +3% mutations at night'}},
+ {id:'lantern',n:'Abyssal Lantern',price:450000,luck:140,reel:1.58,ctrl:.17,res:.45,shaft:'#1e2a30',handle:'#3a3020',reelC:'#6a8a8a',len:3.1,metal:.7,wrap:'#c8a050',glow:'#ffd27a',req:{sp:'crowned_abyssfish'},perk:{mut:.08,d:'+8% mutation chance'}},
+ {id:'spine',n:'Leviathan Spine',price:700000,luck:180,reel:1.7,ctrl:.2,res:.5,shaft:'#d8d0be',handle:'#1a2e2e',reelC:'#4ab8a0',len:3.2,glow:'#4affd0',req:{lvl:28},perk:{wt:.2,dbl:.05,d:'+20% weight and 5% double catch'}},
+ {id:'blossom',deco:'petals',n:'Blossom Bough',price:45000,luck:56,reel:1.28,ctrl:.11,res:.25,shaft:'#c8909c',handle:'#4a2a2a',reelC:'#e8d8d0',len:2.85,wrap:'#e8a8b8',glow:'#ffb8d8',perk:{hook:.35,d:'Strike window 0.35 s longer'}},
+ {id:'dune',deco:'sun',n:'Sunscorch Rod',price:130000,luck:80,reel:1.4,ctrl:.1,res:.4,shaft:'#c8964a',handle:'#5a3a1a',reelC:'#d8b060',len:2.9,metal:.3,wrap:'#2a8a8a',perk:{tire:1.3,cond:'day',d:'Fish tire 30% faster in daylight'}},
+ {id:'amethyst',deco:'crystal',n:'Amethyst Wand',price:340000,luck:120,reel:1.52,ctrl:.16,res:.42,shaft:'#5a3a7a',handle:'#22182e',reelC:'#c8a8e8',len:3.05,metal:.5,wrap:'#a878e8',glow:'#c88aff',req:{lvl:25},perk:{mut:.05,luck:20,cond:'fog',d:'+5% mutation chance, +20% luck in fog'}},
  {id:'wayfinder',deco:'compass',n:'Wayfinder Rod',price:0,luck:105,reel:1.5,ctrl:.18,res:.45,shaft:'#3a5a6a',handle:'#6a4a2a',reelC:'#d8c088',len:3,metal:.6,wrap:'#d8b060',glow:'#8af0ff',req:{quest:'cart6'},perk:{luck:25,cond:'deep',reel:1.1,d:'+25% luck in open water, reels 10% faster'}},
  {id:'moonpetal',deco:'moon',n:'Moonpetal Rod',price:0,luck:135,reel:1.58,ctrl:.19,res:.48,shaft:'#e8e4f4',handle:'#2a2a4a',reelC:'#c8c8e8',len:3.1,metal:.4,wrap:'#ff9ac8',glow:'#e8e8ff',req:{quest:'mirren5'},perk:{luck:35,hook:.3,cond:'night',d:'+35% luck and a longer strike window at night'}},
- {id:'celestial',deco:'stars',n:'Celestial Rod',price:240000,luck:230,reel:1.85,ctrl:.24,res:.55,shaft:'#1e2240',handle:'#c8a050',reelC:'#f0e0a0',len:3.3,metal:.7,wrap:'#f0d070',glow:'#fff0a8',req:{lvl:40},perk:{luck:30,mut:.05,tire:1.25,d:'+30% luck, +5% mutations, fish tire 25% faster'}},
+ {id:'celestial',deco:'stars',n:'Celestial Rod',price:1200000,luck:230,reel:1.85,ctrl:.24,res:.55,shaft:'#1e2240',handle:'#c8a050',reelC:'#f0e0a0',len:3.3,metal:.7,wrap:'#f0d070',glow:'#fff0a8',req:{lvl:35},perk:{luck:30,mut:.05,tire:1.25,d:'+30% luck, +5% mutations, fish tire 25% faster'}},
 ];
 const RODM={};RODS.forEach(r=>RODM[r.id]=r);
 const BAITS=[
- {id:'worm',n:'Garden Worm',price:30,qty:10,luck:0,wait:.85,mut:0,wt:0,d:'Bites come 15% faster'},
- {id:'shrimp',n:'Salted Shrimp',price:180,qty:10,luck:15,wait:.75,mut:0,wt:0,d:'+15% luck, bites 25% faster'},
- {id:'glowfly',n:'Glowfly',price:350,qty:10,luck:35,wait:1,mut:0,wt:0,night:true,d:'+35% luck, doubled at night'},
- {id:'spinner',n:'Silver Spinner',price:900,qty:10,luck:20,wait:.85,mut:0,wt:0,d:'+20% luck, bites 15% faster'},
- {id:'prism',n:'Prism Lure',price:1200,qty:10,luck:10,wait:1,mut:.06,wt:0,d:'+10% luck, +6% mutation chance'},
- {id:'popper',n:'Topwater Popper',price:2200,qty:8,luck:30,wait:.95,mut:0,wt:.15,d:'+30% luck, +15% fish weight'},
+ {id:'worm',n:'Garden Worm',price:60,qty:10,luck:0,wait:.85,mut:0,wt:0,d:'Bites come 15% faster'},
+ {id:'shrimp',n:'Salted Shrimp',price:200,qty:10,luck:15,wait:.75,mut:0,wt:0,d:'+15% luck, bites 25% faster'},
+ {id:'glowfly',n:'Glowfly',price:450,qty:10,luck:35,wait:1,mut:0,wt:0,night:true,d:'+35% luck, doubled at night'},
+ {id:'spinner',n:'Silver Spinner',price:800,qty:10,luck:20,wait:.85,mut:0,wt:0,d:'+20% luck, bites 15% faster'},
+ {id:'prism',n:'Prism Lure',price:1400,qty:10,luck:10,wait:1,mut:.06,wt:0,d:'+10% luck, +6% mutation chance'},
+ {id:'popper',n:'Topwater Popper',price:2000,qty:8,luck:30,wait:.95,mut:0,wt:.15,d:'+30% luck, +15% fish weight'},
+ {id:'feather',n:'Feather Fly',price:3200,qty:6,luck:60,wait:.8,mut:.03,wt:0,d:'+60% luck, +3% mutation chance, bites 20% faster'},
  {id:'ink',n:'Kraken Ink',price:3500,qty:5,luck:90,wait:.9,mut:.02,wt:.2,d:'+90% luck, +20% weight'},
- {id:'feather',n:'Feather Fly',price:5000,qty:6,luck:60,wait:.8,mut:.03,wt:0,d:'+60% luck, +3% mutation chance, bites 20% faster'},
 ];
 const BAITM={};BAITS.forEach(b=>BAITM[b.id]=b);
 const BOATS=[
  {id:'dinghy',n:'Driftwood Dinghy',price:0,speed:18,turn:1.4,storage:0,fx:{luck:5,d:'+5% luck while fishing from the boat'},m:{L:5.6,W:1.22,H:.78,D:-.42,hull:'#d6d0c4',bottom:'#5a4036',type:'row'}},
- {id:'skiff',n:'Reed Skiff',price:2500,speed:20,turn:1.65,storage:10,fx:{wait:.85,d:'Bites come 15% faster from the boat'},m:{L:6.6,W:1.05,H:.62,D:-.38,hull:'#7a6a54',bottom:'#4a3c30',stripe:'#5a4a3a',type:'skiff'}},
- {id:'sloop',n:'Gull Sloop',price:9000,speed:21,turn:1.3,storage:20,fx:{luck:20,d:'+20% luck from the boat'},m:{L:7.6,W:1.5,H:.9,D:-.6,hull:'#dcd7cc',bottom:'#2e3e4c',stripe:'#3e5468',type:'sail'}},
- {id:'cruiser',n:'Tidewatch Cruiser',price:25000,speed:24,turn:1.25,storage:30,fx:{drain:.65,bar:1.1,cond:'rain',d:'Reeling is 35% easier in rain and storms'},m:{L:8.6,W:1.8,H:1.05,D:-.7,hull:'#cfd1cd',bottom:'#4a2e2a',stripe:'#2e4052',type:'cabin'}},
- {id:'runner',n:'Abyss Runner',price:60000,speed:28,turn:1.15,storage:40,fx:{luck:35,cond:'deep',d:'+35% luck for rare fish in open water'},m:{L:9.6,W:1.9,H:1.1,D:-.75,hull:'#2e3a44',bottom:'#1c242a',stripe:'#8a2e2a',type:'runner'}},
- {id:'outrigger',n:'Reef Outrigger',price:5500,speed:23,turn:1.8,storage:12,fx:{luck:12,wait:.9,d:'+12% luck and bites 10% faster from the boat'},m:{L:6.8,W:.9,H:.6,D:-.36,hull:'#a8704a',bottom:'#5a3a26',stripe:'#e0b060',type:'outrigger'}},
- {id:'catamaran',n:'Seabreeze Catamaran',price:38000,speed:25,turn:1.35,storage:35,fx:{bar:1.15,luck:15,d:'Line tension builds 15% slower and +15% luck from the boat'},m:{L:8.8,W:1.1,H:.85,D:-.55,hull:'#eae6dc',bottom:'#2e5a6a',stripe:'#3a8ab0',type:'catamaran'}},
- {id:'speedster',n:'Gullwing Speedster',price:95000,speed:34,turn:1.5,storage:25,fx:{luck:25,wait:.85,d:'+25% luck and bites 15% faster from the boat'},m:{L:8.2,W:1.6,H:.9,D:-.55,hull:'#c8402e',bottom:'#1e2228',stripe:'#f2efe8',type:'speedster'}},
- {id:'trawler',n:'Ironkeel Trawler',price:140000,speed:22,turn:.95,storage:70,fx:{mut:.08,wt:.15,d:'+8% mutation chance and +15% weight from the boat'},m:{L:11.5,W:2.3,H:1.4,D:-.95,hull:'#5e3a30',bottom:'#2a2422',stripe:'#d6d0c4',type:'trawler'}},
+ {id:'skiff',n:'Reed Skiff',price:7500,speed:20,turn:1.65,storage:10,fx:{wait:.85,d:'Bites come 15% faster from the boat'},m:{L:6.6,W:1.05,H:.62,D:-.38,hull:'#7a6a54',bottom:'#4a3c30',stripe:'#5a4a3a',type:'skiff'}},
+ {id:'sloop',n:'Gull Sloop',price:32000,speed:21,turn:1.3,storage:20,fx:{luck:20,d:'+20% luck from the boat'},m:{L:7.6,W:1.5,H:.9,D:-.6,hull:'#dcd7cc',bottom:'#2e3e4c',stripe:'#3e5468',type:'sail'}},
+ {id:'cruiser',n:'Tidewatch Cruiser',price:70000,speed:24,turn:1.25,storage:30,fx:{drain:.65,bar:1.1,cond:'rain',d:'Reeling is 35% easier in rain and storms'},m:{L:8.6,W:1.8,H:1.05,D:-.7,hull:'#cfd1cd',bottom:'#4a2e2a',stripe:'#2e4052',type:'cabin'}},
+ {id:'runner',n:'Abyss Runner',price:180000,speed:28,turn:1.15,storage:40,fx:{luck:35,cond:'deep',d:'+35% luck for rare fish in open water'},m:{L:9.6,W:1.9,H:1.1,D:-.75,hull:'#2e3a44',bottom:'#1c242a',stripe:'#8a2e2a',type:'runner'}},
+ {id:'outrigger',n:'Reef Outrigger',price:18000,speed:23,turn:1.8,storage:12,fx:{luck:12,wait:.9,d:'+12% luck and bites 10% faster from the boat'},m:{L:6.8,W:.9,H:.6,D:-.36,hull:'#a8704a',bottom:'#5a3a26',stripe:'#e0b060',type:'outrigger'}},
+ {id:'catamaran',n:'Seabreeze Catamaran',price:120000,speed:25,turn:1.35,storage:35,fx:{bar:1.15,luck:15,d:'Line tension builds 15% slower and +15% luck from the boat'},m:{L:8.8,W:1.1,H:.85,D:-.55,hull:'#eae6dc',bottom:'#2e5a6a',stripe:'#3a8ab0',type:'catamaran'}},
+ {id:'speedster',n:'Gullwing Speedster',price:260000,speed:34,turn:1.5,storage:25,fx:{luck:25,wait:.85,d:'+25% luck and bites 15% faster from the boat'},m:{L:8.2,W:1.6,H:.9,D:-.55,hull:'#c8402e',bottom:'#1e2228',stripe:'#f2efe8',type:'speedster'}},
+ {id:'trawler',n:'Ironkeel Trawler',price:400000,speed:22,turn:.95,storage:70,fx:{mut:.08,wt:.15,d:'+8% mutation chance and +15% weight from the boat'},m:{L:11.5,W:2.3,H:1.4,D:-.95,hull:'#5e3a30',bottom:'#2a2422',stripe:'#d6d0c4',type:'trawler'}},
 ];
 const BOATM={};BOATS.forEach(b=>BOATM[b.id]=b);
 const BUFFS=[
- {id:'tonic',n:'Luck Tonic',price:300,dur:240,ico:'L',c:'#6f8f5e',fx:{luck:35,d:'+35% luck'}},
- {id:'steady',n:'Steady Hands',price:350,dur:240,ico:'S',c:'#5f7f9a',fx:{bar:1.2,drain:.75,d:'Line tension builds 20% slower and the line is 25% tougher'}},
- {id:'charm',n:'Mutation Charm',price:700,dur:180,ico:'M',c:'#86708f',fx:{mut:.06,d:'+6% mutation chance'}},
- {id:'brew',n:'XP Brew',price:450,dur:300,ico:'X',c:'#9a8350',fx:{xp:.5,d:'+50% XP'}},
- {id:'scent',n:'Lure Scent',price:250,dur:240,ico:'B',c:'#946650',fx:{wait:.7,d:'Bites come 30% faster'}},
+ {id:'tonic',n:'Luck Tonic',price:800,dur:240,ico:'L',c:'#6f8f5e',fx:{luck:35,d:'+35% luck'}},
+ {id:'steady',n:'Steady Hands',price:900,dur:240,ico:'S',c:'#5f7f9a',fx:{bar:1.2,drain:.75,d:'Line tension builds 20% slower and the line is 25% tougher'}},
+ {id:'charm',n:'Mutation Charm',price:1500,dur:180,ico:'M',c:'#86708f',fx:{mut:.06,d:'+6% mutation chance'}},
+ {id:'brew',n:'XP Brew',price:1000,dur:300,ico:'X',c:'#9a8350',fx:{xp:.5,d:'+50% XP'}},
+ {id:'scent',n:'Lure Scent',price:700,dur:240,ico:'B',c:'#946650',fx:{wait:.7,d:'Bites come 30% faster'}},
 ];
 const BUFFM={};BUFFS.forEach(b=>BUFFM[b.id]=b);
 const ENCH={
