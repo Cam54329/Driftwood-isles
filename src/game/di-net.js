@@ -41,7 +41,7 @@ function makeLocalBackend(){const bc=new BroadcastChannel('driftwood-isles-mp');
   else if(m.type==='leave'){L.peers.delete(m.uid);L.cbPeers&&L.cbPeers({peers:[],left:[{peer:m.uid}]});}
   else if(m.type==='emit'&&m.uid!==uid){const cb=L.topics[m.topic];cb&&cb({data:m.data,isMe:false,peer:m.uid,by:m.uid});}
   else if(m.type==='doc'){fire(m.base);}};
- setInterval(()=>{const now=Date.now();for(const[k,t]of L.peers)if(now-t>6000){L.peers.delete(k);L.cbPeers&&L.cbPeers({peers:[],left:[{peer:k}]});}},2000);
+ setInterval(()=>{const now=Date.now();for(const[k,t]of L.peers)if(now-t>22000){L.peers.delete(k);L.cbPeers&&L.cbPeers({peers:[],left:[{peer:k}]});}},2000);
  addEventListener('pagehide',()=>bc.postMessage({type:'leave',uid}));
  const user={id:async()=>uid,can:async()=>true};
  const db={doc(p){const path=pathOf(p);return{async get(){const v=store.get(path);return{exists:v!=null,data:()=>v};},async set(d){store.set(path,d);const base=path.split('/')[0];bc.postMessage({type:'doc',base});fire(base);}};},
