@@ -25,7 +25,7 @@ function menuCamera(dt){MENU.t+=dt;const d=MENU.dock;if(!d)return;const D=new V3
 function menuAct(k){AU.init();AU.ui();
  if(k==='continue')closeMenu(()=>{if(!state.tips.intro)openIntro();else toast('Welcome back to '+ZONES[state.last||'cove'].n+'!');});
  else if(k==='new'){if(state.profile&&state.tips.joined){openPanel('Start a new game?','',()=>{body(`<div class="muted">This erases your coins, fish, rods, quests and Bestiary on this device. There is no undo.</div><div class="row"><button class="btn rose" data-act="yes">Erase and start over</button><button class="btn ghost" data-act="no">Keep my save</button></div>`);
-   bindPanel({yes:()=>{const keep=state.settings;state=freshState();state.settings=keep;qState();save();onStateReplaced();closePanel();renderMenu();closeMenu(()=>openJoin(false));},no:()=>closePanel()});});}
+   bindPanel({yes:()=>{backupSave('Before starting a new game');const keep=state.settings;state=freshState();state.settings=keep;qState();save();onStateReplaced();closePanel();renderMenu();closeMenu(()=>openJoin(false));},no:()=>closePanel()});});}
   else closeMenu(()=>openJoin(false));}
  else if(k==='mp')openMultiplayer();else if(k==='settings')openSettings();else if(k==='credits')openCredits();}
 $('#menuNav').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b)menuAct(b.dataset.m);});

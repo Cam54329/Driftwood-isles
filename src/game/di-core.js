@@ -262,7 +262,17 @@ const HATS=[{id:'bucket',n:'Bucket hat'},{id:'cap',n:'Cap'},{id:'beanie',n:'Bean
 const EMOTES={wave:{n:'Wave',d:2.6},dance:{n:'Dance',d:6},cheer:{n:'Cheer',d:3},show:{n:'Show off',d:4.5}};
 
 /* ================= STATE / SAVE ================= */
-const KEY='driftwood-isles-save-v1';
+/* The save key never changes between updates: new versions read the same save and fill in anything new.
+   Before an update touches a save (and once a day) a backup copy is kept, see backupSave. */
+const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.0';
+/* how far along a save is: lifetime earnings never go down, so they decide which of two saves to keep */
+function progressOf(s){return s&&typeof s==='object'?(Number(s.earned)||0)+(Number(s.level)||1)*500+Object.keys(s.dex||{}).length*200:0;}
+function backups(){try{const b=JSON.parse(localStorage.getItem(BKEY));return Array.isArray(b)?b.filter(x=>x&&typeof x.json==='string'):[];}catch(e){return [];}}
+function backupSave(why,raw){try{raw=raw||localStorage.getItem(KEY);if(!raw)return false;const s=JSON.parse(raw);if(!s||typeof s!=='object'||progressOf(s)<=progressOf(freshState()))return false;
+ const list=backups();if(list.some(b=>b.at===(s.savedAt||0)&&b.e===(s.earned||0)))return false;
+ list.unshift({t:Date.now(),why,ver:s.gv||'2',lv:s.level||1,c:s.coins||0,e:s.earned||0,at:s.savedAt||0,json:raw});while(list.length>8)list.pop();
+ for(;;){try{localStorage.setItem(BKEY,JSON.stringify(list));return true;}catch(e){if(list.length<=1)return false;list.pop();}}}catch(e){return false;}}
+function dailyBackup(){const b=backups()[0];if(!b||Date.now()-b.t>20*3600e3)backupSave('Daily backup');}
 function defSettings(){return{gfx:isMobile?'medium':'high',gfxAuto:true,music:.55,sfx:.8,amb:.7,chill:false,tags:true,weather:'auto',v2:true,v3:true};}
 function freshState(){return{v:2,coins:0,earned:0,xp:0,level:1,inv:[],rods:['drift'],rod:'drift',bait:{},baitOn:null,ench:{},relics:0,unlocked:['cove'],dex:{},last:'cove',settings:defSettings(),uid:1,savedAt:0,tips:{},profile:null,boats:['dinghy'],boat:'dinghy',bup:{},buffs:{}};}
 function sanitize(s){const f=freshState();if(!s||typeof s!=='object')return f;const o=Object.assign(f,s);
@@ -271,15 +281,19 @@ function sanitize(s){const f=freshState();if(!s||typeof s!=='object')return f;co
  if(!old.v3){o.settings.v3=true;o.settings.gfxAuto=true;o.settings.gfx=isMobile?'medium':'high';}
  delete o.settings.sound;if(!['ultra','high','medium','low'].includes(o.settings.gfx))o.settings.gfx='medium';if(!['auto','clear','rain','storm','fog'].includes(o.settings.weather))o.settings.weather='auto';
  for(const k of['music','sfx','amb'])o.settings[k]=clamp(Number(o.settings[k])||0,0,1);
- if(!Array.isArray(o.inv))o.inv=[];o.inv=o.inv.filter(x=>x&&SPM[x.sp]);if(!Array.isArray(o.rods)||!o.rods.length)o.rods=['drift'];if(!RODM[o.rod])o.rod='drift';
+ /* fish of a species this version doesn't know are parked, not deleted, and come back if the species does */
+ if(!Array.isArray(o.inv))o.inv=[];if(!Array.isArray(o.invHold))o.invHold=[];{const all=o.inv.concat(o.invHold).filter(x=>x&&typeof x==='object');o.inv=all.filter(x=>SPM[x.sp]);o.invHold=all.filter(x=>!SPM[x.sp]).slice(0,500);}o.gv=GAME_VER;if(!Array.isArray(o.rods)||!o.rods.length)o.rods=['drift'];if(!RODM[o.rod])o.rod='drift';
  if(!Array.isArray(o.unlocked))o.unlocked=['cove'];if(!o.unlocked.includes('cove'))o.unlocked.push('cove');if(!ZONES[o.last]||o.last==='sea')o.last='cove';
  if(o.baitOn&&!BAITM[o.baitOn])o.baitOn=null;if(!Array.isArray(o.boats)||!o.boats.length)o.boats=['dinghy'];if(!BOATM[o.boat])o.boat='dinghy';if(!o.bup||typeof o.bup!=='object')o.bup={};if(!o.buffs||typeof o.buffs!=='object')o.buffs={};for(const k in o.buffs)if(!BUFFM[k]||!(o.buffs[k]>0))delete o.buffs[k];if(typeof o.earned!=='number')o.earned=o.coins||0;
  if(o.profile){const p=o.profile;o.profile={name:cleanText(p.name,16)||'Angler',color:isHex(p.color)?p.color:SHIRTS[5],hatC:isHex(p.hatC)?p.hatC:SHIRTS[2],skin:isHex(p.skin)?p.skin:SKINS[1],hat:HATS.some(h=>h.id===p.hat)?p.hat:'bucket'};}
  return o;}
 let state=freshState();
-function loadLocal(){try{const r=localStorage.getItem(KEY);if(r)return sanitize(JSON.parse(r));}catch(e){}return null;}
+function loadLocal(){let r=null;try{r=localStorage.getItem(KEY);}catch(e){}if(!r)return null;
+ try{const s=JSON.parse(r);if((s.gv||'2')!==GAME_VER)backupSave('Before the '+GAME_VER+' update',r);else dailyBackup();return sanitize(s);}
+ catch(e){/* a damaged save: keep it aside and fall back to the newest backup */try{localStorage.setItem(KEY+'-damaged',r);}catch(_){}const b=backups()[0];if(b){try{return sanitize(JSON.parse(b.json));}catch(_){}}}return null;}
 let cloudRef=null,lastCloud=0,cloudPending=false;
-function save(){state.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}cloudPending=true;cloudTick(false);}
+let lastBk=Date.now();
+function save(){state.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}if(Date.now()-lastBk>3600e3){lastBk=Date.now();dailyBackup();}cloudPending=true;cloudTick(false);}
 function cloudTick(force){if(!cloudRef||!cloudPending)return;const now=Date.now();if(!force&&now-lastCloud<20000)return;lastCloud=now;cloudPending=false;
  cloudRef.set({json:JSON.stringify(state),savedAt:state.savedAt}).catch(e=>{if(e&&(e.code==='invalid_argument'||e.code==='not_granted'||e.code==='revoked'))cloudRef=null;});}
 
