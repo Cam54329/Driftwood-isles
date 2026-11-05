@@ -44,10 +44,26 @@ const QUESTS=[
   offer:"I forge rods for legends. Show me you are one: land a Legendary fish or anything rarer.",prog:"Legendary or better. Good bait and a strong rod help.",done:"A legend in the flesh! The forge salutes you."},
  {id:'kettle1',npc:'kettle',n:'Hot Spring',goal:{t:'catch',n:3,zone:'pond_ember'},rw:{c:2000,xp:350,bait:['ink',2]},
   offer:"The Ash Spring bubbles with strange fish. Three of them, and I'll trade you some Kraken Ink.",prog:"The spring's in the middle of the island. Mind the steam.",done:"Steamed to perfection. Here's your ink. Use it wisely."},
+  {id:'nalu1',npc:'nalu',n:'Reef Haul',goal:{t:'catch',n:5,zone:'atoll'},rw:{c:1800,xp:320},
+  offer:"The reef is generous to patient hands. Bring me five fish from around the atoll and I'll pay island prices.",prog:"Fish the shallows around the atoll, or the Blue Lagoon.",done:"Beautiful colours! The reef has taken a liking to you."},
+ {id:'coralie1',npc:'coralie',n:'Pearl of the Lagoon',goal:{t:'catch',n:1,zone:'pond_atoll',r:2},rw:{c:2400,xp:380,bait:['prism',4]},
+  offer:"The Blue Lagoon hides real treasures. Catch me a Rare fish or better from its waters.",prog:"Rare or rarer, from the Blue Lagoon in the middle of the atoll.",done:"A true pearl! Take these lures, they catch the light like nothing else."},
+ {id:'kai1',npc:'kai',n:'Island Hopper',goal:{t:'visit',n:1,zone:'amber'},rw:{c:3000,xp:400},
+  offer:"Far to the east the leaves never stop falling. Buy the Amberglen chart and set foot in the glen.",prog:"Amberglen lies east of Pebble Cove. Charts are on my board.",done:"You smell of woodsmoke and maple. Welcome back, island hopper!"},
+ {id:'moana1',npc:'moana',n:'Speed Trial',goal:{t:'catch',n:4,sea:true},rw:{c:2000,xp:300,bait:['shrimp',12]},
+  offer:"A boat's only as good as its captain. Take her out and land four fish from the deck in open water.",prog:"Four fish from your boat, out at sea.",done:"You handle the swell like a local! Shrimp for the road."},
+ {id:'rowan1',npc:'rowan',n:'Glen Harvest',goal:{t:'catch',n:5,zone:'amber'},rw:{c:4000,xp:500},
+  offer:"Harvest season in the glen means fat fish. Five from around Amberglen, if you please.",prog:"Around the cliffs or in Maple Mere.",done:"A fine harvest! The glen thanks you."},
+ {id:'bramwell1',npc:'bramwell',n:'Thornback Hunt',goal:{t:'catch',n:1,sp:'thornback_pike'},rw:{c:3200,xp:450,bait:['glowfly',8]},
+  offer:"There's a pike in these waters with a back like a bramble. It only shows in the rain. Catch me a Thornback Pike.",prog:"Thornback Pike bite around Amberglen while it rains.",done:"Look at those spines! You've earned these glowflies."},
+ {id:'hazel1',npc:'hazel',n:'Mere Magic',goal:{t:'catch',n:3,zone:'pond_amber'},rw:{c:2600,xp:380},
+  offer:"Maple Mere's water makes the best brews. Catch three of its fish and I'll know the water's right.",prog:"Maple Mere is up the hill, past the pumpkin patches.",done:"The mere is happy, and so am I. Thank you, dear."},
+ {id:'tamsin1',npc:'tamsin',n:'Legend of the Glen',goal:{t:'catch',n:1,zone:'amber',r:3},rw:{c:6000,xp:700,title:'Glen Legend'},req:['rowan1'],
+  offer:"They say Old Amber still swims off these cliffs. Land any Legendary fish around Amberglen and the glen will sing of you.",prog:"Legendary or rarer, around Amberglen. Fog and night bring out the strange ones.",done:"The glen will sing of this! Wear your title proudly."},
 ];
 const QM={};QUESTS.forEach(q=>QM[q.id]=q);
 const LEVEL_TITLES=[[1,'Novice Angler'],[10,'Seasoned Angler'],[25,'Master Angler'],[50,'Legend of the Isles']];
-const TITLE_COL={'Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a'};
+const TITLE_COL={'Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
 const ALL_TITLES=Object.keys(TITLE_COL);
 
 /* ---------- dialogue lines (extra flavour beyond the quests) ---------- */
@@ -77,6 +93,7 @@ function npcQuests(id){return QUESTS.filter(q=>q.npc===id);}
 function currentQuest(id){const list=npcQuests(id);return list.find(q=>{const s=qStatus(q);return s==='ready'||s==='active';})||list.find(q=>qStatus(q)==='offer')||null;}
 function activeQuests(){const Q=qState();return Object.keys(Q.a).map(id=>QM[id]).filter(Boolean);}
 function goalText(q){const g=q.goal,n=g.n;const where=g.zone?' in '+ZONES[g.zone].n:'';
+ if(g.t==='catch'&&g.sp)return `Catch ${n===1?'a':n} ${SPM[g.sp].name}`;
  if(g.t==='catch'){let s=`Catch ${n} ${g.r!=null?RAR[g.r].n+'+ ':''}${g.mut===true?'mutated ':g.mut?MUTS[g.mut].n+' ':''}fish`;if(n===1)s=s.replace('fish','fish');if(g.w)s+=` over ${g.w} kg`;if(g.night)s+=' at night';if(g.sea)s+=' from your boat at sea';if(g.ev)s+=' during a big event';return s+where;}
  if(g.t==='sell')return `Sell ${fmt(n)} coins' worth of fish`;if(g.t==='visit')return `Visit ${ZONES[g.zone].n}`;if(g.t==='relic')return 'Find a Tide Relic';if(g.t==='rod')return 'Buy a new rod';return '';}
 function rewardText(rw){const p=[];if(rw.c)p.push(fmt(rw.c)+' coins');if(rw.xp)p.push(rw.xp+' XP');if(rw.bait)p.push(rw.bait[1]+'× '+BAITM[rw.bait[0]].n);if(rw.title)p.push('Title: '+rw.title);return p.join(' · ');}
@@ -84,7 +101,7 @@ function rewardText(rw){const p=[];if(rw.c)p.push(fmt(rw.c)+' coins');if(rw.xp)p
 /* ---------- progress ---------- */
 function questEvent(type,d={}){const Q=qState();let changed=false;
  for(const id in Q.a){const q=QM[id];if(!q)continue;const g=q.goal;if(Q.a[id]>=g.n)continue;let inc=0;
-  if(g.t==='catch'&&type==='catch'){if(g.zone&&d.zone!==g.zone&&d.isl!==g.zone)continue;if(g.r!=null&&d.r<g.r)continue;if(g.mut===true&&!d.mut)continue;if(typeof g.mut==='string'&&d.mut!==g.mut)continue;if(g.w&&d.w<g.w)continue;if(g.night&&!d.night)continue;if(g.sea&&!d.sea)continue;if(g.ev&&!d.ev)continue;inc=1;}
+  if(g.t==='catch'&&type==='catch'){if(g.zone&&d.zone!==g.zone&&d.isl!==g.zone)continue;if(g.sp&&d.sp!==g.sp)continue;if(g.r!=null&&d.r<g.r)continue;if(g.mut===true&&!d.mut)continue;if(typeof g.mut==='string'&&d.mut!==g.mut)continue;if(g.w&&d.w<g.w)continue;if(g.night&&!d.night)continue;if(g.sea&&!d.sea)continue;if(g.ev&&!d.ev)continue;inc=1;}
   else if(g.t==='sell'&&type==='sell')inc=d.v||0;else if(g.t==='visit'&&type==='visit'&&d.zone===g.zone)inc=1;else if(g.t==='relic'&&type==='relic')inc=1;else if(g.t==='rod'&&type==='rod')inc=1;
   if(inc){const was=Q.a[id];Q.a[id]=Math.min(g.n,was+inc);changed=true;if(Q.a[id]>=g.n&&was<g.n){toast(`Quest complete: ${q.n}. Return to ${NPCM[q.npc].name}.`,'gold');AU.level();}}}
  if(changed){save();renderHotbar();}return changed;}

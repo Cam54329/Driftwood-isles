@@ -90,11 +90,11 @@ mat3 dwTBN(vec3 eye,vec3 N,vec2 uv){vec3 q0=dFdx(eye),q1=dFdy(eye);vec2 s0=dFdx(
 function makeWorldMat(o={}){const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:1,side:o.side||THREE.FrontSide,flatShading:true});
  m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,WU);
   sh.vertexShader=`attribute float mat;attribute vec3 tp;${o.sway?'attribute float sway;uniform float uTime;uniform float uWind;':''}
-flat varying float vMat;varying vec3 vTp;varying float vUpW;
+flat varying float vMat;varying vec3 vTp;varying float vUpW;varying vec3 vWPw;
 `+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
-vMat=mat;vTp=tp;vUpW=normalize(mat3(modelMatrix)*objectNormal).y;
+vMat=mat;vTp=tp;vUpW=normalize(mat3(modelMatrix)*objectNormal).y;vWPw=(modelMatrix*vec4(position,1.)).xyz;
 ${o.sway?'{vec3 wp=(modelMatrix*vec4(position,1.)).xyz;float ph=uTime*1.5+wp.x*.12+wp.z*.1;float gs=sin(ph)+.35*sin(ph*2.3+1.);transformed.x+=gs*sway*.2*uWind;transformed.z+=cos(ph*.8)*sway*.15*uWind;transformed.y-=abs(gs)*sway*.03;}':''}`);
-  sh.fragmentShader=GLSL_TRI_PARS+`flat varying float vMat;varying vec3 vTp;varying float vUpW;
+  sh.fragmentShader=GLSL_TRI_PARS+`uniform vec3 uSunDirW;uniform vec3 uSunColW;flat varying float vMat;varying vec3 vTp;varying float vUpW;varying vec3 vWPw;
 `+sh.fragmentShader.replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
 int dwL=int(vMat+.5);float dwS=uTexScale[dwL];vec3 dwP=vTp*dwS;
 vec3 dwTc=cross(dFdx(vTp),dFdy(vTp));float dwTl=length(dwTc);vec3 dwTn=dwTl>1e-10?dwTc/dwTl:vec3(0.,1.,0.);vec3 dwW=pow(abs(dwTn),vec3(4.));dwW/=(dwW.x+dwW.y+dwW.z+1e-5);
@@ -109,7 +109,9 @@ diffuseColor.rgb*=mix(vec3(1.),dwA.rgb*2.*(.82+.36*dwMac),uDetail);diffuseColor.
   .replace('#include <roughnessmap_fragment>','float roughnessFactor=mix(mix(.86,dwB.b,uDetail+.2),.2,dwWet*.85);')
   .replace('#include <metalnessmap_fragment>','float metalnessFactor=uMetal[dwL];')
   .replace('#include <aomap_fragment>',`#include <aomap_fragment>
-reflectedLight.indirectDiffuse*=dwB.a;reflectedLight.indirectSpecular*=mix(1.,dwB.a,.6);`);};
+reflectedLight.indirectDiffuse*=dwB.a;reflectedLight.indirectSpecular*=mix(1.,dwB.a,.6);`)
+  .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+${o.sway?'{vec3 vd=normalize(vWPw-cameraPosition);float tr=pow(max(dot(vd,uSunDirW),0.),5.);totalEmissiveRadiance+=diffuseColor.rgb*uSunColW*tr*.9;}':''}`);};
  m.customProgramCacheKey=()=>'dwWorld'+(o.sway?'S':'')+(o.side||0);return m;}
 
 /* terrain: smooth mesh, splat weights per vertex (sand, ground, rock, dirt) blended by height */

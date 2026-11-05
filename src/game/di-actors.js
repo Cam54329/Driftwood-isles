@@ -79,7 +79,7 @@ class CharAnim{constructor(rig){this.r=rig;this.t=Math.random()*10;this.ph=0;thi
   if(f==='idle'&&!em&&!p.sit&&s<.04){this.fidT=(this.fidT==null?rand(6,12):this.fidT)-dt;if(this.fidT<=0){this.fid=1.6;this.fidT=rand(9,16);}}
   if(this.fid>0){this.fid-=dt;if(f!=='idle'||s>.04||em)this.fid=0;const k=Math.sin(clamp(1-this.fid/1.6,0,1)*Math.PI);T.sLx=lerp(T.sLx,-2.8,k);T.sRx=lerp(T.sRx,-2.8,k);T.sLz=lerp(T.sLz,-.35,k);T.sRz=lerp(T.sRz,.35,k);T.spX-=.12*k;T.nX=-.22*k;}
   if(s>.04&&p.ground)T.nX+=Math.sin(this.ph*2)*.04;
-  if(!this.c)this.c=Object.assign({},T);const k=1-Math.exp(-14*dt),c=this.c;for(const key in T)c[key]=lerp(c[key],T[key],key==='bodyY'&&p.sit?1:k);
+  if(!this.c)this.c=Object.assign({},T);const k=1-Math.exp(-20*dt),c=this.c;for(const key in T)c[key]=lerp(c[key],T[key],key==='bodyY'&&p.sit?1:k);
   r.body.position.y=c.bodyY;r.body.rotation.x=c.lean;r.hips.rotation.y=c.hipsRY;r.spine.rotation.x=c.spX;r.spine.rotation.y=c.twist;r.neck.rotation.y=c.nY;r.neck.rotation.x=c.nX;
   r.aL.sh.rotation.x=c.sLx;r.aL.sh.rotation.z=c.sLz;r.aL.el.rotation.x=c.eL;r.aR.sh.rotation.x=c.sRx;r.aR.sh.rotation.z=c.sRz;r.aR.el.rotation.x=c.eR;
   r.lL.hp.rotation.x=c.hL;r.lL.kn.rotation.x=c.kL;r.lR.hp.rotation.x=c.hR;r.lR.kn.rotation.x=c.kR;
@@ -196,21 +196,30 @@ function drawLine(line,a,b,sag){const arr=line.geometry.attributes.position.arra
 function makeBoat(accent,type){const BT=BOATM[type]||BOATS[0],M=BT.m,b=new Builder(),N=16,st=[];b.M(TL.paint);const L=M.L,W=M.W,H=M.H,D=M.D,z0=-L*.45;
  const white=new THREE.Color(M.hull),acc=new THREE.Color(M.stripe||accent||'#8a4a3a'),bot=new THREE.Color(M.bottom||'#4a3a32'),wood=new THREE.Color('#6e5a46');
  for(let i=0;i<=N;i++){const t=i/N,z=z0+t*L;const bowK=clamp((t-.55)/.45,0,1);const w=W*Math.sqrt(Math.max(0,1-bowK*bowK))*(t<.1?.88+t*1.2:1);const top=H+bowK*bowK*H*.5,bt=D-bowK*bowK*D*1.4;st.push({z,w,top,bt,chY:lerp(bt,top,.45)});}
- const P=(s,k,i)=>{const S=st[i];if(k===0)return new THREE.Vector3(s*S.w,S.top,S.z);if(k===1)return new THREE.Vector3(s*S.w*.9,S.chY,S.z);return new THREE.Vector3(0,S.bt,S.z);};
- for(let i=0;i<N;i++)for(const s of[-1,1])for(let k=0;k<2;k++){const a=P(s,k,i),bb=P(s,k+1,i),c=P(s,k,i+1),d=P(s,k+1,i+1);const col=k===0?white:bot;if(s>0){b.tri(a,c,bb,col);b.tri(bb,c,d,col);}else{b.tri(a,bb,c,col);b.tri(bb,d,c,col);}}
- for(let i=0;i<N;i++)for(const s of[-1,1]){const a=P(s,0,i),c=P(s,0,i+1);a.y-=.12;c.y-=.12;const a2=a.clone(),c2=c.clone();a2.y-=.14;c2.y-=.14;const d1=s>0?[a,a2,c]:[a,c,a2],d2=s>0?[a2,c2,c]:[a2,c,c2];b.tri(...d1,acc);b.tri(...d2,acc);}
- const s0=st[0];const tl=new THREE.Vector3(-s0.w,s0.top,s0.z),tr=new THREE.Vector3(s0.w,s0.top,s0.z),cl=new THREE.Vector3(-s0.w*.9,s0.chY,s0.z),cr=new THREE.Vector3(s0.w*.9,s0.chY,s0.z),kb=new THREE.Vector3(0,s0.bt,s0.z);
- b.tri(tl,tr,cl,white);b.tri(cl,tr,cr,white);b.tri(cl,cr,kb,bot);
- b.M(TL.wood);for(let i=0;i<N;i++)for(const s of[-1,1]){const a=P(s,0,i),c=P(s,0,i+1);b.seg(G.cyl,wood,a,c,.07);}
- const fl=lerp(D,H,.3);b.M(TL.wood);b.add(G.box,'#7d6850',0,fl,z0+L*.42,W*1.55,.08,L*.72);
+ const T=M.type,V=THREE.Vector3,hulls=T==='catamaran'?[[-W*1.25,.5],[W*1.25,.5]]:[[0,1]];
+ for(const[ox,wk]of hulls){b.M(TL.paint);
+  const P=(s,k,i)=>{const S=st[i];if(k===0)return new V(ox+s*S.w*wk,S.top,S.z);if(k===1)return new V(ox+s*S.w*.9*wk,S.chY,S.z);return new V(ox,S.bt,S.z);};
+  for(let i=0;i<N;i++)for(const s of[-1,1])for(let k=0;k<2;k++){const a=P(s,k,i),bb=P(s,k+1,i),c=P(s,k,i+1),d=P(s,k+1,i+1);const col=k===0?white:bot;if(s>0){b.tri(a,c,bb,col);b.tri(bb,c,d,col);}else{b.tri(a,bb,c,col);b.tri(bb,d,c,col);}}
+  for(let i=0;i<N;i++)for(const s of[-1,1]){const a=P(s,0,i),c=P(s,0,i+1);a.y-=.12;c.y-=.12;const a2=a.clone(),c2=c.clone();a2.y-=.14;c2.y-=.14;const d1=s>0?[a,a2,c]:[a,c,a2],d2=s>0?[a2,c2,c]:[a2,c,c2];b.tri(...d1,acc);b.tri(...d2,acc);}
+  const s0=st[0];const tl=new V(ox-s0.w*wk,s0.top,s0.z),tr=new V(ox+s0.w*wk,s0.top,s0.z),cl=new V(ox-s0.w*.9*wk,s0.chY,s0.z),cr=new V(ox+s0.w*.9*wk,s0.chY,s0.z),kb=new V(ox,s0.bt,s0.z);
+  b.tri(tl,tr,cl,white);b.tri(cl,tr,cr,white);b.tri(cl,cr,kb,bot);
+  b.M(TL.wood);for(let i=0;i<N;i++)for(const s of[-1,1]){const a=P(s,0,i),c=P(s,0,i+1);b.seg(G.cyl,wood,a,c,.07);}}
+ const fl=T==='catamaran'?H-.05:lerp(D,H,.3);b.M(TL.wood);b.add(G.box,'#7d6850',0,fl,z0+L*.42,T==='catamaran'?W*3.4:W*1.55,.08,L*.72);
  const seatZ=z0+L*.2,seatTop=fl+.42;b.add(G.box,'#8a7358',0,seatTop-.06,seatZ,W*1.5,.12,.7);
- const T=M.type,V=THREE.Vector3;const motor=x=>{const pm=b.mt;b.M(TL.metal);b.add(G.box,'#2e3338',x,H+.15,z0-.25,.6,.85,.6);b.add(G.box,'#41474e',x,H+.62,z0-.25,.66,.16,.66);b.add(G.cyl,'#2e3338',x,D+.45,z0-.45,.08,1.1,.08);b.M(pm);};
+ const motor=x=>{const pm=b.mt;b.M(TL.metal);b.add(G.box,'#2e3338',x,H+.15,z0-.25,.6,.85,.6);b.add(G.box,'#41474e',x,H+.62,z0-.25,.66,.16,.66);b.add(G.cyl,'#2e3338',x,D+.45,z0-.45,.08,1.1,.08);b.M(pm);};
  if(T==='row'||T==='skiff'){b.add(G.box,'#8a7358',0,seatTop-.06,z0+L*.62,W*1.25,.12,.5);motor(0);if(T==='skiff')for(const s of[-1,1])b.seg(G.cyl,'#a89070',new V(s*W*.7,H+.1,z0+L*.35),new V(s*W*1.6,D+.2,z0+L*.1),.035);}
  if(T==='sail'){b.M(TL.wood);const mz=z0+L*.6,bz=z0+L*.12;b.add(G.cyl,'#6e5a44',0,H+3.6,mz,.09,7.2,.09);b.seg(G.cyl,'#6e5a44',new V(0,H+.95,mz),new V(0,H+.95,bz),.06);
   b.M(TL.cloth);const sc=new THREE.Color('#e4ded0'),p1=new V(0,H+1.05,mz-.1),p2=new V(0,H+7,mz),p3=new V(.02,H+1.05,bz+.2);b.tri(p1,p2,p3,sc);b.tri(p1,p3,p2,sc);
   const jc=new THREE.Color('#d6cfbf'),j1=new V(0,H+6.4,mz+.1),j2=new V(0,H+1,mz+.3),j3=new V(0,st[N].top+.1,z0+L-.15);b.tri(j1,j2,j3,jc);b.tri(j1,j3,j2,jc);b.seg(G.cyl,'#5a4a3a',new V(0,H+7,mz),j3,.02);}
  if(T==='cabin'||T==='runner'){b.M(TL.paint);const rn=T==='runner',cz=z0+L*(rn?.5:.55),cw=W*1.25,ch=rn?1.1:1.5,cln=L*(rn?.26:.28);b.add(G.box,rn?'#3a4650':'#d6d3cc',0,fl+ch/2+.05,cz,cw,ch,cln);b.add(G.box,rn?'#252d34':'#6e5e4c',0,fl+ch+.12,cz-.1,cw+.2,.12,cln+.5);
   b.M(TL.metal);for(const s of[-1,1])b.add(G.box,'#1a2228',s*(cw/2+.01),fl+ch*.62,cz,.04,ch*.35,cln*.75);b.add(G.box,'#1a2228',0,fl+ch*.62,cz+cln/2+.01,cw*.8,ch*.35,.04);b.M(TL.paint);motor(rn?-.45:0);if(rn){motor(.45);b.add(G.cyl,'#9aa0a6',0,fl+ch+.9,cz-.3,.03,1.6,.03);}}
+ if(T==='outrigger'){b.add(G.box,'#8a7358',0,seatTop-.06,z0+L*.62,W*1.25,.12,.5);b.M(TL.wood);const fx=W*2.9;b.add(G.cyl,'#9a7a52',fx,D*.2+.12,z0+L*.5,.2,L*.6,.2,Math.PI/2);b.add(G.cone,'#9a7a52',fx,D*.2+.12,z0+L*.82,.2,.5,.2,Math.PI/2);b.add(G.cone,'#9a7a52',fx,D*.2+.12,z0+L*.18,.2,.5,.2,-Math.PI/2);
+  for(const zz of[.35,.65])b.seg(G.cyl,'#6e5a44',new V(-W*.6,H+.05,z0+L*zz),new V(fx,D*.2+.3,z0+L*zz),.06);b.seg(G.box,'#a88a5a',new V(-W*1.4,H+.3,z0+L*.3),new V(W*1.6,H+.2,z0+L*.45),.04,.18);motor(0);}
+ if(T==='catamaran'){b.M(TL.wood);const mz=z0+L*.55,bz=z0+L*.1;b.add(G.cyl,'#d8d4cc',0,H+4.2,mz,.1,8.4,.1);b.seg(G.cyl,'#d8d4cc',new V(0,H+1.1,mz),new V(0,H+1.1,bz),.06);
+  b.M(TL.cloth);const sc=new THREE.Color('#f2efe6'),p1=new V(0,H+1.2,mz-.1),p2=new V(0,H+8.2,mz),p3=new V(.02,H+1.2,bz+.2);b.tri(p1,p2,p3,sc);b.tri(p1,p3,p2,sc);const jc=new THREE.Color(M.stripe||'#3a8ab0'),j1=new V(0,H+7.4,mz+.1),j2=new V(0,H+1.1,mz+.3),j3=new V(0,H+.4,z0+L-.4);b.tri(j1,j2,j3,jc);b.tri(j1,j3,j2,jc);
+  b.M(TL.metal);for(const sx of[-1,1])b.seg(G.cyl,'#8a9096',new V(sx*W*1.25,H+.3,z0+L*.95),new V(0,H+8,mz),.015);motor(0);}
+ if(T==='speedster'){b.M(TL.paint);b.add(G.box,'#e8e2d6',0,fl+.3,z0+L*.62,W*1.5,.18,L*.18);b.M(TL.metal);b.add(G.box,'#1a2a34',0,fl+.72,z0+L*.53,W*1.45,.5,.06,-.55);for(const sx of[-1,1])b.add(G.box,'#c8ccd0',sx*W*.73,fl+.72,z0+L*.53,.05,.5,.08,-.55);
+  b.M(TL.cloth);for(const sx of[-.4,.4])b.add(G.box,'#2a2e34',sx*W,seatTop+.25,seatZ+.05,.5,.6,.12);b.M(TL.paint);motor(-.4);motor(.4);}
  if(T==='trawler'){b.M(TL.paint);const cz=z0+L*.45,cw=W*1.3,ch=2.1,cln=L*.22;b.add(G.box,'#d2cec6',0,fl+ch/2+.05,cz,cw,ch,cln);b.add(G.box,'#4a3e36',0,fl+ch+.15,cz,cw+.3,.16,cln+.4);
   b.M(TL.metal);for(const s of[-1,1])b.add(G.box,'#1a2228',s*(cw/2+.01),fl+ch*.68,cz,.04,ch*.3,cln*.75);b.add(G.box,'#1a2228',0,fl+ch*.68,cz+cln/2+.01,cw*.8,ch*.3,.04);b.M(TL.wood);b.add(G.cyl,'#55575c',0,fl+ch+.8,cz-.2,.12,1.4,.12);
   const mx=z0+L*.68;b.add(G.cyl,'#6e6052',0,fl+2.4,mx,.12,4.8,.12);b.seg(G.cyl,'#6e6052',new V(0,fl+4.4,mx),new V(0,fl+1.6,z0+L*.08),.07);

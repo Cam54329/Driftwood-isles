@@ -120,7 +120,8 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  const night=EC.nightHor;_hor.add(_c1.copy(night).multiplyScalar(skyU.uNight.value));_zen.add(_c1.copy(night).multiplyScalar(skyU.uNight.value*.6));
  const greyOf=c=>{const g=c.r*.3+c.g*.55+c.b*.15;return _c2.setRGB(g*.92,g*.96,g*1.04);};
  _hor.lerp(greyOf(_hor),dark*.7).multiplyScalar(1-dark*.35);_zen.lerp(greyOf(_zen),dark*.7).multiplyScalar(1-dark*.35);
- _fogC.copy(_hor);if(env.flash>0)_fogC.lerp(EC.white,env.flash*.3);
+ _fogC.copy(_hor);{camera.getWorldDirection(_fw);const fd=Math.max(0,_fw.x*sunDir.x+_fw.z*sunDir.z)/Math.max(.001,Math.hypot(sunDir.x,sunDir.z));const glow=Math.pow(fd,3)*smooth(-.04,.08,sunDir.y)*(1-smooth(.35,.7,sunDir.y))*(1-dark*.8);
+  _c3.copy(_sunC).multiplyScalar((_hor.r*.3+_hor.g*.55+_hor.b*.15)*1.6);_fogC.lerp(_c3,glow*.55);}if(env.flash>0)_fogC.lerp(EC.white,env.flash*.3);
  skyU.uFogC.value.copy(_fogC);skyU.uFogK.value=clamp(.42+env.fog*.55+env.rain*.25,0,1);
  const sunVis=smooth(-.03,.1,sy);
  skyU.uCloudSun.value.copy(_sunC).multiplyScalar((_hor.r*.3+_hor.g*.55+_hor.b*.15)*1.9*sunVis*(1-dark*.5)+.02);skyU.uCloudAmb.value.copy(_zen).lerp(_hor,.5).multiplyScalar(.85).add(_c1.copy(night).multiplyScalar(nightK*.25));
@@ -147,10 +148,13 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  WIND.uStr.value=1+env.rain*.7+env.cloud*.3+(env.weather==='storm'?.9:0);
  WU.uWet.value=env.wet*.9;WU.uSunDirW.value.copy(lightDir);WU.uSunColW.value.copy(sun.color).multiplyScalar(sun.intensity*.3);
  puddleMat.opacity=env.wet*.85;world.puddles.forEach(p=>p.visible=env.wet>.02);
- if(GFX.grade){const u=GFX.grade.material.uniforms;u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);u.uSat.value=1.1+dusk*.06-ov*.16-nightK*.14;u.uCon.value=1.07+day*.04-ov*.05;}
+ if(GFX.rays){const u=GFX.rays.material.uniforms;_hd.copy(camera.position).addScaledVector(sunDir,500).project(camera);const onScr=_hd.z<1&&Math.abs(_hd.x)<1.6&&Math.abs(_hd.y)<1.6;camera.getWorldDirection(_fw);const facing=Math.max(0,_fw.dot(sunDir));
+  u.uSun.value.set(_hd.x*.5+.5,_hd.y*.5+.5);u.uK.value=onScr&&!isMoon?smooth(.2,.75,facing)*smooth(-.02,.06,sy)*(1-env.cloud*.85)*(1-env.fog*.8)*(.55+dusk*.7):0;u.uCol.value.copy(_sunC);u.uTh.value=lerp(1.4,.9,dusk);}
+ if(GFX.bloom){GFX.bloom.threshold=lerp(GFX.hdr?2.4:.92,GFX.hdr?1.5:.85,dusk);GFX.bloom.strength=.2+dusk*.12+nightK*.06;}
+ if(GFX.grade){const u=GFX.grade.material.uniforms;u.uHigh.value.setRGB(1+dusk*.08+.02,1+dusk*.01,1-dusk*.08-.02);u.uShadow.value.setRGB(.95-dusk*.03,.98,1.05+dusk*.04);u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);u.uSat.value=1.1+dusk*.06-ov*.16-nightK*.14;u.uCon.value=1.07+day*.04-ov*.05;}
  lampT-=dt;if(lampT<=0){lampT=.25;updateLampLights(nightK);}
- {const fz=ZONES.frost,em=ZONES.ember,cv=ZONES.cove,px=cp.x,pz=cp.z;const nf=1-smooth(fz.R*1.4,fz.R*3,Math.hypot(px-fz.x,pz-fz.z)),ne=1-smooth(em.R*1.2,em.R*2.6,Math.hypot(px-em.x,pz-em.z)),nc=1-smooth(cv.R*1.1,cv.R*2.2,Math.hypot(px-cv.x,pz-cv.z));env.snowK=nf;
-  const set=(k,a)=>{const d=drifts[k];if(!d)return;d.u.uAmt.value=a;d.pts.visible=a>.01;d.u.uCam.value.copy(cp);d.u.uLit.value=k==='ember'?1:lerp(.3,1,day);};set('snow',nf*(.35+Math.min(env.rain,1.3)*.8));set('ember',ne*(.7+(1-day)*.5));set('petal',nc*day*(1-Math.min(env.rain,1))*.8);
+ {const fz=ZONES.frost,em=ZONES.ember,cv=ZONES.cove,am=ZONES.amber,px=cp.x,pz=cp.z;const na=1-smooth(am.R*1.2,am.R*2.4,Math.hypot(px-am.x,pz-am.z));const nf=1-smooth(fz.R*1.4,fz.R*3,Math.hypot(px-fz.x,pz-fz.z)),ne=1-smooth(em.R*1.2,em.R*2.6,Math.hypot(px-em.x,pz-em.z)),nc=1-smooth(cv.R*1.1,cv.R*2.2,Math.hypot(px-cv.x,pz-cv.z));env.snowK=nf;
+  const set=(k,a)=>{const d=drifts[k];if(!d)return;d.u.uAmt.value=a;d.pts.visible=a>.01;d.u.uCam.value.copy(cp);d.u.uLit.value=k==='ember'?1:lerp(.3,1,day);};set('snow',nf*(.35+Math.min(env.rain,1.3)*.8));set('ember',ne*(.7+(1-day)*.5));set('petal',nc*day*(1-Math.min(env.rain,1))*.8);set('leaf',na*(.4+.6*day)*(1-Math.min(env.rain,1)*.5));
   if(rainbow){const ra=clamp(env.rainbow/10,0,1)*clamp((80-env.rainbow)/6,0,1)*day*(1-Math.min(env.rain,1));rainbow.visible=ra>.01;if(rainbow.visible){const ax=-sunDir.x,az=-sunDir.z,l=Math.hypot(ax,az)||1;rainbow.position.set(cp.x+ax/l*650,cp.y-90,cp.z+az/l*650);rainbow.lookAt(cp.x,cp.y-90,cp.z);rainbow.material.uniforms.uA.value=ra;}}
   if(bolt&&bolt.visible){bolt.userData.t-=dt;bolt.material.opacity=Math.random()<.3?.3:1;if(bolt.userData.t<=0)bolt.visible=false;}}
  if(world.altarCrystal){const c=world.altarCrystal;c.rotation.y+=dt*.8;c.position.y=world.altarY+Math.sin(WIND.uTime.value*1.6)*.25;}
@@ -313,7 +317,7 @@ function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].in
  if(player.mode==='walk'){const mag=Math.hypot(ix,iy);
   if(mag>.08){if(['charging','casting','waiting'].includes(F.st))cancelFishing();stopEmote();}
   const fwd=camFwd(),right=new V3(Math.cos(cam.yaw),0,-Math.sin(cam.yaw));const mv=fwd.multiplyScalar(iy).add(right.multiplyScalar(ix));
-  const run=!!(keys.ShiftLeft||keys.ShiftRight)||Math.hypot(joy.x,joy.y)>.95;player.speed=damp(player.speed,(run?12.5:7)*mag,run?6:12,dt);
+  const run=!!(keys.ShiftLeft||keys.ShiftRight)||Math.hypot(joy.x,joy.y)>.95;player.speed=damp(player.speed,(run?12.5:7)*mag,run?10:18,dt);
   if(mag>.08){player.face=Math.atan2(mv.x,mv.z);const st=player.speed*dt/mag,nx=player.pos.x+mv.x*st,nz=player.pos.z+mv.z*st;const ok=(x,z)=>{const g=groundH(x,z);return g>.1&&g<player.pos.y+.95;};
    if(ok(nx,nz)){player.pos.x=nx;player.pos.z=nz;}else if(ok(nx,player.pos.z))player.pos.x=nx;else if(ok(player.pos.x,nz))player.pos.z=nz;
    for(const c of world.colliders){const dx=player.pos.x-c.x,dz=player.pos.z-c.z,rr=c.r+.55,d2=dx*dx+dz*dz;if(d2<rr*rr&&d2>1e-6){const d=Math.sqrt(d2);const px=c.x+dx/d*rr,pz=c.z+dz/d*rr;if(ok(px,pz)){player.pos.x=px;player.pos.z=pz;}}}}
@@ -332,7 +336,7 @@ function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].in
   boat.wake-=dt;if(Math.abs(boat.speed)>3&&boat.wake<=0){boat.wake=.32;addRipple(boat.pos.x-fx*(bl+.2),boat.pos.z-fz*(bl+.2),.8);if(Math.abs(boat.speed)>8)splash(new V3(boat.pos.x-fx*2.8,boat.g.position.y,boat.pos.z-fz*2.8),3,2);}
   {const ud=boat.g.userData;R.position.set(boat.pos.x+fx*ud.seat,boat.g.position.y+ud.seatY,boat.pos.z+fz*ud.seat);}}
  if(player.emote){player.emT+=dt;if(player.emote==='dance')player.face+=dt*1.2;if(player.emT>EMOTES[player.emote].d)stopEmote();}
- const pry=R.rotation.y;R.rotation.y+=angDiff(R.rotation.y,player.face)*(1-Math.exp(-14*dt));player.turn=damp(player.turn||0,angDiff(pry,R.rotation.y)/Math.max(dt,1e-3),8,dt);
+ const pry=R.rotation.y;R.rotation.y+=angDiff(R.rotation.y,player.face)*(1-Math.exp(-20*dt));player.turn=damp(player.turn||0,angDiff(pry,R.rotation.y)/Math.max(dt,1e-3),8,dt);
  const fs=F.st==='caught'||player.emote==='show'?'caught':F.st;
  panim.update(dt,{spd:player.mode==='walk'?player.speed:0,ground:player.onGround,vy:player.vy,turn:player.mode==='walk'?player.turn:0,sit:player.mode==='boat',fish:fs,fishT:F.t,power:F.power,hold:F.reel&&F.reel.hold,emote:player.emote,emT:player.emT});
  if(rodObj){const re=rodObj.g;re.rotation.x=Math.PI/2+(F.st==='reeling'?.12+Math.sin(F.t*24)*.05*(F.reel&&F.reel.hold?1:.3):F.st==='bite'?.18:0);if(re.userData.ench){re.userData.ench.rotation.y+=dt*3;re.userData.ench.scale.setScalar(1+Math.sin(WIND.uTime.value*5)*.2);}}
@@ -346,7 +350,7 @@ function updateNPCs(dt){for(const n of world.npcs){const d=Math.hypot(player.pos
  n.anim.update(dt,{spd:0,ground:true,emote:n.waveT!=null?'wave':null,emT:n.waveT||0});n.label.visible=state.settings.tags&&d<45;}}
 function updateCamera(dt){const tgt=player.mode==='boat'?boat.pos.clone().setY(boat.g.position.y+2.2):player.pos.clone().add(new V3(0,1.85,0));let want=cam.tdist;
  if((F.st==='reeling'||F.st==='bite')&&!PHOTO.on){want*=.72;tgt.lerp(_v.copy(bobber.position).setY(tgt.y-.5),.32);}if(F.st==='charging')want*=1.06;if(F.st==='caught'||player.emote==='show')want*=.8;
- const k=state.settings.chill?5:7;cam.target.x=damp(cam.target.x,tgt.x,k,dt);cam.target.y=damp(cam.target.y,tgt.y,k,dt);cam.target.z=damp(cam.target.z,tgt.z,k,dt);cam.dist=damp(cam.dist,want,3.2,dt);
+ const k=state.settings.chill?8:13;cam.target.x=damp(cam.target.x,tgt.x,k,dt);cam.target.y=damp(cam.target.y,tgt.y,k,dt);cam.target.z=damp(cam.target.z,tgt.z,k,dt);cam.dist=damp(cam.dist,want,5,dt);
  if(player.mode==='boat'&&Math.abs(boat.speed)>3&&ptrs.size===0&&cam.manualT>2.5&&!PHOTO.on)cam.yaw+=angDiff(cam.yaw,boat.yaw+Math.PI)*(1-Math.exp(-1.1*dt));
  const cp=Math.cos(cam.pitch);camera.position.set(cam.target.x+Math.sin(cam.yaw)*cp*cam.dist,cam.target.y+Math.sin(cam.pitch)*cam.dist,cam.target.z+Math.cos(cam.yaw)*cp*cam.dist);
  const minY=Math.max(groundH(camera.position.x,camera.position.z)+.8,waveH(camera.position.x,camera.position.z,WIND.uTime.value)+.8);if(camera.position.y<minY)camera.position.y=minY;
@@ -374,6 +378,7 @@ function updateLife(dt){const T=WIND.uTime.value,cp=camera.position;
   if(j.t>=1.1&&j.t-dt<1.1){splash(new V3(x,waveH(x,z,T),z),10,3.5);addRipple(x,z,1);AU.splash(.25,clamp((x-cp.x)/30,-1,1));}if(j.t>=1.2)j.g.visible=false;}
  for(const s of world.smoke){s.age+=dt;if(s.age>s.life){s.age-=s.life;s.dx=rand(-.4,.4);s.dz=rand(-.4,.4);}const k=s.age/s.life;s.s.position.set(s.o.x+s.dx*k*4+k*2,s.o.y+k*s.size*3.2,s.o.z+s.dz*k*4);const sc=s.size*(.5+k*1.6);s.s.scale.set(sc,sc,1);s.s.material.opacity=Math.sin(k*Math.PI)*.45*(s.size>2?1:.7);}
  for(const p of puffs){if(p.t>=p.d)continue;p.t+=dt;const k=p.t/p.d;const sc=.35+k*1.2;p.s.scale.set(sc,sc,1);p.s.position.y+=dt*.6;p.s.material.opacity=(1-k)*.5;if(p.t>=p.d)p.s.visible=false;}
+ if(world.windmill)world.windmill.rotateZ(dt*(.35+WIND.uStr.value*.25));
  for(const m of animMats)m.color.setHSL((T*.25+m.userData.prism)%1,.85,.6);}
 
-function renderFrame(){if(renderer.shadowMap.enabled)renderer.shadowMap.needsUpdate=true;if(GFX.refl)renderRefl();if(GFX.composer)GFX.composer.render();else renderer.render(scene,camera);}
+function renderFrame(){GFX.fc=(GFX.fc||0)+1;const every=GFX.tier==='ultra'?1:2;if(renderer.shadowMap.enabled&&(GFX.fc%every===0||GFX.tier==='high'))renderer.shadowMap.needsUpdate=true;if(GFX.refl&&(GFX.fc%every===0))renderRefl();if(GFX.composer)GFX.composer.render();else renderer.render(scene,camera);}

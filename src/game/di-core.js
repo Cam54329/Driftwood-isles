@@ -40,11 +40,14 @@ const ZONES={
  moss:{n:'Mossreach',tag:'Misty bog isle',x:580,z:-310,R:94,H:2.6,hill:1.1,p1:2.3,p2:.4,price:1500,grass:'#566e3e',grass2:'#4a6136',sand:'#a99a74',rock:'#666b62'},
  frost:{n:'Frostmere',tag:'Frozen fjord',x:-540,z:-520,R:98,H:4,hill:1.9,p1:4.1,p2:1.2,price:6000,grass:'#e3e7ea',grass2:'#d2d9de',sand:'#b7bec4',rock:'#7c868f'},
  ember:{n:'Emberkey',tag:'Smoldering volcano',x:180,z:720,R:96,H:3.4,hill:1.1,p1:1.4,p2:3.3,price:18000,grass:'#4a413d',grass2:'#3f3734',sand:'#5f5650',rock:'#2f2c2b',volcano:true},
+ atoll:{n:'Sunken Atoll',tag:'Coral lagoon',x:-720,z:280,R:92,H:2.2,hill:.7,p1:3.1,p2:1.7,price:3500,grass:'#5f9440',grass2:'#4f8438',sand:'#d8c094',rock:'#c88a84'},
+ amber:{n:'Amberglen',tag:'Autumn highlands',x:800,z:420,R:100,H:4.6,hill:2.1,p1:5.2,p2:2.6,price:12000,grass:'#8a8a48',grass2:'#7a6e3c',sand:'#c4ae84',rock:'#7a7068'},
  sea:{n:'Open Waters',tag:'Deep sea'},
  pond_cove:{n:'Willow Pond',tag:'Pebble Cove pond',pond:'cove',col:'#3e5c52'},pond_moss:{n:'Murk Pool',tag:'Mossreach pond',pond:'moss',col:'#34422c'},
- pond_frost:{n:'Frozen Tarn',tag:'Frostmere pond',pond:'frost',col:'#56788a'},pond_ember:{n:'Ash Spring',tag:'Emberkey hot spring',pond:'ember',col:'#4e605c'}
+ pond_frost:{n:'Frozen Tarn',tag:'Frostmere pond',pond:'frost',col:'#56788a'},pond_ember:{n:'Ash Spring',tag:'Emberkey hot spring',pond:'ember',col:'#4e605c'},
+ pond_atoll:{n:'Blue Lagoon',tag:'Sunken Atoll lagoon',pond:'atoll',col:'#2f8e9a'},pond_amber:{n:'Maple Mere',tag:'Amberglen pond',pond:'amber',col:'#4a5a3a'}
 };
-const ISL=['cove','moss','frost','ember'];
+const ISL=['cove','moss','frost','ember','atoll','amber'];
 const SPECIES=[
  ['pebble_perch','Pebble Perch','cove',0,.2,1.2,12,'fish','#8fbf5a','#f0e6a8'],
  ['skipper_minnow','Skipper Minnow','cove',0,.05,.3,9,'fish','#6aa8d8','#e8f2f8'],
@@ -95,6 +98,12 @@ const SPECIES=[
  ['murk_minnow','Murk Minnow','pond_moss',0,.05,.3,26,'fish','#5a6a4a','#a8b090'],['frogmouth','Frogmouth','pond_moss',1,.5,2.5,85,'flat','#6a7a3a','#c8c890'],['spore_eel','Spore Eel','pond_moss',2,.6,3,300,'eel','#7a5a8a','#d8c0e0'],['bog_lantern','Bog Lantern','pond_moss',3,1,5,1100,'tall','#3a4a3a','#b0ff90','night','lure'],['ancient_bowfin','Ancient Bowfin','pond_moss',4,6,22,2600,'long','#4a4a38','#a89a70','fog'],
  ['tarn_char','Tarn Char','pond_frost',0,.3,1.5,32,'fish','#9aa8b8','#e8eef4'],['ice_perch','Ice Perch','pond_frost',1,.4,2,95,'fish','#b8d0e0','#ffffff'],['glass_trout','Glass Trout','pond_frost',2,1,5,320,'fish','#d0e8f0','#ffffff'],['frost_wraith','Frost Wraith','pond_frost',4,3,12,3000,'eel','#e8f4ff','#8ab0d0','night'],['tarn_queen','Tarn Queen','pond_frost',6,40,120,22000,'long','#a8c8e8','#ffffff','fog'],
  ['spring_goby','Spring Goby','pond_ember',0,.1,.6,40,'fish','#7a5a4a','#e8a070'],['steam_loach','Steam Loach','pond_ember',1,.4,2,130,'eel','#8a6a5a','#ffc090'],['cinder_ray','Cinder Ray','pond_ember',2,2,8,420,'ray','#4a3a3a','#ff8a4a'],['ember_koi','Ember Koi','pond_ember',3,2,8,1600,'tall','#e8603a','#ffd890'],['magma_heart','Magma Heart','pond_ember',5,10,40,9000,'tall','#ff5a2a','#3a1a10','night'],
+ ['reef_dart','Reef Dart','atoll',0,.1,.6,30,'fish','#3a9ad8','#e8f4ff'],['clownfin','Clownfin','atoll',0,.05,.4,34,'fish','#f07a2a','#ffffff'],['blue_tang','Blue Tang','atoll',1,.3,1.6,110,'tall','#2a5ad8','#f2d03a'],['parrot_wrasse','Parrot Wrasse','atoll',1,1,5,150,'fish','#3ac8a0','#f0a0c0'],
+ ['coral_grouper','Coral Grouper','atoll',2,4,20,520,'fish','#c8503a','#f0c0a0'],['moray_ribbon','Moray Ribbon','atoll',2,2,9,480,'eel','#6a7a3a','#d8d890','night'],['spotted_manta','Spotted Manta','atoll',3,40,300,2600,'ray','#2a3a4a','#f0f4f8'],['reef_shark','Reef Shark','atoll',4,30,140,6400,'shark','#7a8a96','#f0f2f4'],['atoll_sovereign','Atoll Sovereign','atoll',6,60,220,48000,'tall','#f0c040','#3a6ad8','fog'],
+ ['lagoon_sprat','Lagoon Sprat','pond_atoll',0,.05,.3,36,'fish','#9ad8e8','#ffffff'],['glass_goby','Glass Goby','pond_atoll',1,.2,1,120,'fish','#c8f0f0','#ffffff'],['sunset_angel','Sunset Angel','pond_atoll',2,1,4,460,'tall','#f08a3a','#ffd060','day'],['lagoon_queen','Lagoon Queen','pond_atoll',5,8,30,12000,'tall','#e870c8','#a8f0ff','night'],
+ ['leaf_trout','Leaf Trout','amber',0,.3,1.8,48,'fish','#a8883a','#f0e0b0'],['acorn_bass','Acorn Bass','amber',0,.5,2.6,56,'fish','#7a5a2a','#e8d0a0'],['russet_carp','Russet Carp','amber',1,2,9,190,'tall','#b8582a','#f0c890'],['maple_perch','Maple Perch','amber',1,.6,3,170,'fish','#d8602a','#f8e0b0'],
+ ['harvest_salmon','Harvest Salmon','amber',2,4,16,700,'fish','#a84a3a','#f0d0c0'],['thornback_pike','Thornback Pike','amber',2,3,14,640,'long','#5a5a2a','#d8c890','rain'],['old_amber','Old Amber','amber',3,15,60,3400,'tall','#e0a030','#fff0c0'],['hollow_king','Hollow King','amber',4,20,90,8200,'shark','#4a3a2a','#c8a060','night'],['glenwyrm','Glenwyrm','amber',6,80,260,64000,'eel','#3a2a1a','#ffb040','fog'],
+ ['mere_dace','Mere Dace','pond_amber',0,.1,.6,44,'fish','#8a9a6a','#f0f0d8'],['copperfin','Copperfin','pond_amber',1,.5,2.4,160,'fish','#c8783a','#f8d8a8'],['mistwhisker','Mistwhisker','pond_amber',2,2,8,560,'fish','#6a6a5a','#d8d8c0','fog','whisk'],['autumn_wyrm','Autumn Wyrm','pond_amber',5,10,40,14000,'eel','#c85a1a','#ffd080','rain'],
 ].map(a=>({id:a[0],name:a[1],zone:a[2],r:a[3],minW:a[4],maxW:a[5],price:a[6],shape:a[7],c1:a[8],c2:a[9],cond:a[10]||null,feat:a[11]||null}));
 const SPM={};SPECIES.forEach(s=>SPM[s.id]=s);
 const COND={day:'Daytime',night:'Night only',rain:'While raining',fog:'In fog'};
@@ -129,6 +138,9 @@ const BOATS=[
  {id:'sloop',n:'Gull Sloop',price:9000,speed:21,turn:1.3,storage:20,fx:{luck:20,d:'+20% luck from the boat'},m:{L:7.6,W:1.5,H:.9,D:-.6,hull:'#dcd7cc',bottom:'#2e3e4c',stripe:'#3e5468',type:'sail'}},
  {id:'cruiser',n:'Tidewatch Cruiser',price:25000,speed:24,turn:1.25,storage:30,fx:{drain:.65,bar:1.1,cond:'rain',d:'Reeling is 35% easier in rain and storms'},m:{L:8.6,W:1.8,H:1.05,D:-.7,hull:'#cfd1cd',bottom:'#4a2e2a',stripe:'#2e4052',type:'cabin'}},
  {id:'runner',n:'Abyss Runner',price:60000,speed:28,turn:1.15,storage:40,fx:{luck:35,cond:'deep',d:'+35% luck for rare fish in open water'},m:{L:9.6,W:1.9,H:1.1,D:-.75,hull:'#2e3a44',bottom:'#1c242a',stripe:'#8a2e2a',type:'runner'}},
+ {id:'outrigger',n:'Reef Outrigger',price:5500,speed:23,turn:1.8,storage:12,fx:{luck:12,wait:.9,d:'+12% luck and bites 10% faster from the boat'},m:{L:6.8,W:.9,H:.6,D:-.36,hull:'#a8704a',bottom:'#5a3a26',stripe:'#e0b060',type:'outrigger'}},
+ {id:'catamaran',n:'Seabreeze Catamaran',price:38000,speed:25,turn:1.35,storage:35,fx:{bar:1.15,luck:15,d:'Reel bar 15% wider and +15% luck from the boat'},m:{L:8.8,W:1.1,H:.85,D:-.55,hull:'#eae6dc',bottom:'#2e5a6a',stripe:'#3a8ab0',type:'catamaran'}},
+ {id:'speedster',n:'Gullwing Speedster',price:95000,speed:34,turn:1.5,storage:25,fx:{luck:25,wait:.85,d:'+25% luck and bites 15% faster from the boat'},m:{L:8.2,W:1.6,H:.9,D:-.55,hull:'#c8402e',bottom:'#1e2228',stripe:'#f2efe8',type:'speedster'}},
  {id:'trawler',n:'Ironkeel Trawler',price:140000,speed:22,turn:.95,storage:70,fx:{mut:.08,wt:.15,d:'+8% mutation chance and +15% weight from the boat'},m:{L:11.5,W:2.3,H:1.4,D:-.95,hull:'#5e3a30',bottom:'#2a2422',stripe:'#d6d0c4',type:'trawler'}},
 ];
 const BOATM={};BOATS.forEach(b=>BOATM[b.id]=b);
@@ -192,6 +204,14 @@ const NPCS=[
   lines:['Hull holding up? The water\'s warm out here.']},
  {id:'oren',name:'Oren',title:'Forge Rods',role:'rods',zone:'ember',dth:-1.1,look:{skin:'#8a5a3a',shirt:'#4a4a4a',pants:'#5a2a1a',hat:'#ff6a2a',hatType:'beanie'},house:{wall:'#554846',roof:'#ff7a3a',trim:'#7a6460'},
   lines:['Every rod in the world, forged or found. Take your pick.']},
+ {id:'nalu',name:'Nalu',title:'Reef Merchant',role:'merchant',zone:'atoll',dth:1.1,look:{skin:'#a8704a',shirt:'#3aa8a0',pants:'#e8dcc0',hat:'#e8d8a0',hatType:'sunhat'},house:{wall:'#c8a878',roof:'#b09a6a',trim:'#e8dcc0'},stilt:true,lines:['The reef feeds us all. Sell me what it gives you.','Coral fish fetch a pretty price on the mainland.']},
+ {id:'kai',name:'Kai',title:'Harbormaster',role:'harbor',zone:'atoll',look:{skin:'#8a5a3a',shirt:'#e8e0d0',pants:'#3a4a5a',hat:'#3a6a8a',hatType:'cap'},lines:['Charts? Every isle on the sea, right here.','Watch the reef when you dock. It bites hulls.']},
+ {id:'moana',name:'Moana',title:'Boatwright',role:'shipwright',zone:'atoll',look:{skin:'#b8805a',shirt:'#e8703a',pants:'#3a3a3a',hat:'#2a2a2a',hatType:'none'},lines:['Outriggers, catamarans, speedsters. I build what the sea asks for.','A light hull flies over the swell.']},
+ {id:'coralie',name:'Coralie',title:'Pearl Appraiser',role:'appraiser',zone:'atoll',dth:-1.2,look:{skin:'#e8c0a0',shirt:'#e8a0c0',pants:'#5a4a6a',hat:'#f0e0c0',hatType:'sunhat'},house:{wall:'#e8d0c0',roof:'#c87a6a',trim:'#f4ece0'},stilt:true,lines:['Every fish is a pearl if you look closely.','Let me weigh that one again. The light here plays tricks.']},
+ {id:'rowan',name:'Rowan',title:'Glen Merchant',role:'merchant',zone:'amber',dth:1.0,look:{skin:'#e0b090',shirt:'#8a4a2a',pants:'#3a3428',hat:'#5a4a2a',hatType:'top'},house:{wall:'#cdb898',roof:'#8a3a2a',trim:'#e8dcc8'},lines:['Fair coin for fair fish, as the glen folk say.','The leaves turn and the fish run fat.']},
+ {id:'tamsin',name:'Tamsin',title:'Harbormaster',role:'harbor',zone:'amber',look:{skin:'#d8a080',shirt:'#5a6a3a',pants:'#3a3a2a',hat:'#a8603a',hatType:'beanie'},lines:['Mind the cliffs when you sail in.','Charts for all the isles, freshly inked.']},
+ {id:'bramwell',name:'Bramwell',title:'Rodmaker',role:'rods',zone:'amber',dth:-1.1,look:{skin:'#c89070',shirt:'#6a5a3a',pants:'#2a2a28',hat:'#3a2a1a',hatType:'bucket'},house:{wall:'#b8a888',roof:'#5a4a3a',trim:'#e0d4bc'},lines:['Every rod I carve has a little of the glen in it.','Bait\'s in the barrel by the door.']},
+ {id:'hazel',name:'Hazel',title:'Herbalist',role:'buffs',zone:'amber',dth:2.4,look:{skin:'#e8c8a8',shirt:'#5a7a4a',pants:'#4a3a2a',hat:'#7a8a4a',hatType:'sunhat'},house:{wall:'#d0c4a8',roof:'#6a7a4a',trim:'#ece4d0'},lines:['Mushrooms, moss and a pinch of luck.','A warm brew for a cold dawn.']}
 ];
 const SHIRTS=['#a8604e','#b88452','#b89c58','#6c8558','#4f7f7a','#4f6a8c','#6a6188','#8e5e78','#d6d0c2','#3e4a5c'];
 const SKINS=['#f6d3b3','#eab894','#d39b72','#a8714d','#7a4e33'];
