@@ -6,31 +6,42 @@
 const MP_LOCAL=/[?&]mp=local/.test(location.search);
 const FB_CFG=Object.assign({apiKey:FB_ENV.apiKey,authDomain:FB_ENV.authDomain,databaseURL:FB_ENV.databaseURL,projectId:FB_ENV.projectId,appId:FB_ENV.appId},window.DRIFTWOOD_FIREBASE||{});
 const fbConfigured=()=>!!(FB_CFG.apiKey&&FB_CFG.databaseURL);
-const STALE_MS=45000;
+const STALE_MS=180000;
+/* plain-JSON copy: Firebase rejects any write that contains undefined */
+const clean=v=>JSON.parse(JSON.stringify(v===undefined?null:v));
+/* what went wrong, in words the player (or the server owner) can act on */
+function netProblem(e){const m=String((e&&(e.code||e.message))||e||'');Net.err=
+ /operation-not-allowed|admin-restricted/i.test(m)?'Anonymous sign-in is turned off. In Firebase, open Authentication → Sign-in method and enable Anonymous.':
+ /api-key|invalid-api-key/i.test(m)?'The Firebase API key is not valid. Check VITE_FIREBASE_API_KEY.':
+ /permission|PERMISSION_DENIED/i.test(m)?'The database rules blocked a write. Paste database.rules.json into Realtime Database → Rules and click Publish.':
+ /databaseURL|Can't determine Firebase Database URL|FIREBASE FATAL/i.test(m)?'The database URL is missing or wrong. Check VITE_FIREBASE_DATABASE_URL.':
+ /network|fetch|offline|unavailable/i.test(m)?'Cannot reach Firebase right now. Check the internet connection.':m.slice(0,160);
+ console.warn('[online]',m);if(typeof panelCtx!=='undefined'&&panelCtx&&panelCtx.kind==='mp')rerender();}
 
 /* ---------- Firebase Realtime Database ---------- */
 async function makeFirebaseBackend(cfg){
  const [{initializeApp},{getAuth,signInAnonymously},R]=await Promise.all([import('firebase/app'),import('firebase/auth'),import('firebase/database')]);
- const app=initializeApp(cfg,'driftwood');const auth=getAuth(app);const cred=await signInAnonymously(auth);const uid=cred.user.uid;const D=R.getDatabase(app);
+ const app=initializeApp(cfg,'driftwood');const auth=getAuth(app);let cred;try{cred=await signInAnonymously(auth);}catch(e){netProblem(e);throw e;}const uid=cred.user.uid;const D=R.getDatabase(app);
+ let skew=0;R.onValue(R.ref(D,'.info/serverTimeOffset'),s=>{skew=s.val()||0;});
  const {ref,set,get,onValue,onChildAdded,onChildChanged,onChildRemoved,query,orderByChild,limitToLast,serverTimestamp,onDisconnect}=R;
  const user={id:async()=>uid,can:async()=>true};
  const pathOf=p=>p.startsWith('data/users/')?'saves/'+uid:p.startsWith('chat/')?'chatlog/'+p.slice(5):p.startsWith('lb/')?'lb/'+p.slice(3):null;
  const db={doc(p){const path=pathOf(p);return{
    async get(){const s=await get(ref(D,path));return{exists:s.exists(),data:()=>s.val()};},
    set(d){if(path.startsWith('saves/')){let st={};try{st=JSON.parse(d.json);}catch(e){}d={json:d.json,savedAt:d.savedAt||Date.now(),coins:Math.max(0,Math.round(st.coins||0)),earned:Math.max(0,Math.round(st.earned||0)),level:Math.max(1,st.level|0),at:serverTimestamp()};}
-    else d=Object.assign({},d,{at:serverTimestamp()});return set(ref(D,path),d).catch(e=>{const err=new Error(e.message);err.code=/permission/i.test(e.message)?'not_granted':'error';throw err;});}};},
+    else d=Object.assign(clean(d),{at:serverTimestamp()});return set(ref(D,path),d).catch(e=>{netProblem(e);const err=new Error(e.message);err.code='error';throw err;});}};},
   collection(name){const base=name==='chat'?'chatlog':'lb';let lim=50;const api={orderBy(){return api;},limit(n){lim=n;return api;},
-   onSnapshot(cb,err){return onValue(query(ref(D,base),orderByChild('u'),limitToLast(lim)),s=>{const docs=[];s.forEach(c=>{docs.push({id:c.key,data:()=>c.val()});});cb({docs});},err);}};return api;}};
+   onSnapshot(cb,err){return onValue(query(ref(D,base),orderByChild('u'),limitToLast(lim)),s=>{const docs=[];s.forEach(c=>{docs.push({id:c.key,data:()=>c.val()});});cb({docs});},e=>{netProblem(e);err&&err(e);});}};return api;}};
  const me=ref(D,'players/'+uid),players=ref(D,'players');
- const fresh=v=>v&&typeof v==='object'&&(!v.ts||Date.now()-v.ts<STALE_MS);
- const room={presence:p=>set(me,p),
+ const fresh=v=>v&&typeof v==='object'&&(typeof v.st!=='number'||Date.now()+skew-v.st<STALE_MS);let pErr=0;
+ const room={presence:p=>set(me,Object.assign(clean(p),{st:serverTimestamp()})).catch(e=>{if(Date.now()-pErr>10000){pErr=Date.now();netProblem(e);}throw e;}),
   onPeers(cb){const one=(s,left)=>{if(s.key===uid)return;if(left||!fresh(s.val())){cb({peers:[],left:[{peer:s.key}]});return;}cb({peers:[{peer:s.key,isMe:false,kind:'viewer',presence:s.val(),by:s.key}],left:[]});};
    onChildAdded(players,s=>one(s,false));onChildChanged(players,s=>one(s,false));onChildRemoved(players,s=>one(s,true));},
-  emit:(topic,data)=>set(ref(D,'live/'+topic+'/'+uid),Object.assign({},data,{u:uid,t:serverTimestamp()})).catch(e=>{const err=new Error(e.message);err.code='not_permitted';throw err;}),
-  on(topic,cb){const since=Date.now()-3000,seen=new Set();const h=s=>{const v=s.val();if(!v||v.u===uid||!v.i||seen.has(v.i))return;if(typeof v.t==='number'&&v.t<since)return;seen.add(v.i);cb({data:v,isMe:false,peer:v.u,by:v.u});};
+  emit:(topic,data)=>set(ref(D,'live/'+topic+'/'+uid),Object.assign(clean(data),{u:uid,t:serverTimestamp()})).catch(e=>{netProblem(e);const err=new Error(e.message);err.code='error';throw err;}),
+  on(topic,cb){const seen=new Set();const h=s=>{const v=s.val();if(!v||v.u===uid||!v.i||seen.has(v.i))return;if(typeof v.t==='number'&&v.t<Date.now()+skew-15000)return;seen.add(v.i);cb({data:v,isMe:false,peer:v.u,by:v.u});};
    onChildAdded(ref(D,'live/'+topic),h);onChildChanged(ref(D,'live/'+topic),h);},
-  onConnection(cb){onValue(ref(D,'.info/connected'),s=>{const c=!!s.val();if(c)onDisconnect(me).remove();cb(c);});}};
- return{kind:'firebase',rate:.2,use:async k=>({user,db,room})[k]};}
+  onConnection(cb){onValue(ref(D,'.info/connected'),s=>{const c=!!s.val();if(c){onDisconnect(me).remove();Net.err='';}cb(c);});}};
+ return{kind:'firebase',rate:.2,project:cfg.projectId||'',use:async k=>({user,db,room})[k]};}
 
 /* ---------- local test transport: several tabs of the same browser share the isles ---------- */
 function makeLocalBackend(){const bc=new BroadcastChannel('driftwood-isles-mp');let uid;try{uid=sessionStorage.getItem('mp-uid');if(!uid){uid='local-'+Math.random().toString(36).slice(2,9);sessionStorage.setItem('mp-uid',uid);}}catch(e){uid='local-'+Math.random().toString(36).slice(2,9);}

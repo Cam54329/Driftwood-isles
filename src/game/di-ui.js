@@ -138,17 +138,19 @@ function addFeed(name,sp,mut,w,color,mine,id){const txt=sp?feedText(sp,mut,w):'f
 function onRemoteCatch(r,k){if(k.sp==='relic'){addFeed(r.name,null,null,0,r.color,false,k.i);return;}const sp=SPM[k.sp];if(!sp)return;const mut=MUTS[k.m]?k.m:null;if(isNotable(sp.r,mut))addFeed(r.name,sp,mut,clamp(num(k.w,0),0,5000),r.color,false,k.i);}
 
 /* ---------- multiplayer ---------- */
-const Net={backend:'pending',rate:.1,pLast:0,room:null,db:null,user:null,uid:null,remotes:new Map(),peers:[],log:[],seen:new Set(),myChat:[],myChatLoaded:false,chatW:false,chatDirty:false,chatReady:false,canChat:true,canDb:true,lb:new Map(),lbW:false,lbLast:0,lbKey:'',pAcc:0,pKey:'',connected:false,lastSend:0,startT:Date.now()};
+const Net={backend:'pending',err:'',project:'',rate:.1,pLast:0,room:null,db:null,user:null,uid:null,remotes:new Map(),peers:[],log:[],seen:new Set(),myChat:[],myChatLoaded:false,chatW:false,chatDirty:false,chatReady:false,canChat:true,canDb:true,lb:new Map(),lbW:false,lbLast:0,lbKey:'',pAcc:0,pKey:'',connected:false,lastSend:0,startT:Date.now()};
 async function netInit(){let C=null;
  if(window.claude&&window.claude.use){C=window.claude;Net.backend='claude';}
  else if(MP_LOCAL){C=makeLocalBackend();Net.backend='local';Net.rate=C.rate;}
- else if(fbConfigured()){try{C=await makeFirebaseBackend(FB_CFG);Net.backend='firebase';Net.rate=C.rate;}catch(e){console.warn('Online play unavailable',e);Net.backend='none';sysLine('Could not reach the online isles. Fishing solo for now.');}}
- else Net.backend='none';
+ else{if(!fbConfigured()){try{const r=await fetch('./online-config.json',{cache:'no-store'});if(r.ok){const j=await r.json();if(j&&j.firebase&&j.firebase.apiKey)Object.assign(FB_CFG,j.firebase);}}catch(e){}}
+  if(fbConfigured()){Net.backend='firebase';try{C=await makeFirebaseBackend(FB_CFG);Net.rate=C.rate;Net.project=C.project;}catch(e){C=null;Net.backend='failed';if(!Net.err)netProblem(e);sysLine('Could not reach the online isles. Fishing solo for now.');}}}
+ if(!C&&Net.backend==='pending')Net.backend='none';
  if(!C){netStatus();if(MENU.on)renderMenu();return;}
  let user=null,db=null,room=null;try{[user,db,room]=await Promise.all([C.use('user'),C.use('db'),C.use('room')]);}catch(e){}
  Net.user=user;Net.db=db;Net.room=room;
  if(user){try{Net.uid=await user.id();}catch(e){}try{const cw=await user.can('data.write');if(cw===false)Net.canDb=false;}catch(e){}}
  if(db&&Net.uid){try{const ref=db.doc('data/users/'+Net.uid+'/save');const snap=await ref.get();if(snap.exists){const d=snap.data();if(d&&typeof d.json==='string'){const s=sanitize(JSON.parse(d.json));if((s.savedAt||0)>(state.savedAt||0)+2000){const prof=state.profile;state=s;if(!state.profile)state.profile=prof;onStateReplaced();toast('Cloud save loaded');}}}cloudRef=ref;cloudPending=true;cloudTick(true);}catch(e){}}
+ if(!room&&Net.backend==='claude')Net.err='Online play here needs you to be signed in to Claude and invited to this page (or a member of its organization).';
  if(room){room.onPeers(onPeers,()=>{Net.room=null;netStatus();});room.on('chat',onChatEvt,()=>{});room.onConnection(c=>{Net.connected=c;netStatus();},()=>{});}
  if(db){db.collection('chat').orderBy('u','desc').limit(40).onSnapshot(onChatSnap,()=>{});db.collection('lb').orderBy('u','desc').limit(300).onSnapshot(onLbSnap,()=>{});}
  netStatus();}
@@ -202,7 +204,7 @@ function openOnline(){if(JOIN.on)return;openPanel('Online now','',()=>{panelCtx.
  const me=profileOr();const meAct=F.st!=='idle'?'Fishing':player.mode==='boat'?'Sailing':'Exploring';
  const row=(name,color,lv,place,act,you)=>`<div class="lbrow ${you?'me':''}" style="grid-template-columns:1fr auto"><span class="nm"><i class="cdot" style="--c:${color}"></i><span><b>${esc(name)}</b> <span class="muted">Lv ${lv}</span></span>${you?'<span class="pill" style="--c:#c7e3ff">You</span>':''}</span><span class="val">${esc(place)}<small>${esc(act)}</small></span></div>`;
  body(`<div class="list">${row(me.name,me.color,state.level,player.mode==='boat'?'Sailing near '+ZONES[player.zone||'sea'].n:ZONES[player.zone||'cove'].n,meAct,true)}${list.map(r=>row(r.name,r.color,r.level,(r.onBoat?'Sailing near ':'')+ZONES[r.zone].n,activity(r),false)).join('')}</div>
-  ${!Net.room?'<div class="muted">You\'re fishing solo right now. When online play is on, other anglers appear here and on the islands.</div>':!Net.connected?'<div class="muted">Connecting to the isles…</div>':list.length?'':'<div class="muted">No one else is here yet. Share the page and fish together.</div>'}`);bindPanel({});});}
+  ${!Net.room?'<div class="muted">You\'re fishing solo right now. When online play is on, other anglers appear here and on the islands.</div><button class="btn ghost sm" data-act="mp" style="align-self:flex-start">Connection details</button>':!Net.connected?'<div class="muted">Connecting to the isles…</div>':list.length?'':'<div class="muted">No one else is here yet. Share the page and fish together.</div>'}`);bindPanel({mp:()=>openMultiplayer()});});}
 
 /* ---------- state ---------- */
 function onStateReplaced(){GFX.tier=state.settings.gfx;qState();rebuildPlayerRig();updateHUD();AU.applyVol();rerender();}

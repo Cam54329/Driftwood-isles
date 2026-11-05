@@ -4,10 +4,12 @@
     ".write": false,
     "players": {
       ".read": "auth != null",
-      ".indexOn": ["ts"],
+      ".indexOn": [
+        "ts"
+      ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
-        ".validate": "!newData.exists() || (newData.child('v').val() === 2 && newData.child('n').isString() && newData.child('n').val().length <= 16 && newData.child('x').isNumber() && newData.child('x').val() > -2000 && newData.child('x').val() < 2000 && newData.child('z').isNumber() && newData.child('z').val() > -2000 && newData.child('z').val() < 2000 && newData.child('lv').isNumber() && newData.child('lv').val() >= 1 && ((!root.child('saves/' + $uid + '/level').exists() && newData.child('lv').val() <= 3) || newData.child('lv').val() <= root.child('saves/' + $uid + '/level').val() + 1))"
+        ".validate": "!newData.exists() || (newData.child('v').val() === 2 && newData.child('n').isString() && newData.child('n').val().length <= 16 && newData.child('x').isNumber() && newData.child('x').val() > -2000 && newData.child('x').val() < 2000 && newData.child('z').isNumber() && newData.child('z').val() > -2000 && newData.child('z').val() < 2000 && newData.child('lv').isNumber() && newData.child('lv').val() >= 1 && newData.child('lv').val() <= 999)"
       }
     },
     "saves": {
@@ -19,15 +21,19 @@
     },
     "lb": {
       ".read": "auth != null",
-      ".indexOn": ["u"],
+      ".indexOn": [
+        "u"
+      ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
-        ".validate": "newData.child('n').isString() && newData.child('n').val().length <= 16 && newData.child('e').isNumber() && newData.child('e').val() <= root.child('saves/' + $uid + '/earned').val() + 1 && newData.child('hw').isNumber() && newData.child('hw').val() >= 0 && newData.child('hw').val() <= 5000 && newData.child('dx').isNumber() && newData.child('dx').val() <= 100 && newData.child('lv').isNumber() && newData.child('lv').val() <= root.child('saves/' + $uid + '/level').val() && newData.child('u').isNumber()"
+        ".validate": "newData.child('n').isString() && newData.child('n').val().length <= 16 && newData.child('e').isNumber() && newData.child('e').val() >= 0 && newData.child('e').val() <= root.child('saves/' + $uid + '/earned').val() + 300000 && newData.child('hw').isNumber() && newData.child('hw').val() >= 0 && newData.child('hw').val() <= 5000 && newData.child('dx').isNumber() && newData.child('dx').val() <= 150 && newData.child('lv').isNumber() && newData.child('lv').val() <= root.child('saves/' + $uid + '/level').val() + 6 && newData.child('u').isNumber()"
       }
     },
     "chatlog": {
       ".read": "auth != null",
-      ".indexOn": ["u"],
+      ".indexOn": [
+        "u"
+      ],
       "$uid": {
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.child('n').isString() && newData.child('n').val().length <= 16 && newData.child('u').isNumber()"

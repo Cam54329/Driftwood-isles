@@ -1,4 +1,18 @@
-# Turning on online multiplayer (free Firebase project)
+# Playing online with friends
+
+There are two ways to play together.
+
+## Option A: inside Claude (no setup)
+The Claude page of the game already has online play switched on.
+1. Open the page, click **Share**, and invite each friend by email. They need a free Claude account.
+2. Give them **Contributor** (or edit) access so they can chat and appear on the leaderboard.
+   Viewers can still fish with you and see everyone, but can't chat.
+3. Everyone opens the same page. The main menu shows how many anglers are online.
+Public "anyone with the link" visitors who aren't signed in can't join the live isles.
+
+## Option B: your own website (Vercel + a free Firebase project)
+Anyone with the address can play, with no accounts. Set it up once:
+
 
 Driftwood Isles uses Firebase Realtime Database for online play: players see each other with name
 tags, movement, casting, catches and boats, plus chat, emotes, the online list, the rare-catch feed,
@@ -39,6 +53,18 @@ In Vercel open your project → **Settings → Environment Variables** and add:
 Then **Deployments → … → Redeploy**. The main menu's status line will say how many anglers are online.
 
 For local testing, copy `.env.example` to `.env.local`, fill in the same values and run `npm run dev`.
+
+**No Vercel?** If you upload the `play-now` folder to any static host instead, open
+`online-config.json` in that folder and paste the same five values into it. No rebuild needed.
+
+## If it doesn't connect
+Open **Multiplayer** on the main menu (or the players button in game → **Connection details**).
+It shows the server, the connection status and, if something is wrong, the exact problem, for example:
+- *Anonymous sign-in is turned off*: enable it under Authentication → Sign-in method.
+- *The database rules blocked a write*: paste `database.rules.json` into the Rules tab and Publish.
+- *The database URL is missing or wrong*: check `VITE_FIREBASE_DATABASE_URL` and redeploy.
+- *The Firebase API key is not valid*: check `VITE_FIREBASE_API_KEY` and redeploy.
+Remember to **redeploy** in Vercel after changing environment variables.
 
 ## Testing without Firebase
 Open the game with `?mp=local` in two tabs of the same browser: the tabs share the isles, so you can
