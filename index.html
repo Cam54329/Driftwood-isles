@@ -156,29 +156,52 @@ body:not(.desk) #chat.open #chatClose{display:grid}
 @keyframes slideIn{from{transform:translateX(24px);opacity:0}}
 @keyframes fadeOut{to{transform:translateX(12px);opacity:0}}
 
-/* shake circles */
-#shakeLayer{position:fixed;inset:0;z-index:20;pointer-events:none}
-.shake{position:absolute;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;pointer-events:auto;border:3px solid #fff;background:rgba(12,15,20,.25);box-shadow:0 0 0 2px rgba(0,0,0,.5),0 0 20px rgba(242,193,78,.35);display:grid;place-items:center;animation:shakeIn .3s cubic-bezier(.2,1.5,.4,1),float 1.6s ease-in-out infinite .3s;touch-action:none}
-.shake.chill{width:116px;height:116px;margin:-58px 0 0 -58px}
-.shake::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--gold);animation:ring 1.4s ease-out infinite;pointer-events:none}
-.shake span{font:900 13px var(--hud);letter-spacing:.12em;text-transform:uppercase;text-shadow:var(--stroke);pointer-events:none}
-.shake.pop{animation:pop .3s ease-out forwards}.shake.fade{animation:fade .35s forwards}
-@keyframes shakeIn{from{transform:scale(.3);opacity:0}}@keyframes float{50%{transform:translateY(-5px)}}
+@keyframes float{50%{transform:translateY(-5px)}}
 @keyframes ring{from{transform:scale(1);opacity:.9}to{transform:scale(1.5);opacity:0}}@keyframes pop{to{transform:scale(1.6);opacity:0}}@keyframes fade{to{transform:scale(.7);opacity:0}}
 
-/* reel minigame */
+/* fishing: waiting tip, strike prompt, classic reel-in panel (tension gauge, line out, fish stamina) */
+#fishTip{position:fixed;z-index:12;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);font:800 13px var(--hud);padding:7px 14px;border-radius:4px;background:var(--panel);color:var(--ink2);pointer-events:none;white-space:nowrap;box-shadow:var(--sh)}
+#fishTip b{color:var(--gold2)}#fishTip.nib{color:#fff;box-shadow:0 0 0 2px var(--gold),var(--sh);animation:nib .5s ease-out}
+@keyframes nib{30%{transform:translateX(-50%) scale(1.08)}}
+body.menu #fishTip,body.photo #fishTip,body.menu #hook,body.menu #reel{display:none!important}
+#hook{position:fixed;z-index:26;left:50%;top:34%;width:150px;height:150px;margin:-75px 0 0 -75px;pointer-events:none;display:grid;place-items:center}
+#hook .hk-ring{position:absolute;inset:0;border-radius:50%;border:5px solid var(--gold2);box-shadow:0 0 26px rgba(242,193,78,.55),inset 0 0 18px rgba(242,193,78,.3);animation:hookRing var(--hw,1s) linear forwards}
+#hook .hk-core{font:900 32px/1 var(--hud);letter-spacing:.05em;color:#fff;text-shadow:var(--stroke);text-align:center;animation:hookPop .3s cubic-bezier(.2,1.7,.4,1)}
+#hook small{display:block;font:800 12px var(--hud);letter-spacing:.06em;color:var(--ink);margin-top:6px}
+@keyframes hookRing{from{transform:scale(1.7);opacity:0}8%{opacity:1}to{transform:scale(.6);border-color:#ff6a4a}}
+@keyframes hookPop{from{transform:scale(.3);opacity:0}}
+.floatTip{position:fixed;z-index:27;left:50%;top:34%;transform:translateX(-50%);font:900 26px var(--hud);color:var(--gold2);text-shadow:var(--stroke);pointer-events:none;animation:floatUp 1.3s ease-out forwards}
+@keyframes floatUp{from{transform:translate(-50%,10px) scale(.6);opacity:0}15%{transform:translate(-50%,0) scale(1.1);opacity:1}to{transform:translate(-50%,-40px);opacity:0}}
 #reelCatch{position:fixed;inset:0;z-index:24;touch-action:none}
-#reel{position:fixed;z-index:25;left:50%;bottom:calc(140px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,calc(100vw - 32px));padding:10px 12px 10px;border-radius:6px;background:var(--panel);border:1px solid var(--line);pointer-events:none}
-.reel-top{display:flex;justify-content:space-between;align-items:center;font:900 16px var(--hud);margin-bottom:8px}
-.reel-track{position:relative;height:44px;border-radius:4px;background:linear-gradient(180deg,#1f4a66,#12304a);box-shadow:inset 0 2px 8px rgba(0,0,0,.5);overflow:hidden}
-.reel-track::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 44px,rgba(255,255,255,.06) 44px 46px)}
-#reelBar{position:absolute;top:3px;bottom:3px;border-radius:3px;background:rgba(242,193,78,.2);border:2px solid var(--gold2);transition:background .2s,box-shadow .2s}
-#reelBar.in{background:rgba(79,192,106,.35);border-color:#9be07a;box-shadow:0 0 16px rgba(79,192,106,.6)}
-#reelFish{position:absolute;top:50%;width:40px;height:26px;transform:translate(-50%,-50%);z-index:2;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
-.reel-prog{height:10px;margin-top:8px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
-#reelFill{height:100%;width:30%;background:linear-gradient(90deg,#e07a4a,#f2c14e 50%,#4fc06a)}
-.reel-hint{font:700 12px var(--hud);color:var(--ink2);text-align:center;margin-top:6px}
+#reel{position:fixed;z-index:25;left:50%;bottom:calc(118px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(430px,calc(100vw - 24px));padding:10px 14px 9px;border-radius:6px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--sh);pointer-events:none;animation:rise .25s ease-out}
+#reel.big{box-shadow:0 0 0 2px var(--rc),0 0 26px -6px var(--rc),var(--sh)}
+.reel-top{display:flex;justify-content:space-between;align-items:center;font:900 16px var(--hud);margin-bottom:2px}
+.rf{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center}
+.rf-gauge{position:relative;width:150px;height:100px}
+.rf-gauge svg{display:block;width:150px;height:86px;overflow:visible}
+#rfNeedle{transform-box:view-box;transform-origin:75px 78px}
+.rf-gauge .lbl{position:absolute;left:0;right:0;bottom:0;text-align:center;font:900 10px var(--hud);letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+.rf-gauge.hot .lbl{color:#ff8a6a;animation:hotBlink .3s steps(2) infinite}
+.rf-gauge.hot svg{animation:hotShake .12s linear infinite}
+@keyframes hotBlink{50%{opacity:.35}}@keyframes hotShake{25%{transform:translateX(-1px)}75%{transform:translateX(1px)}}
+.rf-side{display:flex;flex-direction:column;gap:8px;min-width:0}
+.rf-dist{font:900 30px/1 var(--hud);font-variant-numeric:tabular-nums;white-space:nowrap}.rf-dist small{font-size:12px;font-weight:800;color:var(--ink2);margin-left:4px}
+.rf-k{font:900 10px var(--hud);letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
+.rf-bar{height:8px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden}
+#rfStam{height:100%;width:100%;background:linear-gradient(90deg,#e0704a,#f2c14e);transition:width .15s}
+.rf-line{position:relative;height:8px;border-radius:2px;background:linear-gradient(90deg,rgba(79,192,106,.5),rgba(255,255,255,.1) 62%,rgba(201,76,64,.75))}
+#rfFish{position:absolute;top:50%;width:24px;height:15px;transform:translate(-50%,-50%);filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+.reel-hint{font:800 12px var(--hud);color:var(--ink2);text-align:center;margin-top:6px}
+.reel-hint.warn{color:#ff8a6a}
+#rfSteer{position:fixed;z-index:25;bottom:calc(300px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);font:900 24px var(--hud);letter-spacing:.04em;color:#fff;text-shadow:var(--stroke);pointer-events:none;opacity:0;transition:opacity .15s;white-space:nowrap}
+#rfSteer.on{opacity:1;animation:steerPulse .6s ease-in-out infinite}#rfSteer .ok{color:#9be07a}
+@keyframes steerPulse{50%{transform:translateX(-50%) scale(1.08)}}
 
+.story{position:fixed;z-index:28;left:50%;top:calc(84px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:min(520px,calc(100vw - 32px));padding:12px 16px;border-radius:6px;background:var(--panel2);border:1px solid var(--line2);box-shadow:var(--sh);font:700 14px/1.45 var(--hud);color:var(--ink);cursor:pointer;animation:storyIn .35s ease-out}@keyframes storyIn{from{transform:translate(-50%,-10px);opacity:0}}@keyframes storyOut{to{transform:translate(-50%,-8px);opacity:0}}
+.story b{display:block;font:900 12px var(--hud);letter-spacing:.12em;text-transform:uppercase;color:var(--gold2);margin-bottom:3px}.story.out{animation:storyOut .45s forwards}#panelWrap:not([hidden])~.story{opacity:0;pointer-events:none}
+body.menu .story{display:none}
+.coinFly{position:fixed;z-index:60;width:16px;height:16px;margin:-8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,#f2c14e 55%,#b88a1e);box-shadow:0 0 6px rgba(242,193,78,.8);pointer-events:none;animation:coinFly .9s cubic-bezier(.5,-.3,.7,1) both}
+@keyframes coinFly{to{transform:translate(var(--dx),var(--dy)) scale(.6);opacity:.4}}
 /* catch card */
 #catchCard{position:fixed;z-index:30;left:50%;bottom:calc(100px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);min-width:280px;max-width:calc(100vw - 32px);padding:12px 22px 14px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);border-top:4px solid var(--rc,#fff);text-align:center;animation:cardIn .5s cubic-bezier(.2,1.4,.4,1);cursor:pointer}
 @keyframes cardIn{from{transform:translate(-50%,24px) scale(.9);opacity:0}}
@@ -338,7 +361,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
  #tc{top:calc(132px + env(safe-area-inset-top,0px));width:min(240px,70vw)}#tr{max-width:140px}.ib{width:36px;height:36px}
  .hs{width:50px;height:54px}.hs svg{width:20px;height:20px}.hs small{display:none}#hotbar .hs:nth-child(n+7){display:none}
  #lvlTxt{font-size:20px}.coins{font-size:22px}.xpbar{width:110px}#br{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
- #feed{top:calc(170px + env(safe-area-inset-top,0px))}#reel{bottom:calc(200px + env(safe-area-inset-bottom,0px))}
+ #feed{top:calc(170px + env(safe-area-inset-top,0px))}#reel{bottom:calc(150px + env(safe-area-inset-bottom,0px))}#rfSteer{bottom:calc(330px + env(safe-area-inset-bottom,0px))}#fishTip{bottom:auto;top:calc(150px + env(safe-area-inset-top,0px));white-space:normal;text-align:center;max-width:calc(100vw - 40px)}
  #join{margin:0 auto;max-height:62vh;padding:16px}#joinWrap{align-items:flex-end}#join h1{font-size:22px}
  .slider{grid-template-columns:90px 1fr 40px}
 }
@@ -411,13 +434,28 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
 </div>
 <div id="feed"></div>
 <div id="zoneBan"></div>
-<div id="shakeLayer"></div>
+<div id="fishTip" hidden></div>
+<div id="hook" hidden></div>
+<div id="rfSteer"></div>
 <div id="reelCatch" hidden></div>
 <div id="reel" hidden>
   <div class="reel-top"><span id="reelName">???</span><span id="reelRar"></span></div>
-  <div class="reel-track" id="reelTrack"><div id="reelBar"></div><svg id="reelFish" viewBox="0 0 40 26"><path d="M2 4 L11 13 L2 22 Z" fill="#ffd84a"/><ellipse cx="24" cy="13" rx="14" ry="9" fill="#ffd84a"/><circle cx="31" cy="11" r="2" fill="#14161a"/></svg></div>
-  <div class="reel-prog"><div id="reelFill"></div></div>
-  <div class="reel-hint" id="reelHint">Hold to push the bar right · release to drift left</div>
+  <div class="rf">
+    <div class="rf-gauge" id="rfGauge"><svg viewBox="0 0 150 86" aria-hidden="true">
+      <path d="M13 78 A62 62 0 0 1 137 78" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="16"/>
+      <path d="M13 78 A62 62 0 0 1 108.22 25.65" fill="none" stroke="#2f6e40" stroke-width="12"/>
+      <path d="M108.22 25.65 A62 62 0 0 1 131.10 51.60" fill="none" stroke="#8a6c24" stroke-width="12"/>
+      <path d="M131.10 51.60 A62 62 0 0 1 137 78" fill="none" stroke="#8e2f27" stroke-width="12"/>
+      <path id="rfArc" d="M13 78 A62 62 0 0 1 137 78" pathLength="100" fill="none" stroke="#7fe08a" stroke-width="5" stroke-dasharray="0 100"/>
+      <g id="rfNeedle"><path d="M75 22 L79 78 L71 78 Z" fill="#f4f1ea"/></g><circle cx="75" cy="78" r="7" fill="#f4f1ea" stroke="#14161a" stroke-width="2"/>
+    </svg><div class="lbl">Line tension</div></div>
+    <div class="rf-side">
+      <div class="rf-dist"><span id="rfDist">0.0</span><small>m out</small></div>
+      <div><div class="rf-k">Fish stamina</div><div class="rf-bar"><div id="rfStam"></div></div></div>
+      <div><div class="rf-k">Line</div><div class="rf-line"><svg id="rfFish" viewBox="0 0 40 26"><path d="M2 4 L11 13 L2 22 Z" fill="var(--rc,#ffd84a)"/><ellipse cx="24" cy="13" rx="14" ry="9" fill="var(--rc,#ffd84a)"/><circle cx="31" cy="11" r="2" fill="#14161a"/></svg></div></div>
+    </div>
+  </div>
+  <div class="reel-hint" id="reelHint"></div>
 </div>
 <div id="catchCard" hidden></div>
 <div id="toasts"></div>
@@ -439,7 +477,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
     <nav class="mm-nav" id="menuNav"></nav>
     <div class="mm-status" id="menuStatus"></div>
   </div>
-  <div class="mm-foot" id="menuFoot">Version 2.0</div>
+  <div class="mm-foot" id="menuFoot">Version 3.0</div>
 </div>
 
 <script>

@@ -60,10 +60,57 @@ const QUESTS=[
   offer:"Maple Mere's water makes the best brews. Catch three of its fish and I'll know the water's right.",prog:"Maple Mere is up the hill, past the pumpkin patches.",done:"The mere is happy, and so am I. Thank you, dear."},
  {id:'tamsin1',npc:'tamsin',n:'Legend of the Glen',goal:{t:'catch',n:1,zone:'amber',r:3},rw:{c:6000,xp:700,title:'Glen Legend'},req:['rowan1'],
   offer:"They say Old Amber still swims off these cliffs. Land any Legendary fish around Amberglen and the glen will sing of you.",prog:"Legendary or rarer, around Amberglen. Fog and night bring out the strange ones.",done:"The glen will sing of this! Wear your title proudly."},
+ /* quest line 1: the Cartographer's Voyage. Isolde (Pebble Cove) sends you to map the three new isles; each step pays out on the spot and the next begins */
+ {id:'cart1',npc:'isolde',line:'Cartographer\'s Voyage',auto:true,n:'Blossom Bearings',goal:{t:'visit',n:1,zone:'petal'},rw:{c:1500,xp:300},
+  offer:"My charts end where the blossoms begin. Sail north to Petalshore and tell me what you see. I'll follow your progress from here, no need to come back each time.",prog:"Petalshore lies far to the north. Harbormasters sell the chart.",done:"Pink petals on the water! Marvellous. Now, the pool at its heart..."},
+ {id:'cart2',npc:'isolde',line:'Cartographer\'s Voyage',auto:true,n:'Depth of the Mirror',goal:{t:'catch',n:3,zone:'pond_petal'},rw:{c:2000,xp:400,bait:['shrimp',10]},req:['cart1'],
+  offer:"Every isle has a heart. On Petalshore it's the Mirror Pool. Catch three of its fish so I can note what lives there.",prog:"The Mirror Pool, under the red bridge on Petalshore.",done:"Three species noted! Next stop: the desert."},
+ {id:'cart3',npc:'isolde',line:'Cartographer\'s Voyage',auto:true,n:'Shifting Sands',goal:{t:'visit',n:1,zone:'dune'},rw:{c:3000,xp:500},req:['cart2'],
+  offer:"East, past Mossreach, there's an isle of sand and red stone. Set foot on Duneveil.",prog:"Duneveil is far to the east. Its chart is not cheap.",done:"Sand in your boots! The mesa is just as the old sailors described."},
+ {id:'cart4',npc:'isolde',line:'Cartographer\'s Voyage',auto:true,n:'Oasis Secrets',goal:{t:'catch',n:1,zone:'pond_dune',r:2},rw:{c:4000,xp:600,bait:['prism',5]},req:['cart3'],
+  offer:"Desert springs hide strange life. Catch a Rare fish or better from the Oasis Spring.",prog:"Rare or rarer, from the Oasis Spring behind the mesa.",done:"A jewel of a fish! One more isle to go."},
+ {id:'cart5',npc:'isolde',line:'Cartographer\'s Voyage',auto:true,n:'The Glimmering Hills',goal:{t:'visit',n:1,zone:'glim'},rw:{c:5000,xp:700},req:['cart4'],
+  offer:"The last blank space on my map: crystal hills to the far south-west. Reach Glimmerholt.",prog:"Glimmerholt, far south-west, past the Sunken Atoll.",done:"You made it! The hills really do glow?"},
+ {id:'cart6',npc:'isolde',line:'Cartographer\'s Voyage',auto:true,n:'Mapmaker\'s Legend',goal:{t:'catch',n:1,zone:'glim',r:3},rw:{c:12000,xp:1500,title:'Cartographer',rod:'wayfinder'},req:['cart5'],
+  offer:"A map isn't finished until it has a legend. Land a Legendary fish or rarer at Glimmerholt and I'll name the hills after you.",prog:"Legendary or rarer, around Glimmerholt or in the Starwell.",done:"The map is complete! Take my old Wayfinder Rod. It has seen every sea, and now so have you."},
+ /* quest line 2: the Spirit of the Tides. Old Mirren (Petalshore) tells the tale of the moon that swims in the sea */
+ {id:'mirren1',npc:'mirren',line:'Spirit of the Tides',auto:true,n:'The Moon Bridge',goal:{t:'catch',n:1,sp:'moonbridge_koi'},rw:{c:2500,xp:400},
+  offer:"Long ago the moon fell into the sea and became a fish. The first sign of it is the Moonbridge Koi. Catch one and I'll tell you more.",prog:"Moonbridge Koi swim around Petalshore.",done:"Ah, white as moonlight. The tale is true, then. Listen..."},
+ {id:'mirren2',npc:'mirren',line:'Spirit of the Tides',auto:true,n:'Night Watch',goal:{t:'catch',n:3,night:true,zone:'petal'},rw:{c:3000,xp:500,bait:['glowfly',8]},req:['mirren1'],
+  offer:"The moon-fish only stirs at night. Fish three times under the stars on Petalshore.",prog:"After dusk, anywhere around Petalshore.",done:"You've felt it too, haven't you? The water hums at night."},
+ {id:'mirren3',npc:'mirren',line:'Spirit of the Tides',auto:true,n:'Glow of the Deep',goal:{t:'catch',n:1,mut:'glowing'},rw:{c:5000,xp:700,bait:['prism',6]},req:['mirren2'],
+  offer:"Fish touched by the moon glow from inside. Catch any Glowing fish, anywhere in the isles.",prog:"Glowing mutations. A Starfall makes them far more common.",done:"It glows like a lantern! The moon is close now."},
+ {id:'mirren4',npc:'mirren',line:'Spirit of the Tides',auto:true,n:'Ink and Starlight',goal:{t:'catch',n:1,sp:'inkbrush_eel'},rw:{c:6000,xp:800},req:['mirren3'],
+  offer:"The Inkbrush Eel writes the moon's path on the water. It only comes out at night.",prog:"Inkbrush Eels bite around Petalshore after dark.",done:"Look at those markings... it's a map of the tides!"},
+ {id:'mirren5',npc:'mirren',line:'Spirit of the Tides',auto:true,n:'The Spirit of the Tides',goal:{t:'catch',n:1,r:4},rw:{c:15000,xp:2000,title:'Tidesinger',rod:'moonpetal'},req:['mirren4'],
+  offer:"Now you are ready. The moon-fish shows itself only to anglers who have caught something truly mythic. Land a Mythic fish or rarer.",prog:"Mythic or rarer, anywhere. Big events and strong bait help.",done:"You've done it. The moon smiles on you, Tidesinger. Take this rod. Its wood grew under a thousand full moons."},
+ /* island chores on the three new isles */
+ {id:'wren1',npc:'wren',n:'Petal Harvest',goal:{t:'catch',n:5,zone:'petal'},rw:{c:3500,xp:450},
+  offer:"Five fish from around Petalshore, if you would. The blossom season makes them plump.",prog:"Around the shore or in the Mirror Pool.",done:"Lovely! They even smell of blossom."},
+ {id:'juniper1',npc:'juniper',n:'Lantern Lighter',goal:{t:'catch',n:2,night:true,zone:'pond_petal'},rw:{c:3000,xp:400,bait:['glowfly',6]},
+  offer:"The koi rise to the lantern light. Catch two from the Mirror Pool after dark.",prog:"The Mirror Pool, at night.",done:"Beautiful in the lantern glow. Glowflies for you."},
+ {id:'ilo1',npc:'ilo',n:'A Worthy Rod',goal:{t:'rod',n:1},rw:{c:4000,xp:500},
+  offer:"Buy any rod you don't own yet, and show me you know when to upgrade.",prog:"Any new rod from any rodmaker.",done:"Good balance, good bend. You chose well."},
+ {id:'sefa1',npc:'sefa',n:'Desert Bounty',goal:{t:'catch',n:5,zone:'dune'},rw:{c:6000,xp:650},
+  offer:"Fish are scarce in the sand, so they sell high. Five from around Duneveil.",prog:"Around Duneveil or in the Oasis Spring.",done:"A fortune in fish! The traders will be pleased."},
+ {id:'doran1',npc:'doran',n:'Noon Heat',goal:{t:'catch',n:1,sp:'sunstone_snapper'},rw:{c:5500,xp:600,bait:['shrimp',12]},
+  offer:"The Sunstone Snapper only bites in daylight, when the sand is hottest. Catch me one.",prog:"Sunstone Snappers, around Duneveil, in the day.",done:"Glowing like a coal! Here, some shrimp for the road."},
+ {id:'amaru1',npc:'amaru',n:'Heavy Gems',goal:{t:'catch',n:1,zone:'dune',w:40},rw:{c:8000,xp:800,title:'Desert Hunter'},req:['sefa1'],
+  offer:"Bring me word of a true giant: a fish over 40 kilos from the waters of Duneveil.",prog:"Over 40 kg, around Duneveil. Canyon Groupers and sharks run big.",done:"A giant! The sands will remember you, Desert Hunter."},
+ {id:'tobi1',npc:'tobi',n:'Sand Sailor',goal:{t:'catch',n:4,sea:true},rw:{c:4000,xp:500},
+  offer:"Test the hull: four fish from the deck, out in open water.",prog:"From your boat, at sea.",done:"Not a scratch! Fine sailing."},
+ {id:'lumen1',npc:'lumen',n:'Crystal Catch',goal:{t:'catch',n:5,zone:'glim'},rw:{c:9000,xp:900},
+  offer:"Fish from these hills fetch the best prices in the isles. Five from around Glimmerholt.",prog:"Around Glimmerholt, or the Starwell.",done:"Look how they sparkle! Here is your share."},
+ {id:'corvin1',npc:'corvin',n:'Wishing Well',goal:{t:'catch',n:3,zone:'pond_glim'},rw:{c:8000,xp:850,bait:['ink',3]},
+  offer:"They say the Starwell grants wishes to those who fish it. Three fish, and we'll see.",prog:"The Starwell is inland, ringed by crystals.",done:"No wish yet, but some Kraken Ink is the next best thing."},
+ {id:'aster1',npc:'aster',n:'Starsmith\'s Trial',goal:{t:'catch',n:1,zone:'glim',mut:true},rw:{c:12000,xp:1100,title:'Starsmith'},req:['lumen1'],
+  offer:"A crystal rod needs a mutated fish to tune it. Catch any mutated fish around Glimmerholt.",prog:"Any mutation, around Glimmerholt.",done:"It rings true! You've earned the title Starsmith."},
+ {id:'vesper1',npc:'vesper',n:'Fog and Moonlight',goal:{t:'catch',n:2,night:true,zone:'glim'},rw:{c:7000,xp:800},
+  offer:"My brews need fish caught under the moon on these hills. Two will do.",prog:"At night, around Glimmerholt.",done:"Still glowing faintly. Perfect for brewing."},
 ];
 const QM={};QUESTS.forEach(q=>QM[q.id]=q);
 const LEVEL_TITLES=[[1,'Novice Angler'],[10,'Seasoned Angler'],[25,'Master Angler'],[50,'Legend of the Isles']];
-const TITLE_COL={'Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
+const TITLE_COL={'Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Cartographer':'#8af0ff','Tidesinger':'#e8e8ff','Desert Hunter':'#f0c060','Starsmith':'#c8a8ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
 const ALL_TITLES=Object.keys(TITLE_COL);
 
 /* ---------- dialogue lines (extra flavour beyond the quests) ---------- */
@@ -82,6 +129,8 @@ const NPC_LINES={
  brannoc:['Ice has a way of sharpening a fish\'s worth.','Let me weigh that properly. The scale doesn\'t lie.'],
  cinda:['Ash and embers. Fish here are tough as nails.','Pay\'s better near the volcano. So is the danger.'],
  kettle:['The spring\'s always simmering.','Steam vents are warm in the morning. Good for the bones.'],
+ isolde:['Every island you visit, I add to the chart. Keep sailing!','The sea between the isles is wider than any map shows.','I once mapped a whirlpool by sailing into it. Not recommended.'],
+ mirren:['The moon pulls the tides, and the tides pull the fish. Everything is connected, little one.','I caught my first fish under that bridge, seventy summers ago.'],
  oren:['My rods are forged in volcanic glass.','A legend needs a legendary rod.','Hold it by the grip, not the shaft. Show some respect.'],
 };
 
@@ -96,15 +145,22 @@ function goalText(q){const g=q.goal,n=g.n;const where=g.zone?' in '+ZONES[g.zone
  if(g.t==='catch'&&g.sp)return `Catch ${n===1?'a':n} ${SPM[g.sp].name}`;
  if(g.t==='catch'){let s=`Catch ${n} ${g.r!=null?RAR[g.r].n+'+ ':''}${g.mut===true?'mutated ':g.mut?MUTS[g.mut].n+' ':''}fish`;if(n===1)s=s.replace('fish','fish');if(g.w)s+=` over ${g.w} kg`;if(g.night)s+=' at night';if(g.sea)s+=' from your boat at sea';if(g.ev)s+=' during a big event';return s+where;}
  if(g.t==='sell')return `Sell ${fmt(n)} coins' worth of fish`;if(g.t==='visit')return `Visit ${ZONES[g.zone].n}`;if(g.t==='relic')return 'Find a Tide Relic';if(g.t==='rod')return 'Buy a new rod';return '';}
-function rewardText(rw){const p=[];if(rw.c)p.push(fmt(rw.c)+' coins');if(rw.xp)p.push(rw.xp+' XP');if(rw.bait)p.push(rw.bait[1]+'× '+BAITM[rw.bait[0]].n);if(rw.title)p.push('Title: '+rw.title);return p.join(' · ');}
+function rewardText(rw){const p=[];if(rw.rod)p.push(RODM[rw.rod].n);if(rw.c)p.push(fmt(rw.c)+' coins');if(rw.xp)p.push(rw.xp+' XP');if(rw.bait)p.push(rw.bait[1]+'× '+BAITM[rw.bait[0]].n);if(rw.title)p.push('Title: '+rw.title);return p.join(' · ');}
 
 /* ---------- progress ---------- */
 function questEvent(type,d={}){const Q=qState();let changed=false;
  for(const id in Q.a){const q=QM[id];if(!q)continue;const g=q.goal;if(Q.a[id]>=g.n)continue;let inc=0;
   if(g.t==='catch'&&type==='catch'){if(g.zone&&d.zone!==g.zone&&d.isl!==g.zone)continue;if(g.sp&&d.sp!==g.sp)continue;if(g.r!=null&&d.r<g.r)continue;if(g.mut===true&&!d.mut)continue;if(typeof g.mut==='string'&&d.mut!==g.mut)continue;if(g.w&&d.w<g.w)continue;if(g.night&&!d.night)continue;if(g.sea&&!d.sea)continue;if(g.ev&&!d.ev)continue;inc=1;}
   else if(g.t==='sell'&&type==='sell')inc=d.v||0;else if(g.t==='visit'&&type==='visit'&&d.zone===g.zone)inc=1;else if(g.t==='relic'&&type==='relic')inc=1;else if(g.t==='rod'&&type==='rod')inc=1;
-  if(inc){const was=Q.a[id];Q.a[id]=Math.min(g.n,was+inc);changed=true;if(Q.a[id]>=g.n&&was<g.n){toast(`Quest complete: ${q.n}. Return to ${NPCM[q.npc].name}.`,'gold');AU.level();}}}
+  if(inc){const was=Q.a[id];Q.a[id]=Math.min(g.n,was+inc);changed=true;if(Q.a[id]>=g.n&&was<g.n){if(q.auto)setTimeout(()=>autoTurnIn(id),900);else{toast(`Quest complete: ${q.n}. Return to ${NPCM[q.npc].name}.`,'gold');AU.level();}}}}
  if(changed){save();renderHotbar();}return changed;}
+/* story-line steps pay out on the spot, then the next step starts */
+function autoTurnIn(id){const q=QM[id];if(!q||qStatus(q)!=='ready')return;QH.qturn(id,true);const nx=QUESTS.find(o=>o.line&&o.line===q.line&&(o.req||[]).includes(id));
+ if(nx&&qStatus(nx)==='offer'){const Q=qState();Q.a[nx.id]=0;if(nx.goal.t==='visit'&&player.zone===nx.goal.zone)Q.a[nx.id]=1;setTimeout(()=>{toast(`${q.line}: ${nx.n}. ${goalText(nx)}.`,'gold');showStory(nx);},1600);save();renderHotbar();}}
+const STORYQ=[];let storyOn=false;
+function showStory(q){const s=qState().a[q.id]!=null?q.offer:q.done;STORYQ.push({who:NPCM[q.npc].name,s});if(!storyOn)nextStory();}
+function nextStory(){const o=STORYQ.shift();if(!o){storyOn=false;return;}storyOn=true;const el=document.createElement('div');el.className='story';el.innerHTML=`<b>${esc(o.who)}</b><span>${esc(o.s)}</span>`;document.body.appendChild(el);
+ let done=false;const end=()=>{if(done)return;done=true;el.classList.add('out');setTimeout(()=>{el.remove();nextStory();},450);};setTimeout(end,Math.max(5000,o.s.length*55));el.onclick=end;}
 function catchQuestInfo(){const a=activeQuests().filter(q=>q.goal.t==='catch');if(!a.length)return '';const q=a[0],v=qState().a[q.id];return `<div class="cc-q">${esc(q.n)} · ${Math.min(v,q.goal.n)}/${q.goal.n}</div>`;}
 function grantTitle(t){if(!state.titles.includes(t)){state.titles.push(t);toast(`New title unlocked: ${t}`,'gold');}}
 function checkLevelTitles(){for(const[l,t]of LEVEL_TITLES)if(state.level>=l)grantTitle(t);}
@@ -123,9 +179,9 @@ function npcSay(n){const fixed=pick(n.lines||['Hello there!']);return{toString()
 const QH={qaccept:id=>{const q=QM[id];if(!q||qStatus(q)!=='offer')return;const Q=qState();Q.a[id]=0;
   if(q.goal.t==='visit'&&player.zone===q.goal.zone)Q.a[id]=1;if(q.goal.t==='rod'&&state.rods.length>1)Q.a[id]=0;
   AU.ui();toast(`Quest accepted: ${q.n}`);save();renderHotbar();rerender();},
- qturn:id=>{const q=QM[id];if(!q||qStatus(q)!=='ready')return;const Q=qState();delete Q.a[id];Q.d.push(id);const rw=q.rw;
+ qturn:(id,auto)=>{const q=QM[id];if(!q||qStatus(q)!=='ready')return;const Q=qState();delete Q.a[id];Q.d.push(id);const rw=q.rw;if(rw.rod&&!state.rods.includes(rw.rod)){state.rods.push(rw.rod);setTimeout(()=>toast(`New rod: ${RODM[rw.rod].n}! Equip it from any rodmaker or your hotbar.`,'gold'),1200);}if(auto===true&&q.done)showStory(Object.assign({},q,{offer:q.done}));
   if(rw.c){state.coins+=rw.c;state.earned+=rw.c;}if(rw.bait){state.bait[rw.bait[0]]=(state.bait[rw.bait[0]]||0)+rw.bait[1];if(!state.baitOn)state.baitOn=rw.bait[0];}if(rw.title)grantTitle(rw.title);
-  if(rw.xp)gainXP(rw.xp);AU.coin();toast(`${q.n} complete! ${rewardText(rw)}`,'gold');save();updateHUD();rerender();}};
+  if(rw.xp)gainXP(rw.xp);AU.coin();AU.level();toast(`${q.n} complete! ${rewardText(rw)}`,'gold');save();updateHUD();if(typeof panelCtx!=='undefined'&&panelCtx)rerender();}};
 
 /* ---------- quest log ---------- */
 function openQuests(){if(JOIN.on)return;openPanel('Quests','Help the islanders and earn rewards',()=>{panelCtx.kind='quests';const act=activeQuests(),Q=qState();
