@@ -206,8 +206,34 @@ const CASINO={inside:false,keep:null};
 function updateCasino(){const H=world.casino;if(!H)return;const dx=player.pos.x-H.x,dz=player.pos.z-H.z,c=Math.cos(H.ry),s=Math.sin(H.ry),lx=dx*c-dz*s,lz=dx*s+dz*c;const inside=player.mode==='walk'&&Math.abs(lx)<H.W/2&&Math.abs(lz)<H.D/2;
  if(inside!==CASINO.inside){CASINO.inside=inside;H.roof.visible=!inside;if(H.sign)H.sign.visible=!inside;if(inside){CASINO.keep={d:cam.tdist,p:cam.pitch};cam.tdist=Math.min(cam.tdist,10);cam.pitch=Math.max(cam.pitch,.8);toast('Welcome to the Tidewater Casino!');}else if(CASINO.keep){cam.tdist=CASINO.keep.d;cam.pitch=CASINO.keep.p;CASINO.keep=null;}}}
 
+
+/* ================= ROD DISPLAYS =================
+   Every island lays its rods out on stands beside the arrival path. Walk up to one and press E to look it over,
+   buy it or equip it. The same rods are also in the rodmakers' shops. */
+const ROD_RACKS={cove:['pine','bamboo','tidepool','coral','reed'],moss:['bogwood','moss'],atoll:['reefcomber'],frost:['frostbite','glacier'],petal:['petalwind','blossom','storm'],
+ amber:['harvestmoon','magma','twin'],ember:['cinderheart','sage','star','lantern'],dune:['mirage','dune'],glim:['prismheart','amethyst','spine','celestial'],hollow:['drowncrown']};
+const RACK={built:false,list:[]};
+function rodState(r){return state.rod===r.id?'eq':state.rods.includes(r.id)?'own':rodLocked(r)?'lock':'buy';}
+function rackLabel(it){const r=it.r,s=rodState(r);const sub=s==='eq'?'Equipped':s==='own'?'Owned · press E to equip':s==='lock'?rodLocked(r):fmt(r.price)+' coins';const col=s==='eq'?'#9be07a':s==='own'?'#a6d4f7':s==='lock'?'#ff9a8a':'#f2c14e';
+ if(it.key===s+sub)return;it.key=s+sub;if(it.label){it.g.remove(it.label);it.label.material.map.dispose();it.label.material.dispose();}it.label=tagSprite(null,r.n,sub,col);it.label.position.set(0,4.6,0);it.g.add(it.label);}
+function buildRodRacks(){RACK.built=true;for(const key in ROD_RACKS){const sp=world.spawn[key];if(!sp)continue;const ids=ROD_RACKS[key].filter(id=>RODM[id]);const fx=Math.sin(sp.yaw),fz=Math.cos(sp.yaw),sx=Math.cos(sp.yaw),sz=-Math.sin(sp.yaw);
+  let side=0;for(const sgn of[1,-1]){let ok=true;for(let i=0;i<ids.length;i++){const x=sp.x+sx*sgn*7+fx*(i-(ids.length-1)/2)*2.4,z=sp.z+sz*sgn*7+fz*(i-(ids.length-1)/2)*2.4,y=groundH(x,z);if(y<.4||world.colliders.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+.6)){ok=false;break;}}if(ok){side=sgn;break;}}if(!side)side=1;
+  const b=new Builder();
+  ids.forEach((id,i)=>{const r=RODM[id],x=sp.x+sx*side*7+fx*(i-(ids.length-1)/2)*2.4,z=sp.z+sz*side*7+fz*(i-(ids.length-1)/2)*2.4,y=groundH(x,z);
+   b.M(TL.wood);b.add(G.cyl12,'#6a4a2e',x,y+.12,z,.55,.24,.55);b.add(G.cyl12,'#8a6440',x,y+.27,z,.45,.08,.45);b.add(G.box,'#5a3a22',x,y+.9,z,.12,1.3,.12);b.add(G.box,'#5a3a22',x,y+1.5,z,.5,.08,.12);b.M(TL.paint);b.add(G.cyl12,'#c8a040',x,y+.31,z,.47,.02,.47);b.M(0);
+   const g=new THREE.Group();g.position.set(x,y,z);const rod=buildRod(r,state.ench[id]||null);rod.g.rotation.set(0,0,0);rod.g.position.set(0,.35,0);g.add(rod.g);scene.add(g);
+   const it={r,g,rod,x,z,label:null,key:''};rackLabel(it);RACK.list.push(it);world.colliders.push({x,z,r:.5});
+   world.inter.push({x,z,r:2.6,get label(){const s=rodState(r);return s==='eq'?`${r.n} (equipped)`:s==='own'?`Equip the ${r.n}`:s==='lock'?`Look at the ${r.n}`:`Buy the ${r.n} · ${fmt(r.price)}c`;},get kind(){const s=rodState(r);return s==='buy'?'Buy':s==='own'?'Equip':'Look';},act:()=>openRodView(r)});});
+  if(b.p.length){const m=b.mesh(worldMat);m.castShadow=true;m.receiveShadow=true;scene.add(m);}}}
+function updateRodRacks(dt){if(!RACK.built){if(world.spawn.cove)buildRodRacks();return;}const T=WIND.uTime.value,p=player.pos;
+ for(const it of RACK.list){const d=Math.hypot(it.x-p.x,it.z-p.z);const vis=d<140;it.g.visible=vis;if(!vis)continue;it.rod.g.rotation.y=T*.6+it.x;if(it.label){it.label.visible=d<18&&state.settings.tags;if(it.label.visible)rackLabel(it);}}}
+function openRodView(r){openPanel(r.n,rodState(r)==='buy'?fmt(r.price)+' coins':'Rod',()=>{panelCtx.kind='rodview';const s=rodState(r),lock=rodLocked(r);
+ body(`<div class="card ${s==='eq'?'eq':''}"><div class="row"><img class="thumb" src="${rodThumb(r)}" alt=""><div class="grow"><h3>${esc(r.n)}</h3>${r.perk?`<div class="muted">Perk: ${esc(r.perk.d)}</div>`:''}</div></div>${statBars(r)}
+  <div class="row" style="justify-content:flex-end;gap:8px">${s==='eq'?'<span class="pill" style="--c:#9be07a">Equipped</span>':s==='own'?`<button class="btn sky" data-act="req" data-id="${r.id}">Equip</button>`:lock&&s!=='own'?`<span class="muted">${esc(lock)}</span>`:`<span class="muted">You have ${fmt(state.coins)}c</span><button class="btn" data-act="rbuy" data-id="${r.id}" ${state.coins<r.price?'disabled':''}>Buy · ${fmt(r.price)}c</button>`}</div></div>`);
+ bindPanel({rbuy:id=>{const R=RODM[id];if(state.coins<R.price||rodLocked(R)||state.rods.includes(id))return;state.coins-=R.price;state.rods.push(id);state.rod=id;equipRodModel();AU.coin();coinBurst(6);questEvent('rod');toast(`You bought the ${R.n}!`,'gold');save();updateHUD();rerender();},
+  req:id=>{if(!state.rods.includes(id))return;state.rod=id;equipRodModel();AU.ui();save();updateHUD();rerender();}});});}
 /* ================= per-frame ================= */
 let updT=0;
-function updateExtra(dt){updateWells(dt);updateLittleEvents(dt);updateCasino();
+function updateExtra(dt){updateWells(dt);updateLittleEvents(dt);updateCasino();updateRodRacks(dt);
  /* show what's new once after each update */
  if(!MENU.on&&!JOIN.on&&state.tips.joined&&state.tips.intro&&state.seenVer!==GAME_VER&&!panelCtx){if(!updT)updT=performance.now();if(performance.now()-updT>2500){state.seenVer=GAME_VER;save();openUpdates();}}if(Net.uid)noteRiders();}

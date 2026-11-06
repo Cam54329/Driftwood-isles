@@ -54,8 +54,8 @@ const ZONES={
  glim:{n:'Glimmerholt',tag:'Crystal highlands',x:-560,z:860,R:98,H:4.4,hill:2,p1:1.9,p2:4.4,price:400000,tor:true,grass:'#4e6a60',grass2:'#445e58',sand:'#aaa6b8',rock:'#5c5672'},
  sea:{n:'Open Waters',tag:'Deep sea'},
  well:{n:'Tide Well',tag:'A whirling well that opens at sea'},
- abyss:{n:'The Sunless Deep',tag:'The final chamber beneath the Hollow',x:-1650,z:-1600,R:66,H:2,hill:1.5,p1:2.4,p2:.8,price:0,grass:'#2a1a24',grass2:'#24161e',sand:'#3a2a30',rock:'#1e161c',cave:true},
- hollow:{n:'The Drowned Hollow',tag:'A secret cave beneath the sea',x:-1350,z:-1050,R:72,H:2.2,hill:1.3,p1:1.1,p2:2.7,price:0,grass:'#34424a',grass2:'#2c3a42',sand:'#4a5258',rock:'#2a3038',cave:true},
+ abyss:{n:'The Sunless Deep',tag:'The final chamber beneath the Hollow',x:-1650,z:-1600,R:66,H:2,hill:1.5,p1:2.4,p2:.8,price:0,grass:'#3e2a3a',grass2:'#352433',sand:'#4e3a46',rock:'#33262f',cave:true},
+ hollow:{n:'The Drowned Hollow',tag:'A secret cave beneath the sea',x:-1350,z:-1050,R:72,H:2.2,hill:1.3,p1:1.1,p2:2.7,price:0,grass:'#3e5c5c',grass2:'#36524f',sand:'#5e7070',rock:'#425058',cave:true},
  pond_cove:{n:'Willow Pond',tag:'Pebble Cove pond',pond:'cove',col:'#3e5c52'},pond_moss:{n:'Murk Pool',tag:'Mossreach pond',pond:'moss',col:'#34422c'},
  pond_frost:{n:'Frozen Tarn',tag:'Frostmere pond',pond:'frost',col:'#56788a'},pond_ember:{n:'Ash Spring',tag:'Emberkey hot spring',pond:'ember',col:'#4e605c'},
  pond_atoll:{n:'Blue Lagoon',tag:'Sunken Atoll lagoon',pond:'atoll',col:'#2f8e9a'},pond_amber:{n:'Maple Mere',tag:'Amberglen pond',pond:'amber',col:'#4a5a3a'},
@@ -229,6 +229,7 @@ const LUREM={};LURES.forEach(l=>LUREM[l.id]=l);
 const CRATE_PRICE=25000;
 /* what's new: shown once after each update, and any time from the menus */
 const UPDATES=[
+ {v:'3.4',d:'Rods on display',items:['Every island lays its rods out on stands by the arrival path: walk up to look, buy or equip','The Drowned Hollow and Sunless Deep remastered: brighter caves, glowworm ceilings, shafts of light, glowing moss and crystals that light the room','A separate dev profile for the game\'s owner that never reaches the leaderboards']},
  {v:'3.3',d:'Rods remastered',items:['A new signature rod for every island, sold once you hold its chart','10 coloured fishing lines with buffs, won from Mystery Crates (Common, Rare, Legendary, Secret)','6 permanent lures you can win and equip','4 new baits','Mystery Crates for finishing quests, levelling up and landing new Legendary fish','A real Tidewater Casino hall on Pebble Cove, plus a new casino game on every island','Music that changes with events, weather, Tide Wells, fights and the casino']},
  {v:'3.2',d:'Into the deep',items:['Tide Wells open off every island; dive in to find the Drowned Hollow','Floating chests, messages in bottles and fish schools','Boats have seats: ride along in a friend\'s boat','Sunset Pontoon (8 seats) and Wavecutter Jet Ski','Rare fish are three times harder to find and pay double','Dev bar for the game\'s owner, and clearing chat']},
  {v:'3.1',d:'Safe saves and a fair economy',items:['Backups before every update, save files and save codes','Prices rebalanced for a longer climb','Fish values rise with every island']},
@@ -352,7 +353,13 @@ const DEV={on:false,open:false,fast:false,rar:null,ev:null};
 /* ================= STATE / SAVE ================= */
 /* The save key never changes between updates: new versions read the same save and fill in anything new.
    Before an update touches a save (and once a day) a backup copy is kept, see backupSave. */
-const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.3';
+const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.4';
+/* profiles: your normal profile (cloud save, leaderboards, no tools) and the owner's dev profile (its own save on this
+   device, the dev tools, never on leaderboards and never synced to the cloud). The dev profile needs the dev key. */
+const KEY_DEV='driftwood-isles-save-dev',DEV_HASH='94d329459b6a2bde18d3336b2dbc6098cda74ec216abcc65d537c420d502e29b';
+const devUnlocked=()=>{try{return localStorage.getItem('driftwood-dev')===DEV_HASH||/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);}catch(e){return false;}};
+const PROFILE=(()=>{try{return localStorage.getItem('driftwood-profile')==='dev'&&devUnlocked()?'dev':'normal';}catch(e){return 'normal';}})();
+const activeKey=()=>PROFILE==='dev'?KEY_DEV:KEY;
 /* how far along a save is: lifetime earnings never go down, so they decide which of two saves to keep */
 function progressOf(s){return s&&typeof s==='object'?(Number(s.earned)||0)+(Number(s.level)||1)*500+Object.keys(s.dex||{}).length*200:0;}
 function backups(){try{const b=JSON.parse(localStorage.getItem(BKEY));return Array.isArray(b)?b.filter(x=>x&&typeof x.json==='string'):[];}catch(e){return [];}}
@@ -376,13 +383,13 @@ function sanitize(s){const f=freshState();if(!s||typeof s!=='object')return f;co
  if(o.profile){const p=o.profile;o.profile={name:cleanText(p.name,16)||'Angler',color:isHex(p.color)?p.color:SHIRTS[5],hatC:isHex(p.hatC)?p.hatC:SHIRTS[2],skin:isHex(p.skin)?p.skin:SKINS[1],hat:HATS.some(h=>h.id===p.hat)?p.hat:'bucket'};}
  return o;}
 let state=freshState();
-function loadLocal(){let r=null;try{r=localStorage.getItem(KEY);}catch(e){}if(!r)return null;
- try{const s=JSON.parse(r);if((s.gv||'2')!==GAME_VER)backupSave('Before the '+GAME_VER+' update',r);else dailyBackup();return sanitize(s);}
+function loadLocal(){let r=null;try{r=localStorage.getItem(activeKey());if(!r&&PROFILE==='dev'){r=localStorage.getItem(KEY);if(r)localStorage.setItem(KEY_DEV,r);}}catch(e){}if(!r)return null;
+ try{const s=JSON.parse(r);if(PROFILE!=='dev'){if((s.gv||'2')!==GAME_VER)backupSave('Before the '+GAME_VER+' update',r);else dailyBackup();}return sanitize(s);}
  catch(e){/* a damaged save: keep it aside and fall back to the newest backup */try{localStorage.setItem(KEY+'-damaged',r);}catch(_){}const b=backups()[0];if(b){try{return sanitize(JSON.parse(b.json));}catch(_){}}}return null;}
 let cloudRef=null,lastCloud=0,cloudPending=false;
 let lastBk=Date.now();
-function save(){state.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}if(Date.now()-lastBk>3600e3){lastBk=Date.now();dailyBackup();}cloudPending=true;cloudTick(false);}
-function cloudTick(force){if(!cloudRef||!cloudPending)return;const now=Date.now();if(!force&&now-lastCloud<20000)return;lastCloud=now;cloudPending=false;
+function save(){state.savedAt=Date.now();try{localStorage.setItem(activeKey(),JSON.stringify(state));}catch(e){}if(PROFILE!=='dev'&&Date.now()-lastBk>3600e3){lastBk=Date.now();dailyBackup();}cloudPending=true;cloudTick(false);}
+function cloudTick(force){if(PROFILE==='dev')return;if(!cloudRef||!cloudPending)return;const now=Date.now();if(!force&&now-lastCloud<20000)return;lastCloud=now;cloudPending=false;
  cloudRef.set({json:JSON.stringify(state),savedAt:state.savedAt}).catch(e=>{if(e&&(e.code==='invalid_argument'||e.code==='not_granted'||e.code==='revoked'))cloudRef=null;});}
 
 /* ================= AUDIO ================= */

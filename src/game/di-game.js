@@ -156,7 +156,7 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
   u.uSun.value.set(_hd.x*.5+.5,_hd.y*.5+.5);u.uK.value=onScr&&!isMoon?smooth(.2,.75,facing)*smooth(-.02,.06,sy)*(1-env.cloud*.85)*(1-env.fog*.8)*(.55+dusk*.7):0;u.uCol.value.copy(_sunC);u.uTh.value=lerp(1.4,.9,dusk);}
  if(GFX.bloom){GFX.bloom.threshold=lerp(GFX.hdr?2.4:.92,GFX.hdr?1.5:.85,dusk);GFX.bloom.strength=.2+dusk*.12+nightK*.06;}
  if(GFX.grade){const u=GFX.grade.material.uniforms;u.uHigh.value.setRGB(1+dusk*.08+.02,1+dusk*.01,1-dusk*.08-.02);u.uShadow.value.setRGB(.95-dusk*.03,.98,1.05+dusk*.04);u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);u.uSat.value=1.1+dusk*.06-ov*.16-nightK*.14;u.uCon.value=1.07+day*.04-ov*.05;}
- lampT-=dt;if(lampT<=0){lampT=.25;updateLampLights(nightK);}
+ lampT-=dt;if(lampT<=0){lampT=.25;updateLampLights(Math.max(nightK,env.cave||0));}
  {const fz=ZONES.frost,em=ZONES.ember,cv=ZONES.cove,am=ZONES.amber,px=cp.x,pz=cp.z;const na=1-smooth(am.R*1.2,am.R*2.4,Math.hypot(px-am.x,pz-am.z));const nf=1-smooth(fz.R*1.4,fz.R*3,Math.hypot(px-fz.x,pz-fz.z)),ne=1-smooth(em.R*1.2,em.R*2.6,Math.hypot(px-em.x,pz-em.z)),nc=Math.max(1-smooth(cv.R*1.1,cv.R*2.2,Math.hypot(px-cv.x,pz-cv.z)),(1-smooth(ZONES.petal.R*1.2,ZONES.petal.R*2.4,Math.hypot(px-ZONES.petal.x,pz-ZONES.petal.z)))*1.6);env.snowK=nf;
   const set=(k,a)=>{const d=drifts[k];if(!d)return;d.u.uAmt.value=a;d.pts.visible=a>.01;d.u.uCam.value.copy(cp);d.u.uLit.value=k==='ember'?1:lerp(.3,1,day);};set('snow',nf*(.35+Math.min(env.rain,1.3)*.8));set('ember',ne*(.7+(1-day)*.5));set('petal',nc*day*(1-Math.min(env.rain,1))*.8);set('leaf',na*(.4+.6*day)*(1-Math.min(env.rain,1)*.5));
   if(rainbow){const ra=clamp(env.rainbow/10,0,1)*clamp((80-env.rainbow)/6,0,1)*day*(1-Math.min(env.rain,1));rainbow.visible=ra>.01;if(rainbow.visible){const ax=-sunDir.x,az=-sunDir.z,l=Math.hypot(ax,az)||1;rainbow.position.set(cp.x+ax/l*650,cp.y-90,cp.z+az/l*650);rainbow.lookAt(cp.x,cp.y-90,cp.z);rainbow.material.uniforms.uA.value=ra;}}
@@ -165,15 +165,17 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  // refresh the captured sky (reflections + lighting) every so often, sooner after a lightning flash
  updateBigFx(dt);
  /* inside a sea cave the cave takes over the lighting: teal in the Drowned Hollow, violet and ember in the Sunless Deep */
- {let hk=0,deep=false;for(const k of['hollow','abyss']){const H=ZONES[k],v=1-smooth(H.R*1.6,H.R*1.85,Math.hypot(cp.x-H.x,cp.z-H.z));if(v>hk){hk=v;deep=k==='abyss';}}env.cave=hk;waterU.uCave.value=hk;if(hk>0){
-  _c1.set(deep?'#1a0a1c':'#0a262c');scene.fog.color.lerp(_c1,hk);scene.fog.near=lerp(scene.fog.near,4,hk);scene.fog.far=lerp(scene.fog.far,deep?120:150,hk);
-  sun.intensity*=1-hk*.94;hemi.intensity=lerp(hemi.intensity,deep?.7:.9,hk);hemi.color.lerp(_c2.set(deep?'#a05aff':'#4ad8d0'),hk);hemi.groundColor.lerp(_c3.set(deep?'#2a0a10':'#101a22'),hk);
-  scene.environmentIntensity*=1-hk*.8;renderer.toneMappingExposure=lerp(renderer.toneMappingExposure,1.5,hk);
+ {let hk=0,deep=false;for(const k of['hollow','abyss']){const H=ZONES[k],v=1-smooth(H.R*1.6,H.R*1.85,Math.hypot(cp.x-H.x,cp.z-H.z));if(v>hk){hk=v;deep=k==='abyss';}}env.cave=hk;waterU.uCave.value=hk;
+  for(const[k,on]of[['mote',!deep],['moteV',deep]]){const d=drifts[k];if(!d)continue;const a=on?hk:0;d.u.uAmt.value=a;d.pts.visible=a>.01;d.u.uCam.value.copy(cp);d.u.uLit.value=1;}
+  if(hk>0){
+  _c1.set(deep?'#2a1430':'#14444c');scene.fog.color.lerp(_c1,hk);scene.fog.near=lerp(scene.fog.near,10,hk);scene.fog.far=lerp(scene.fog.far,deep?190:230,hk);
+  sun.intensity*=1-hk*.94;hemi.intensity=lerp(hemi.intensity,deep?1.1:1.35,hk);hemi.color.lerp(_c2.set(deep?'#c08aff':'#7aeee4'),hk);hemi.groundColor.lerp(_c3.set(deep?'#4a1a30':'#1e4a50'),hk);
+  scene.environmentIntensity*=1-hk*.75;renderer.toneMappingExposure=lerp(renderer.toneMappingExposure,1.85,hk);
   waterU.uFogC.value.lerp(_c1,hk);waterU.uFogN.value=scene.fog.near;waterU.uFogF.value=scene.fog.far;waterU.uSunCol.value.multiplyScalar(1-hk);waterU.uSpark.value*=1-hk;
-  waterU.uDeep.value.lerp(_c2.set(deep?'#0e0410':'#03141a'),hk);waterU.uShal.value.lerp(_c3.set(deep?'#3a1028':'#0a4a50'),hk);waterU.uBio.value=Math.max(waterU.uBio.value,hk*(deep?.25:.4));waterU.uAmb.value.multiplyScalar(1-hk*.7);
-  glowMat.color.setScalar(lerp(glowMat.color.r,3.4,hk));starU.uA.value*=1-hk;moon.material.opacity*=1-hk;moonHalo.material.opacity*=1-hk;
-  if(GFX.rays)GFX.rays.material.uniforms.uK.value*=1-hk;if(GFX.bloom)GFX.bloom.strength=lerp(GFX.bloom.strength,.42,hk);
-  for(const h of world.halos)if(h.userData.always)h.material.opacity=Math.max(h.material.opacity,hk*.4);
+  waterU.uDeep.value.lerp(_c2.set(deep?'#1a0820':'#063038'),hk);waterU.uShal.value.lerp(_c3.set(deep?'#5a1a40':'#16807a'),hk);waterU.uBio.value=Math.max(waterU.uBio.value,hk*(deep?.3:.45));waterU.uAmb.value.lerp(_c1.set(deep?'#6a3a8a':'#3a9a9a'),hk*.6);
+  glowMat.color.setScalar(lerp(glowMat.color.r,3.2,hk));starU.uA.value*=1-hk;moon.material.opacity*=1-hk;moonHalo.material.opacity*=1-hk;
+  if(GFX.rays)GFX.rays.material.uniforms.uK.value*=1-hk;if(GFX.bloom)GFX.bloom.strength=lerp(GFX.bloom.strength,.5,hk);
+  for(const h of world.halos)if(h.userData.always)h.material.opacity=Math.max(h.material.opacity,hk*.45);
   for(const r of world.caveRings)r.rotation.z+=dt*.6;}}
  ENV.t-=dt;if(ENV.t<=0||(env.flash>.9&&ENV.t<ENV.every-.1)){ENV.t=ENV.every;updateEnvMap();}}
 

@@ -531,19 +531,32 @@ function buildWorld(){LEAFK=TT().leaf;
    {const a=I.dockTh+Math.PI*.6,sx=I.x+Math.cos(a)*I.R*.42,sz=I.z+Math.sin(a)*I.R*.42;if(groundH(sx,sz)>.5){standingStones(sb,gl,sx,0,sz,6.5,r);reserved.push({x:sx,z:sz,r:9});}}
    for(let i=0;i<6;i++){const a=r()*TAU,d=I.R*(.25+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;floatRock(sb,gl,x,groundH(x,z)+9+r()*7,z,.8+r()*.8,r);}
    {const cy=groundH(I.x,I.z);gemCluster(sb,gl,I.x,cy-.4,I.z,3.2,'#b08aff',r);halo(I.x,cy+4,I.z,9,0xb8a0ff).userData.always=true;world.colliders.push({x:I.x,z:I.z,r:3});reserved.push({x:I.x,z:I.z,r:8});}}
-  if(I.cave){/* the caves under the sea: the Drowned Hollow (teal crystals) and, below it, the Sunless Deep (violet crystals and lava) */
-   const deep=key==='abyss',gems=deep?['#b06aff','#ff4ad8','#7a5aff','#ff6a3a']:['#3ae8d0','#5aa8ff','#8a6aff','#3affa0'],caps=deep?['#6a1a4a','#3a1a6a','#8a2a2a']:['#2ab8a8','#3a6ad8','#6a3ad8'],hc=deep?0xc070ff:0x5affe0;
-   place(26,.1,.85,(x,y,z)=>{gemCluster(sb,gl,x,y,z,.7+r()*1.1,pick(gems),r);world.colliders.push({x,z,r:.8});},1.4);
-   place(16,.12,.7,(x,y,z)=>{const s=.7+r()*1;mushroom(sb,gl,x,y,z,s,pick(caps));world.colliders.push({x,z,r:.4*s});});
-   place(14,.15,.8,(x,y,z)=>{sb.M(TL.rock);const h=2+r()*4;sb.add(G.cone,'#2e343c',x,y+h/2-.2,z,.5+r()*.4,h,.5+r()*.4,0,r()*3,0);sb.M(0);world.colliders.push({x,z,r:.7});},1.2);
+  if(I.cave){/* the caves under the sea: the Drowned Hollow (teal) and, below it, the Sunless Deep (violet and ember).
+     A smooth domed ceiling speckled with glowworms, shafts of light through cracks, glowing moss and crystals that light the room */
+   const deep=key==='abyss',gems=deep?['#b06aff','#ff4ad8','#7a5aff','#ff6a3a']:['#3ae8d0','#5aa8ff','#8a6aff','#3affa0'],caps=deep?['#8a2a6a','#4a2a8a','#a83a3a']:['#2ab8a8','#3a6ad8','#7a4ad8'],hc=deep?0xc070ff:0x5affe0,moss=deep?['#3a0e30','#2a1040','#401010']:['#0c3a32','#0e3240','#123a28'];
+   place(22,.1,.85,(x,y,z)=>{gemCluster(sb,gl,x,y,z,.8+r()*1.3,pick(gems),r);world.colliders.push({x,z,r:.9});if(r()<.5){halo(x,y+1.6,z,4.5,new THREE.Color(pick(gems)).getHex()).userData.always=true;const v=V(x,y+1.6,z);v.col=new THREE.Color(pick(gems)).getHex();world.lamps.push(v);}},1.6);
+   place(16,.12,.7,(x,y,z)=>{const s=.8+r()*1.1;mushroom(sb,gl,x,y,z,s,pick(caps));world.colliders.push({x,z,r:.4*s});},1.3);
+   place(16,.15,.85,(x,y,z)=>{const s=.8+r()*1.4;rock(sb,x,y-.2,z,s,deep?'#4a3644':'#4e626a',deep?'#6a2a7a':'#2f8a7a');world.colliders.push({x,z,r:s*.8});},1.4);
+   place(60,.08,.9,(x,y,z)=>{gl.add(G.cyl12,pick(moss),x,y+.03,z,.6+r()*1.2,.03,.6+r()*1.2,0,r()*3,0);},.5);
    if(!deep)place(10,.84,.95,(x,y,z)=>coral(sb,x,y-.2,z,.6+r()*.6,r),.6);
-   else place(5,.3,.7,(x,y,z)=>{const s=1.4+r()*1.2;lv.add(G.cyl12,'#ff5a1a',x,y+.06,z,s,.12,s);for(let i=0;i<8;i++){const a=i/8*TAU;sb.M(TL.rock);sb.add(pick(G.rocks),'#1a1416',x+Math.cos(a)*(s+.3),y+.1,z+Math.sin(a)*(s+.3),.55,.38,.55,0,r()*3);sb.M(0);}world.colliders.push({x,z,r:s});for(let i=0;i<2;i++)world.smoke.push(makeSmoke({x,y:y+.2,z},1.4,i,5));},3.5);
-   const dome=new THREE.Mesh(new THREE.IcosahedronGeometry(I.R*1.85,3),new THREE.MeshStandardMaterial({color:deep?'#1a1218':'#1c2228',roughness:.95,flatShading:true,side:THREE.BackSide}));
-   {const pa=dome.geometry.attributes.position;for(let i=0;i<pa.count;i++){const k=1+(hashI(Math.round(pa.getX(i)*4)+Math.round(pa.getZ(i)*4)*131,Math.round(pa.getY(i)*4),9)-.5)*.12;pa.setXYZ(i,pa.getX(i)*k,pa.getY(i)*k*.55,pa.getZ(i)*k);}dome.geometry.computeVertexNormals();}
+   else place(5,.3,.7,(x,y,z)=>{const s=1.4+r()*1.2;lv.add(G.cyl12,'#ff5a1a',x,y+.06,z,s,.12,s);for(let i=0;i<8;i++){const a=i/8*TAU;sb.M(TL.rock);sb.add(pick(G.rocks),'#2a1e24',x+Math.cos(a)*(s+.3),y+.1,z+Math.sin(a)*(s+.3),.55,.38,.55,0,r()*3);sb.M(0);}world.colliders.push({x,z,r:s});for(let i=0;i<2;i++)world.smoke.push(makeSmoke({x,y:y+.2,z},1.4,i,5));const v=V(x,y+1.2,z);v.col=0xff7a3a;world.lamps.push(v);},3.5);
+   const DR=I.R*1.85,DY=.55,dome=new THREE.Mesh(new THREE.SphereGeometry(DR,64,32),new THREE.MeshStandardMaterial({color:deep?'#3a2a36':'#3a4e56',roughness:.92,emissive:deep?'#120610':'#061a1e',side:THREE.BackSide}));
+   {const pa=dome.geometry.attributes.position;for(let i=0;i<pa.count;i++){const x=pa.getX(i),y=pa.getY(i),z=pa.getZ(i),n=fbm2(x*.03+key.length,z*.03,64,64,3,11)*.12;pa.setXYZ(i,x*(1+n),y*DY*(1+n),z*(1+n));}dome.geometry.computeVertexNormals();}
    dome.position.set(I.x,-6,I.z);dome.userData.noAO=true;scene.add(dome);
-   const st=new Builder();st.M(TL.rock);for(let i=0;i<70;i++){const a=r()*TAU,d=Math.sqrt(r())*I.R*1.6,x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=-6+Math.sqrt(Math.max(0,1-(d/(I.R*1.85))**2))*I.R*1.85*.55,h=4+r()*12;st.add(G.cone,deep?'#1e161c':'#262c34',x,top-h/2,z,.6+r()*1.2,h,.6+r()*1.2,Math.PI,r()*3,0);if(r()<.35)gl.add(G.oct,pick(gems),x,top-h-.3,z,.25,.5,.25);}
+   const ceil=(x,z)=>{const d=Math.hypot(x-I.x,z-I.z);return -6+Math.sqrt(Math.max(0,1-(d/DR)**2))*DR*DY;};
+   const st=new Builder();st.M(TL.rock);for(let i=0;i<38;i++){const a=r()*TAU,d=Math.sqrt(r())*I.R*1.5,x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=ceil(x,z),h=3+r()*8;st.add(G.cone,deep?'#3a2a34':'#46585e',x,top-h/2+.5,z,.7+r()*1.2,h,.7+r()*1.2,Math.PI,r()*3,0);if(r()<.6)gl.add(G.oct,pick(gems),x,top-h+.2,z,.25,.5,.25);}
    scene.add(st.mesh(worldMat));
-   for(let i=0;i<8;i++){const a=i/8*TAU+r(),d=I.R*(.2+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;halo(x,groundH(x,z)+2,z,6,hc).userData.always=true;world.lamps.push(V(x,groundH(x,z)+2,z));}
+   /* glowworms on the ceiling */
+   {const P=[];for(let i=0;i<900;i++){const a=r()*TAU,d=Math.sqrt(r())*DR*.95,x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;P.push(x,ceil(x,z)-.4,z);}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));
+    const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:new THREE.Color(deep?'#d8a0ff':'#9afff0').multiplyScalar(2.2),size:.55,sizeAttenuation:true,transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));pts.userData.noAO=true;scene.add(pts);}
+   /* shafts of light through cracks in the ceiling */
+   for(let i=0;i<6;i++){const a=r()*TAU,d=I.R*(.15+r()*.6),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=ceil(x,z),gy=Math.max(groundH(x,z),0),h=top-gy;if(h<6)continue;
+    const geo=new THREE.CylinderGeometry(1.2+r()*.8,3.2+r()*1.5,h,24,1,true);geo.translate(0,h/2,0);const col=new THREE.Color(deep?'#ffb0ff':'#c8fff4');
+    const m=new THREE.Mesh(geo,new THREE.ShaderMaterial({uniforms:{uT:WIND.uTime,uC:{value:col},uPh:{value:r()*6}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,fog:false,
+     vertexShader:'varying float vY;varying vec3 vN;varying vec3 vV;void main(){vY=uv.y;vec4 w=modelMatrix*vec4(position,1.);vN=normalize(mat3(modelMatrix)*normal);vV=normalize(cameraPosition-w.xyz);gl_Position=projectionMatrix*viewMatrix*w;}',
+     fragmentShader:'uniform float uT;uniform vec3 uC;uniform float uPh;varying float vY;varying vec3 vN;varying vec3 vV;void main(){float edge=pow(abs(dot(vN,vV)),1.5);float a=smoothstep(0.,.25,vY)*smoothstep(1.,.6,vY)*edge*(.75+.25*sin(uT*.7+uPh));gl_FragColor=vec4(uC*a*.16,1.);}'}));
+    m.position.set(x,gy,z);m.userData.noAO=true;m.frustumCulled=false;scene.add(m);}
+   for(let i=0;i<8;i++){const a=i/8*TAU+r(),d=I.R*(.2+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;halo(x,groundH(x,z)+2,z,6,hc).userData.always=true;const v=V(x,groundH(x,z)+2.4,z);v.col=hc;world.lamps.push(v);}
    /* rings of light: back up (to the surface from the Hollow, to the Hollow from the Deep), and the sealed gate down to the Deep */
    const ringAt=(fx,label,kind,act,col)=>{const sp=world.spawn[key],ex=lerp(sp.x,I.x,fx),ez=lerp(sp.z,I.z,fx),ey=groundH(ex,ez);const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.14,10,40),new THREE.MeshBasicMaterial({color:new THREE.Color(col)}));ring.position.set(ex,ey+1.9,ez);ring.rotation.y=Math.atan2(I.x-sp.x,I.z-sp.z);scene.add(ring);
     halo(ex,ey+1.9,ez,3.2,0x9ffcff).userData.always=true;world.inter.push({x:ex,z:ez,r:4,label,kind,act});world.caveRings.push(ring);return{x:ex,z:ez};};
@@ -678,6 +691,7 @@ function buildLife(){const ic=new THREE.IcosahedronGeometry(.1,1);const sm=new T
  for(const c of world.chimneys.slice(0,12))for(let i=0;i<3;i++)world.smoke.push(makeSmoke(c,.9,i/3*4,4));
  if(world.volcano)for(let i=0;i<9;i++)world.smoke.push(makeSmoke(world.volcano,4,i/9*9,9));
  makeDrift('snow',{n:1800,color:'#ffffff',size:3.4,vy:-2.3,sway:1.3,add:false,box:[70,40,70]});makeDrift('ember',{n:520,color:new THREE.Color(4,1.6,.5),size:2.4,vy:1.7,sway:1.1,add:true,box:[60,30,60]});
+ makeDrift('mote',{n:700,color:new THREE.Color(1.1,3.2,2.9),size:2.4,vy:.3,sway:1.8,add:true,box:[70,24,70]});makeDrift('moteV',{n:600,color:new THREE.Color(3,1.3,3.4),size:2.4,vy:.35,sway:1.6,add:true,box:[70,24,70]});
  makeDrift('petal',{n:280,color:'#ffc6dc',size:2.8,vy:-.75,sway:2.3,add:false,box:[60,26,60]});makeDrift('leaf',{n:420,color:'#d8782a',size:3.4,vy:-1.1,sway:2.8,add:false,box:[64,28,64]});buildRainbow();buildBolt();}
 const drifts={};
 function makeDrift(key,o){const g=new THREE.BufferGeometry();const r=rng(key.length*13+5);const sd=[],p=[];for(let i=0;i<o.n;i++){sd.push(r(),r(),r());p.push(0,0,0);}g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('seed',new THREE.Float32BufferAttribute(sd,3));
@@ -702,7 +716,7 @@ function ringAt(x,y,z,d=1,size=1){for(const r of rings){if(r.t<r.d)continue;r.t=
 function syncLampLights(){const want=TT().lamps;while(GFX.lamps.length<want){const l=new THREE.PointLight(0xffc98a,0,16,2);l.userData.noAO=true;scene.add(l);GFX.lamps.push(l);}
  while(GFX.lamps.length>want){const l=GFX.lamps.pop();scene.remove(l);l.dispose&&l.dispose();}}
 function updateLampLights(nightK){if(!GFX.lamps.length)return;const c=cam.target,L=world.lamps;const near=L.map(p=>[p,(p.x-c.x)**2+(p.z-c.z)**2]).sort((a,b)=>a[1]-b[1]);
- GFX.lamps.forEach((l,i)=>{const e=near[i];if(!e||e[1]>70*70||nightK<.05){l.intensity=0;return;}l.position.copy(e[0]);l.intensity=nightK*14*(1-smooth(40,70,Math.sqrt(e[1])));});}
+ GFX.lamps.forEach((l,i)=>{const e=near[i];if(!e||e[1]>70*70||nightK<.05){l.intensity=0;return;}l.position.copy(e[0]);l.color.set(e[0].col||0xffc98a);l.distance=e[0].col?22:16;l.intensity=nightK*(e[0].col?18:14)*(1-smooth(40,70,Math.sqrt(e[1])));});}
 
 /* ---------- tiers ---------- */
 /* dynamic resolution: GFX.prK trims the pixel ratio a little when frames run long, before the tier itself steps down */

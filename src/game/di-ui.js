@@ -78,8 +78,11 @@ function openDex(){if(JOIN.on)return;let tab=player.zone&&ZONES[player.zone]?pla
  bindPanel({tab:id=>{tab=id;rerender();}});});}
 function vol(id,label,v){return `<label class="slider" for="${id}"><span>${label}</span><input type="range" id="${id}" min="0" max="1" step="0.01" value="${v}" style="--p:${v*100}%"><span>${Math.round(v*100)}</span></label>`;}
 let devMsg='';
-function devCard(){return `<div class="card"><h3>Developer</h3>${DEV.on?`<div class="muted">Developer tools are on for this device. Press <kbd>\`</kbd> or tap <b>DEV</b> at the top right.</div><button class="btn sky sm" data-act="devopen" style="align-self:flex-start">Open developer tools</button>`:
- `<div class="muted">For the game's owner. Enter your dev key.</div><div class="row" style="gap:8px"><input id="devCode" type="password" autocomplete="off" placeholder="Dev key" style="flex:1;min-width:0;background:var(--slot);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:8px;font:700 13px var(--hud)"><button class="btn sm" data-act="devunlock">Unlock</button></div>`}${devMsg?`<div class="muted" style="color:var(--gold2)">${esc(devMsg)}</div>`:''}</div>`;}
+function devCard(){const un=devUnlocked();
+ if(PROFILE==='dev')return `<div class="card"><h3>Developer</h3><div class="muted">You're on your <b>dev profile</b>: the dev tools are on (press <kbd>\`</kbd> or tap <b>DEV</b>), this save stays on this device, and nothing here reaches the leaderboards or your normal save.</div>
+  <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sky sm" data-act="devopen">Open developer tools</button><button class="btn sm" data-act="profnormal">Switch to my normal profile</button><button class="btn ghost sm" data-act="profreset">Reset dev profile from my normal one</button></div>${devMsg?`<div class="muted" style="color:var(--gold2)">${esc(devMsg)}</div>`:''}</div>`;
+ if(un)return `<div class="card"><h3>Developer</h3><div class="muted">You're on your <b>normal profile</b>: no dev tools, your real level, cloud save and leaderboards. Your dev profile has its own save.</div><button class="btn sm" data-act="profdev" style="align-self:flex-start">Switch to my dev profile</button></div>`;
+ return `<div class="card"><h3>Developer</h3><div class="muted">For the game's owner. Enter your dev key to open your dev profile.</div><div class="row" style="gap:8px"><input id="devCode" type="password" autocomplete="off" placeholder="Dev key" style="flex:1;min-width:0;background:var(--slot);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:8px;font:700 13px var(--hud)"><button class="btn sm" data-act="devunlock">Unlock</button></div>${devMsg?`<div class="muted" style="color:var(--gold2)">${esc(devMsg)}</div>`:''}</div>`;}
 /* ---------- your save: backups, save file and save code (move progress to another device or browser) ---------- */
 let saveUI={load:false,msg:'',restore:null};
 function saveCode(){const j=JSON.stringify(state);return 'DI3:'+btoa(unescape(encodeURIComponent(j)));}
@@ -112,7 +115,7 @@ function openSettings(){if(JOIN.on&&!MENU.on)return;let confirmReset=false;openP
  <div class="card"><div class="row"><div class="grow"><h3>Reset progress</h3><span class="muted">${confirmReset?'This erases coins, fish, rods and the Bestiary. There is no undo.':'Start over from scratch.'}</span></div><button class="btn rose sm" data-act="reset">${confirmReset?'Yes, erase everything':'Reset'}</button></div></div>`);
  const sl=(id,key)=>{const el=$('#'+id);el.oninput=()=>{s[key]=Number(el.value);el.style.setProperty('--p',(s[key]*100)+'%');el.nextElementSibling.textContent=Math.round(s[key]*100);AU.applyVol();};el.onchange=()=>save();};sl('vMusic','music');sl('vSfx','sfx');sl('vAmb','amb');{const el=$('#vSens');el.oninput=()=>{s.sens=Number(el.value)*2;el.style.setProperty('--p',(el.value*100)+'%');el.nextElementSibling.textContent=Math.round(s.sens*100);};el.onchange=()=>save();el.nextElementSibling.textContent=Math.round((s.sens??1)*100);}
  bindPanel({gfx:id=>{s.gfx=id;s.gfxAuto=false;GFX.tier=id;applyTier();save();rerender();},wx:id=>{s.weather=id;if(id!=='auto')setWeather(id);save();rerender();},chill:()=>{s.chill=!s.chill;save();updateGear();rerender();toast(s.chill?'Chill mode on. Take it easy.':'Chill mode off.');},
-  ...saveHandlers(),devopen:()=>{closePanel();toggleDev(true);},devunlock:async()=>{const el=$('#devCode');devMsg=await devUnlock(el&&el.value);rerender();},
+  ...saveHandlers(),devopen:()=>{closePanel();toggleDev(true);},profdev:()=>switchProfile('dev'),profnormal:()=>switchProfile('normal'),profreset:()=>switchProfile('dev',true),devunlock:async()=>{const el=$('#devCode');devMsg=await devUnlock(el&&el.value);rerender();},
   tags:()=>{s.tags=!s.tags;save();rerender();},invy:()=>{s.invY=!s.invY;save();rerender();},keys:()=>openControls(),look:()=>{closePanel();openJoin(true);},
   reset:()=>{if(!confirmReset){confirmReset=true;rerender();return;}backupSave('Before resetting progress');const keep=state.settings,prof=state.profile;state=freshState();state.settings=keep;state.profile=prof;state.tips.intro=1;onStateReplaced();const sp=world.spawn.cove;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);placeBoatAt('cove');save();closePanel();toast('Progress reset. Welcome back to Pebble Cove!');}});});}
 function openIntro(){openPanel('Welcome, '+profileOr().name,'A cozy island fishing adventure',()=>{
@@ -169,7 +172,7 @@ function renderDev(){const el=$('#devBar');if(el.hidden)return;const opt=(arr,se
  <div class="dv-s"><h4>Fishing</h4><div class="dv-r"><button data-dev="bite">Bite now</button><select id="dvRar"><option value="">Next catch: normal odds</option>${RAR.map((R,i)=>`<option value="${i}" ${DEV.rar===i?'selected':''}>Next catch: ${R.n}</option>`).join('')}</select></div></div>
  <div class="dv-s"><h4>Player</h4><div class="dv-r"><button data-dev="fast" class="${DEV.fast?'on':''}">Fast travel: ${DEV.fast?'on':'off'}</button></div></div>
  <div class="dv-s"><h4>Chat</h4><div class="dv-r"><button data-dev="chatme">Clear my chat</button>${Net.admin?'<button data-dev="chatall" class="warn">Clear chat for everyone</button>':''}</div>${Net.admin?'':'<small>Clearing chat for everyone needs owner access (see SETUP-MULTIPLAYER.md).</small>'}</div>
- <div class="dv-s"><small>Player ID ${esc(Net.uid||'offline')}${Net.admin?' · owner':''} · position ${Math.round(player.pos.x)}, ${Math.round(player.pos.z)}<br>Progress granted here stays off the leaderboard.</small></div>`;
+ <div class="dv-s"><small>Player ID ${esc(Net.uid||'offline')}${Net.admin?' · owner':''} · position ${Math.round(player.pos.x)}, ${Math.round(player.pos.z)}<br>Dev profile: separate save, never on the leaderboards.</small></div>`;
  const rs=$('#dvRar');rs.onchange=()=>{DEV.rar=rs.value===''?null:Number(rs.value);toast(DEV.rar==null?'Normal catch odds.':'Your next catch will be '+RAR[DEV.rar].n+'.');};}
 function devAct(a,v){
  if(a==='close')toggleDev(false);
@@ -193,15 +196,14 @@ function devAct(a,v){
 $('#devBar').addEventListener('click',e=>{const b=e.target.closest('[data-dev]');if(b){AU.ui();devAct(b.dataset.dev,b.dataset.v);}});
 /* the owner's dev key is checked against its SHA-256 fingerprint, so the key itself never appears in this public code.
    If the same key is set as config/devCode in Firebase, the server also grants owner rights (clearing chat for everyone). */
-const DEV_HASH='94d329459b6a2bde18d3336b2dbc6098cda74ec216abcc65d537c420d502e29b';
 async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
 async function devUnlock(code){code=String(code||'').trim();if(!code)return 'Type the dev key first.';let h='';try{h=await sha256(code);}catch(e){}
- const claim=()=>Net.adm?Net.adm.claim(code).then(()=>{Net.admin=true;return true;}).catch(()=>false):Promise.resolve(false);
- if(h===DEV_HASH){try{localStorage.setItem('driftwood-dev',h);}catch(e){}devAvailable();const ok=await claim();toast('Developer tools unlocked. Press ` or tap DEV.','gold');
-  return Net.adm&&!ok?'Dev bar unlocked. To clear chat for everyone, also set config/devCode to this key in Firebase (see SETUP-MULTIPLAYER.md).':'';}
- if(DEV_HOST){devAvailable();return '';}
- if(await claim()){devAvailable();toast('Developer tools unlocked. Press ` or tap DEV.','gold');return '';}
+ if(h===DEV_HASH||DEV_HOST){try{localStorage.setItem('driftwood-dev',DEV_HASH);}catch(e){}if(Net.adm)Net.adm.claim(code).then(()=>{Net.admin=true;}).catch(()=>{});switchProfile('dev');return '';}
+ if(Net.adm){const ok=await Net.adm.claim(code).then(()=>true).catch(()=>false);if(ok){Net.admin=true;try{localStorage.setItem('driftwood-dev',DEV_HASH);}catch(e){}switchProfile('dev');return '';}}
  return 'That dev key is not right.';}
+/* switch between the normal and dev profile; the dev profile starts as a copy of your normal one */
+function switchProfile(to,reset){save();try{if(to==='dev'&&(reset||!localStorage.getItem(KEY_DEV)))localStorage.setItem(KEY_DEV,localStorage.getItem(KEY)||JSON.stringify(state));localStorage.setItem('driftwood-profile',to);}catch(e){}
+ toast(to==='dev'?'Switching to your dev profile…':'Switching to your normal profile…');setTimeout(()=>location.reload(),500);}
 function renderChatLog(){const el=$('#chatLog');el.innerHTML=Net.log.slice(-50).map(m=>m.sys?`<div class="cl sys">${esc(m.text)}</div>`:`<div class="cl ${m.feed?'feed':''}"><b style="color:${inkName(m.color)}">${esc(m.name)}</b>${esc(m.text)}</div>`).join('');el.scrollTop=el.scrollHeight;}
 function openChat(){if(JOIN.on)return;const c=$('#chat');if(isTouch)c.classList.add('open');$('#chatBadge').hidden=true;c.classList.remove('idle');CHAT.idleT=0;$('#chatIn').focus();}
 $('#chatBtn').addEventListener('click',()=>{AU.init();const c=$('#chat');if(c.classList.contains('open')){c.classList.remove('open');$('#chatIn').blur();}else openChat();});
@@ -228,10 +230,10 @@ async function netInit(){let C=null;
  let user=null,db=null,room=null;try{[user,db,room]=await Promise.all([C.use('user'),C.use('db'),C.use('room')]);}catch(e){}
  Net.user=user;Net.db=db;Net.room=room;
  if(user){try{Net.uid=await user.id();}catch(e){}try{const cw=await user.can('data.write');if(cw===false)Net.canDb=false;}catch(e){}}
- if(db&&Net.uid){try{const ref=db.doc('data/users/'+Net.uid+'/save');const snap=await ref.get();if(snap.exists){const d=snap.data();if(d&&typeof d.json==='string'){const s=sanitize(JSON.parse(d.json));const pc=progressOf(s),pl=progressOf(state);
+ if(db&&Net.uid&&PROFILE!=='dev'){try{const ref=db.doc('data/users/'+Net.uid+'/save');const snap=await ref.get();if(snap.exists){const d=snap.data();if(d&&typeof d.json==='string'){const s=sanitize(JSON.parse(d.json));const pc=progressOf(s),pl=progressOf(state);
   /* keep whichever save is further along (newest wins a tie); the other one is kept as a backup */
   if(pc>pl+1||(Math.abs(pc-pl)<=1&&(s.savedAt||0)>(state.savedAt||0)+2000)){backupSave('Before loading the cloud save');const prof=state.profile;state=s;if(!state.profile)state.profile=prof;onStateReplaced();toast('Cloud save loaded');}else if(pc>progressOf(freshState())+1&&pc<pl-1)backupSave('Older cloud save',d.json);}}cloudRef=ref;cloudPending=true;cloudTick(true);}catch(e){}}
- {let adm=null;try{adm=await C.use('admin');}catch(e){}Net.adm=adm||null;if(adm&&Net.uid){try{adm.onChatClear(applyChatClear);}catch(e){}if(Net.backend==='local'||await adm.check()){Net.admin=true;devAvailable();}}}
+ {let adm=null;try{adm=await C.use('admin');}catch(e){}Net.adm=adm||null;if(adm&&Net.uid){try{adm.onChatClear(applyChatClear);}catch(e){}if(Net.backend==='local'||await adm.check()){Net.admin=true;if(PROFILE==='dev')devAvailable();}}}
  if(!room&&Net.backend==='claude')Net.err='Online play here needs you to be signed in to Claude and invited to this page (or a member of its organization).';
  if(room){room.onPeers(onPeers,()=>{Net.room=null;netStatus();});room.on('chat',onChatEvt,()=>{});room.onConnection(c=>{Net.connected=c;netStatus();},()=>{});}
  if(db){db.collection('chat').orderBy('u','desc').limit(40).onSnapshot(onChatSnap,()=>{});db.collection('lb').orderBy('u','desc').limit(300).onSnapshot(onLbSnap,()=>{});}
@@ -242,7 +244,7 @@ function onPeers(ch){Net.peers=ch.peers;for(const p of ch.peers){if(p.isMe||p.ki
   if(pr!==r.lastP){r.lastP=pr;r.ingest(pr,p);if(r.announce){r.announce=false;sysLine(`${r.name} joined the isles.`);}}}
  for(const p of ch.left){const r=Net.remotes.get(p.peer);if(r){sysLine(`${r.name} left the isles.`);r.dispose();Net.remotes.delete(p.peer);}}netStatus();}
 function buildPresence(){const p=profileOr(),pos=player.mode==='boat'?boat.pos:player.pos;const r2=v=>Math.round(v*100)/100;
- return{v:2,uid:Net.uid||'',n:p.name,c:p.color,hc:p.hatC,h:p.hat,sk:p.skin,lv:state.level,ti:state.title||'',zn:player.zone||'cove',rd:state.rod,en:state.ench[state.rod]||'',
+ return{v:2,uid:Net.uid||'',n:p.name,c:p.color,hc:p.hatC,h:p.hat,sk:p.skin,lv:state.level,ti:PROFILE==='dev'?'Developer':state.title||'',zn:player.zone||'cove',rd:state.rod,en:state.ench[state.rod]||'',
   x:r2(pos.x),y:r2(player.mode==='boat'?0:pos.y),z:r2(pos.z),r:Math.round(prig.root.rotation.y*1000)/1000,b:player.mode==='boat'?1:0,by:Math.round(boat.yaw*1000)/1000,
   rb:RIDE?RIDE.uid:null,sk:RIDE?RIDE.seat:null,ln:state.line,s:SC[F.st]||'i',bt:state.boat,fx:r2(F.to.x),fz:r2(F.to.z),k:F.lastCatch,e:player.emId?{i:player.emId,t:player.emType||'wave',f:player.emFish||null}:null};}
 function netTick(dt){if(!Net.room||JOIN.on||!state.tips.joined)return;Net.pAcc+=dt;if(Net.pAcc<Net.rate)return;Net.pAcc=0;const p=buildPresence();const key=JSON.stringify(p),now=Date.now();if(key===Net.pKey&&now-Net.pLast<15000)return;Net.pKey=key;Net.pLast=now;p.ts=now;Net.room.presence(p).catch(()=>{});}
@@ -268,7 +270,7 @@ function onLbSnap(snap){const m=new Map();for(const doc of snap.docs){const d=do
 function myLb(){const p=profileOr();let dx=0,hw=0,hs='',rr=0,rs='',rm='';for(const id in state.dex){const d=state.dex[id];if(!d||!d.n||!SPM[id])continue;dx++;if(d.best>hw){hw=d.best;hs=id;}
   const sp=SPM[id],bm=(d.muts||[]).filter(m=>MUTS[m]).sort((a,b)=>MUTS[b].m-MUTS[a].m)[0]||'';const sc=sp.r*100+(bm?MUTS[bm].m*10:0);if(sc>rr){rr=sc;rs=id;rm=bm;}}
  return{n:p.name,c:p.color,h:p.hat,e:Math.round(state.earned),co:Math.round(state.coins),hw:Math.round(hw*100)/100,hs,rr,rs,rm,dx,lv:state.level};}
-function lbTick(){if(!Net.db||!Net.uid||!Net.canDb||Net.lbW||!state.tips.joined||state.devUsed)return;const d=myLb();const key=JSON.stringify(d);if(key===Net.lbKey)return;const now=Date.now();if(now-Net.lbLast<15000)return;
+function lbTick(){if(!Net.db||!Net.uid||!Net.canDb||Net.lbW||!state.tips.joined||state.devUsed||PROFILE==='dev')return;const d=myLb();const key=JSON.stringify(d);if(key===Net.lbKey)return;const now=Date.now();if(now-Net.lbLast<15000)return;
  Net.lbW=true;Net.lbLast=now;d.u=now;Net.db.doc('lb/'+Net.uid).set(d).then(()=>{Net.lbKey=key;}).catch(e=>{if(e&&['invalid_argument','not_granted','revoked'].includes(e.code))Net.canDb=false;}).finally(()=>{Net.lbW=false;});}
 function openLeaderboard(){if(JOIN.on)return;let tab='coins';openPanel('Leaderboards','Every angler who has fished here',()=>{panelCtx.kind='lb';
  const me=myLb();const all=new Map(Net.lb);all.set(Net.uid||'me',{n:me.n,c:me.c,e:me.e,hw:me.hw,hs:me.hs,rr:me.rr,rs:me.rs,rm:me.rm,dx:me.dx,lv:me.lv});
@@ -320,7 +322,7 @@ async function boot(data){loadStep(15,'Loading the islands…');const loaded=(da
  initWeather();loadStep(22,'Weathering the rocks…');await nextFrame();await genWorldTextures(TT().tex,async f=>{loadStep(22+f*24,'Weathering the rocks…');await nextFrame();});loadStep(48,'Growing palm trees…');await nextFrame();buildWorld();loadStep(75,'Filling the sea…');await nextFrame();initEnv();setupPlayer();applyTier();resize();WAVE.amp=WAVE_W[env.weather]||1;updateEnv(0);updateEnvMap();loadStep(90,'Lighting the sky…');await nextFrame();
  cam.yaw=player.face+Math.PI;cam.target.copy(player.pos).add(new V3(0,2.5,0));updateHUD();updateClockHUD();renderChatLog();loadStep(100,'Ready');
  requestAnimationFrame(t=>{clock.last=t;frame(t);});setTimeout(()=>{const l=$('#loading');l.classList.add('out');setTimeout(()=>l.remove(),900);},200);
- {let k='';try{k=localStorage.getItem('driftwood-dev')||'';}catch(e){}if(DEV_HOST||k===DEV_HASH)devAvailable();}rebuildPlayerTag();if(/[?&]nomenu/.test(location.search)){if(!state.profile||!state.tips.joined)openJoin(false);else if(!state.tips.intro)openIntro();}else openMenu();
+ if(PROFILE==='dev'){devAvailable();document.body.classList.add('devprof');setTimeout(()=>toast('Dev profile: tools on. This save stays on this device and never goes on the leaderboards.','gold'),1500);}rebuildPlayerTag();if(/[?&]nomenu/.test(location.search)){if(!state.profile||!state.tips.joined)openJoin(false);else if(!state.tips.intro)openIntro();}else openMenu();
  const unlock=()=>{AU.init();removeEventListener('pointerdown',unlock,true);removeEventListener('keydown',unlock,true);};addEventListener('pointerdown',unlock,true);addEventListener('keydown',unlock,true);
  netInit();try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({state}));}catch(e){}}
 const HOTH=window.claude&&window.claude.hot;
@@ -355,4 +357,4 @@ function renderBuffs(){const el=$('#buffBar');if(!el)return;const parts=[];for(c
 
 
 /* ---------- debug hook (only with ?debug in the URL) ---------- */
-if(/[?&]debug/.test(location.search))window.__DI={get state(){return state;},env,cam,camera,GFX,applyTier,get player(){return player;},get bobber(){return bobber;},get boat(){return boat;},openGear,openUpdates,tryDescend,hollowProgress,grantCrate,Music,get fline(){return fline;},devUnlock,sha256,DEV_HASH,CASINO,CAS,get RIDE(){return RIDE;},activeWells,diveWell,surfaceFromHollow,spawnLittleEvent,LE,collectLE,DEV,openCasino,startRide,Net,setTackle,openSettings,backups,save,QUESTS,QM,QH,qState,questEvent,openNPC,NPCM,rarityOdds,get panelCtx(){return panelCtx;},setWeather,renderer,scene,world,ZONES,TT,clock,SKYJS,skyU,WAVE,sun,hemi,waterU,ENV,THREE,BIG,buildFish,makeWhale,makeChar,SPECIES,SPM,F,startBite,setHook,startFight,landCatch,finishCatch,fishPress};
+if(/[?&]debug/.test(location.search))window.__DI={get state(){return state;},env,cam,camera,GFX,applyTier,get player(){return player;},get bobber(){return bobber;},get boat(){return boat;},RACK,openRodView,PROFILE,openGear,openUpdates,tryDescend,hollowProgress,grantCrate,Music,get fline(){return fline;},devUnlock,sha256,DEV_HASH,CASINO,CAS,get RIDE(){return RIDE;},activeWells,diveWell,surfaceFromHollow,spawnLittleEvent,LE,collectLE,DEV,openCasino,startRide,Net,setTackle,openSettings,backups,save,QUESTS,QM,QH,qState,questEvent,openNPC,NPCM,rarityOdds,get panelCtx(){return panelCtx;},setWeather,renderer,scene,world,ZONES,TT,clock,SKYJS,skyU,WAVE,sun,hemi,waterU,ENV,THREE,BIG,buildFish,makeWhale,makeChar,SPECIES,SPM,F,startBite,setHook,startFight,landCatch,finishCatch,fishPress};
