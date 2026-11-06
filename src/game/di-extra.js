@@ -227,7 +227,7 @@ function buildRodRacks(){RACK.built=true;for(const key in ROD_RACKS){const ids=R
    ids.forEach((id,i)=>{const x=sp.x+sx*6+fx*(i-(ids.length-1)/2)*1.2,z=sp.z+sz*6+fz*(i-(ids.length-1)/2)*1.2;spots.push({x,z,ry:sp.yaw,lean:0,stand:true});});}
   ids.forEach((id,i)=>{const r=RODM[id],sp2=spots[i];if(!sp2)return;const y=groundH(sp2.x,sp2.z);
    if(sp2.stand){b.M(TL.wood);b.add(G.cyl12,'#6a4a2e',sp2.x,y+.12,sp2.z,.5,.24,.5);b.M(0);}
-   const g=new THREE.Group();g.position.set(sp2.x,y,sp2.z);g.rotation.y=sp2.ry;const rod=buildRod(r,state.ench[id]||null);rod.g.rotation.set(0,0,sp2.lean);rod.g.position.set(0,.05,0);g.add(rod.g);scene.add(g);
+   const g=new THREE.Group();g.position.set(sp2.x,y,sp2.z);g.rotation.y=sp2.ry;const rod=buildRod(r,state.ench[id]||null);rod.g.rotation.set(0,0,sp2.lean);rod.g.position.set(0,.05,0);{const bm=bakeMeshes(rod.g);if(bm){bm.position.copy(rod.g.position);bm.quaternion.copy(rod.g.quaternion);g.add(bm);}else g.add(rod.g);}scene.add(g);
    const it={r,g,rod,x:sp2.x,z:sp2.z,label:null,key:'',lean:sp2.lean};RACK.list.push(it);world.colliders.push({x:sp2.x,z:sp2.z,r:.3});
    world.inter.push({x:sp2.x,z:sp2.z,r:1.9,get label(){const s=rodState(r);return s==='eq'?`${r.n} (equipped)`:s==='own'?`Equip the ${r.n}`:s==='lock'?`Look at the ${r.n}`:`Buy the ${r.n} · ${fmt(r.price)}c`;},get kind(){const s=rodState(r);return s==='buy'?'Buy':s==='own'?'Equip':'Look';},act:()=>openRodView(r)});});
   if(b.p.length){const m=b.mesh(worldMat);m.castShadow=true;m.receiveShadow=true;scene.add(m);}}}

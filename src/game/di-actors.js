@@ -246,6 +246,20 @@ function makeLine(){const lg=new THREE.BufferGeometry();lg.setAttribute('positio
 function drawLine(line,a,b,sag,top=.3){const arr=line.geometry.attributes.position.array;const d=a.distanceTo(b);for(let i=0;i<24;i++){const k=i/23;arr[i*3]=lerp(a.x,b.x,k);arr[i*3+1]=lerp(a.y,b.y+top,k)-Math.sin(k*Math.PI)*sag*Math.min(d/8,1.5);arr[i*3+2]=lerp(a.z,b.z,k);}line.geometry.attributes.position.needsUpdate=true;}
 
 /* boats */
+
+/* ---------- baking: squash a group of many small meshes into one mesh with vertex colours.
+   Used for far-away townsfolk and for the rods on display, which saves hundreds of draw calls. ---------- */
+const BAKE_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.78,metalness:.05});
+function bakeMeshes(root,skip){root.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(root.matrixWorld).invert(),m4=new THREE.Matrix4(),col=new THREE.Color(),parts=[];
+ root.traverse(o=>{if(!o.isMesh||!o.geometry||!o.geometry.attributes.position)return;const mat=Array.isArray(o.material)?o.material[0]:o.material;if(!mat||mat.transparent||(skip&&skip(o)))return;
+  let v=o.visible,q=o.parent;while(v&&q&&q!==root){v=q.visible;q=q.parent;}if(!v)return;
+  const src=o.geometry,g=src.index?src.toNonIndexed():src.clone(),old=g.attributes.color&&mat.vertexColors?g.attributes.color:null;
+  col.copy(mat.color||col.set('#888888'));if(mat.emissive&&(mat.emissiveIntensity||0)>0){col.r+=mat.emissive.r*mat.emissiveIntensity*.6;col.g+=mat.emissive.g*mat.emissiveIntensity*.6;col.b+=mat.emissive.b*mat.emissiveIntensity*.6;}
+  const n=g.attributes.position.count,ca=new Float32Array(n*3);for(let i=0;i<n;i++){const r=old?old.getX(i):1,gg=old?old.getY(i):1,b=old?old.getZ(i):1;ca[i*3]=col.r*r;ca[i*3+1]=col.g*gg;ca[i*3+2]=col.b*b;}
+  for(const k of Object.keys(g.attributes))if(k!=='position'&&k!=='normal')g.deleteAttribute(k);if(!g.attributes.normal)g.computeVertexNormals();
+  g.setAttribute('color',new THREE.BufferAttribute(ca,3));m4.multiplyMatrices(inv,o.matrixWorld);g.applyMatrix4(m4);parts.push(g);});
+ if(!parts.length)return null;let merged=null;try{merged=BGU.mergeGeometries(parts,false);}catch(e){merged=null;}parts.forEach(g=>g.dispose());if(!merged)return null;
+ const mesh=new THREE.Mesh(merged,BAKE_MAT);mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.baked=true;return mesh;}
 function makeBoat(accent,type,up){const BT=BOATM[type]||BOATS[0],M=BT.m,b=new Builder(),N=16,st=[];b.M(TL.paint);const L=M.L,W=M.W,H=M.H,D=M.D,z0=-L*.45;
  const white=new THREE.Color(M.hull),acc=new THREE.Color(M.stripe||accent||'#8a4a3a'),bot=new THREE.Color(M.bottom||'#4a3a32'),wood=new THREE.Color('#6e5a46');
  for(let i=0;i<=N;i++){const t=i/N,z=z0+t*L;const bowK=clamp((t-.55)/.45,0,1);const w=W*Math.sqrt(Math.max(0,1-bowK*bowK))*(t<.1?.88+t*1.2:1);const top=H+bowK*bowK*H*.5,bt=D-bowK*bowK*D*1.4;st.push({z,w,top,bt,chY:lerp(bt,top,.45)});}

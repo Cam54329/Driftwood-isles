@@ -197,6 +197,14 @@ body.menu #fishTip,body.photo #fishTip,body.menu #hook,body.menu #reel{display:n
 #hook .hk-ring{position:absolute;inset:0;border-radius:50%;border:5px solid var(--gold2);box-shadow:0 0 26px rgba(242,193,78,.55),inset 0 0 18px rgba(242,193,78,.3);animation:hookRing var(--hw,1s) linear forwards}
 #hook .hk-core{font:900 32px/1 var(--hud);letter-spacing:.05em;color:#fff;text-shadow:var(--stroke);text-align:center;animation:hookPop .3s cubic-bezier(.2,1.7,.4,1)}
 #hook small{display:block;font:800 12px var(--hud);letter-spacing:.06em;color:var(--ink);margin-top:6px}
+#hook .hk-perfect{position:absolute;inset:0;border-radius:50%;border:2px dashed rgba(255,231,140,.75);transform:scale(1.39);animation:hkPf var(--hw,1s) linear forwards}
+@keyframes hkPf{0%,29%{opacity:1}31%,100%{opacity:0}}
+#strikeFx{position:fixed;inset:0;z-index:24;pointer-events:none;opacity:0}
+#strikeFx.bite{animation:sfx .55s ease-out;background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(10,40,60,.55))}
+#strikeFx.perfect{animation:sfx .7s ease-out;background:radial-gradient(ellipse at 50% 45%,rgba(255,236,170,.32),transparent 45%,rgba(255,196,80,.45))}
+#strikeFx.good{animation:sfx .55s ease-out;background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.18),transparent 45%,rgba(255,255,255,.3))}
+#strikeFx.late{animation:sfx .5s ease-out;background:radial-gradient(ellipse at 50% 45%,transparent 50%,rgba(120,30,20,.4))}
+@keyframes sfx{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
 @keyframes hookRing{from{transform:scale(1.7);opacity:0}8%{opacity:1}to{transform:scale(.6);border-color:#ff6a4a}}
 @keyframes hookPop{from{transform:scale(.3);opacity:0}}
 .floatTip{position:fixed;z-index:27;left:50%;top:34%;transform:translateX(-50%);font:900 26px var(--hud);color:var(--gold2);text-shadow:var(--stroke);pointer-events:none;animation:floatUp 1.3s ease-out forwards}
@@ -641,6 +649,9 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
 .desk #escTab{display:flex}
 #escTab kbd{font:800 11px/1.3 'Nunito',system-ui,sans-serif;padding:1px 6px;border-radius:6px;background:rgba(255,255,255,.2);color:#fff}
 #escTab:hover{background:rgba(14,20,28,.72)}
+.si.relic{width:auto;display:flex;align-items:center;gap:3px;color:#5fd6ff;cursor:pointer}.si.relic b{font:800 13px/1 'Nunito',system-ui,sans-serif;color:#fff;font-style:normal}
+.rxHead .row{align-items:center;gap:12px}.rxGem{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:rgba(95,214,255,.14);color:#5fd6ff}.rxGem svg{width:28px;height:28px}
+.dcard .btn{margin-top:6px}
 @media (max-width:640px){#lvlTxt{font-size:16px}.coins{font-size:21px}.si,.si svg,#clockIco .si svg{width:18px;height:18px}.xpline{width:90px}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>

@@ -10,9 +10,9 @@ const camera=new THREE.PerspectiveCamera(55,1,.3,1600);
 const hemi=new THREE.HemisphereLight(0xeaf6ff,0x6a8a5a,.4);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff2dc,3);sun.shadow.bias=-.0003;sun.shadow.normalBias=.045;sun.shadow.radius=2.5;scene.add(sun);scene.add(sun.target);
 const TIERS={
- ultra:{pr:2,shadow:4096,ext:58,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.7,fxaa:false,wr:112,ws:160,grass:42000,flowers:3200,rain:2800,ff:520,birds:24,far:900,lamps:6,cloud:6,env:1,tex:512,leaf:1},
- high:{pr:1.75,shadow:2048,ext:48,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.5,fxaa:false,wr:96,ws:128,grass:26000,flowers:2000,rain:2000,ff:360,birds:18,far:780,lamps:4,cloud:5,env:1.5,tex:256,leaf:1},
- medium:{pr:1.5,shadow:2048,ext:42,post:true,msaa:0,ao:false,bloom:true,refl:false,fxaa:true,wr:72,ws:96,grass:14000,flowers:1400,rain:1200,ff:220,birds:12,far:600,lamps:2,cloud:4,env:3,tex:256,leaf:.8},
+ ultra:{pr:2,shadow:4096,ext:58,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.7,fxaa:false,wr:112,ws:160,grass:42000,flowers:3200,rain:2800,ff:520,birds:24,far:900,lamps:8,cloud:6,env:1,tex:512,leaf:1},
+ high:{pr:1.75,shadow:2048,ext:48,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.5,fxaa:false,wr:96,ws:128,grass:26000,flowers:2000,rain:2000,ff:360,birds:18,far:780,lamps:6,cloud:5,env:1.5,tex:256,leaf:1},
+ medium:{pr:1.5,shadow:1536,ext:42,post:true,msaa:0,ao:false,bloom:true,refl:false,fxaa:true,wr:72,ws:96,grass:10000,flowers:1000,rain:1200,ff:220,birds:12,far:600,lamps:4,cloud:4,env:3,tex:256,leaf:.8},
  low:{pr:1,shadow:0,ext:0,post:false,msaa:0,ao:false,bloom:false,refl:false,fxaa:false,wr:52,ws:64,grass:2600,flowers:300,rain:600,ff:120,birds:6,far:420,lamps:0,cloud:3,env:6,tex:256,leaf:.6}};
 const GFX={tier:'high',composer:null,bloom:null,grade:null,fxaa:null,ao:null,refl:null,reflCam:new THREE.PerspectiveCamera(),texMat:new THREE.Matrix4(),hdr:false,lamps:[]};
 const TT=()=>TIERS[GFX.tier]||TIERS.high;
@@ -524,7 +524,7 @@ function buildWorld(){LEAFK=TT().leaf;
   sb.gr={b:-1.5,h:2.6,k:.55};for(let u=0;u<=len;u+=4.2)for(const s of[-1,1]){const px=dx0+cx*u-sz*s*w/2,pz=dz0+sz*u+cx*s*w/2;sb.add(G.cyl,'#5e4630',px,dh-2,pz,.17,4.6,.17);if(u>2)sb.add(G.cyl,'#5e4630',px,dh+.45,pz,.12,.9,.12);}sb.gr=null;
   sb.M(TL.cloth);for(const s of[-1,1]){const a=new THREE.Vector3(),b=new THREE.Vector3();for(let u=4.2;u<len-1;u+=4.2){a.set(dx0+cx*u-sz*s*w/2,dh+.85,dz0+sz*u+cx*s*w/2);b.set(dx0+cx*(u+4.2)-sz*s*w/2,dh+.85,dz0+sz*(u+4.2)+cx*s*w/2);if(u+4.2>len)break;
    const m=a.clone().lerp(b,.5);m.y-=.12;sb.seg(G.cyl,'#cdb88e',a,m,.035);sb.seg(G.cyl,'#cdb88e',m,b,.035);}}
-  const ex=dx0+cx*(len-.8),ez=dz0+sz*(len-.8);lamp(sb,gl,ex-sz*1.3,dh,ez+cx*1.3);lamp(sb,gl,ex+sz*1.3,dh,ez-cx*1.3);
+  const ex=dx0+cx*(len-.8),ez=dz0+sz*(len-.8);lamp(sb,gl,ex-sz*1.3,dh,ez+cx*1.3);lamp(sb,gl,ex+sz*1.3,dh,ez-cx*1.3);if(len>10){const mx=dx0+cx*len*.45,mz=dz0+sz*len*.45;lamp(sb,gl,mx-sz*1.3,dh,mz+cx*1.3);}
   sb.M(TL.metal);sb.add(G.cyl12,'#2c3036',dx0+cx*(len-2.5)-sz*1.1,dh+.3,dz0+sz*(len-2.5)+cx*1.1,.2,.6,.2);sb.M(0);
   crate(sb,dx0+cx*3+sz*1,dh,dz0+sz*3-cx*1,.9);crate(sb,dx0+cx*3.2+sz*1.1,dh+.9,dz0+sz*3.2-cx*1.1,.6);barrel(sb,dx0+cx*4.5-sz*1.1,dh,dz0+sz*4.5+cx*1.1);
   {const P=(u,sd)=>({x:dx0+cx*u-sz*sd,z:dz0+sz*u+cx*sd});let q=P(len-4.6,-1.05);ropeCoil(sb,q.x,dh,q.z);q=P(len*.55,1.1);bucket(sb,q.x,dh,q.z,r);q=P(len*.55+.75,1.12);tackleBox(sb,q.x,dh,q.z,yaw+.2);q=P(6.5,-1.1);if(len>12)ropeCoil(sb,q.x,dh,q.z,.8);
@@ -814,7 +814,7 @@ function ringAt(x,y,z,d=1,size=1){for(const r of rings){if(r.t<r.d)continue;r.t=
 function syncLampLights(){const want=TT().lamps;while(GFX.lamps.length<want){const l=new THREE.PointLight(0xffc98a,0,16,1.4);l.userData.noAO=true;scene.add(l);GFX.lamps.push(l);}
  while(GFX.lamps.length>want){const l=GFX.lamps.pop();scene.remove(l);l.dispose&&l.dispose();}}
 function updateLampLights(nightK){if(!GFX.lamps.length)return;const c=cam.target,L=world.lamps;const near=L.map(p=>[p,(p.x-c.x)**2+(p.z-c.z)**2]).sort((a,b)=>a[1]-b[1]);
- GFX.lamps.forEach((l,i)=>{const e=near[i];if(!e||e[1]>70*70||nightK<.05){l.intensity=0;return;}l.position.copy(e[0]);l.color.set(e[0].col||0xffc98a);l.distance=e[0].col?22:16;l.intensity=nightK*(e[0].col?8:5.5)*(1-smooth(40,70,Math.sqrt(e[1])));});}
+ GFX.lamps.forEach((l,i)=>{const e=near[i];if(!e||e[1]>80*80||nightK<.05){l.intensity=0;return;}l.position.copy(e[0]);l.color.set(e[0].col||0xffc98a);l.distance=e[0].col?24:20;l.intensity=nightK*(e[0].col?9:7)*(1-smooth(45,80,Math.sqrt(e[1])));});}
 
 /* ---------- tiers ---------- */
 /* dynamic resolution: GFX.prK trims the pixel ratio a little when frames run long, before the tier itself steps down */

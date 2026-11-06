@@ -8,7 +8,7 @@ function rerender(){if(panelCtx)panelCtx.render();}
 function closePanel(){if($('#panelWrap').hidden)return;$('#panelWrap').hidden=true;panelCtx=null;AU.close();canvas.focus({preventScroll:true});}
 function body(html){const b=$('#pBody');const sc=b.scrollTop;b.innerHTML=html;b.scrollTop=sc;}
 $('#pClose').addEventListener('click',()=>closePanel());$('#panelWrap').addEventListener('pointerdown',e=>{if(e.target.id==='panelWrap')closePanel();});
-$('#bagBtn').addEventListener('click',()=>{AU.init();openBag();});$('#dexBtn').addEventListener('click',()=>{AU.init();openDex();});$('#setBtn').addEventListener('click',()=>{AU.init();openSettings();});$('#nextRod').addEventListener('click',()=>{AU.init();openRodPath();});$('#escTab').addEventListener('click',()=>{AU.init();openPause();});
+$('#bagBtn').addEventListener('click',()=>{AU.init();openBag();});$('#dexBtn').addEventListener('click',()=>{AU.init();openDex();});$('#setBtn').addEventListener('click',()=>{AU.init();openSettings();});$('#nextRod').addEventListener('click',()=>{AU.init();openRodPath();});$('#escTab').addEventListener('click',()=>{AU.init();openPause();});$('#stExtra').addEventListener('click',e=>{if(e.target.closest('.relic')){AU.init();openGear('relics');}});
 $('#lbBtn').addEventListener('click',()=>{AU.init();openLeaderboard();});$('#statBtn').addEventListener('click',()=>{AU.init();openStats();});$('#onBtn').addEventListener('click',()=>{AU.init();openOnline();});
 const lockSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9.5" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 const unlockSVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9.5" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 7.6-1.7"/></svg>';
@@ -65,12 +65,25 @@ function openHarbor(n){const line=npcSay(n);openPanel(n.name,n.title,()=>{const 
   <div class="muted">Open Waters between the islands are free to sail. The boat is moored at the end of the dock.</div>`);
  bindPanel({unlock:id=>{const z=ZONES[id];if(state.coins<z.price)return;state.coins-=z.price;state.unlocked.push(id);AU.level();toast(`${z.n} chart bought! Sail there or take the ferry.`,'gold');save();updateHUD();rerender();},
   go:id=>{const sp=world.spawn[id];player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;cam.yaw=sp.yaw+Math.PI;cam.target.copy(player.pos);placeBoatAt(id);cam.tdist=12;state.last=id;save();closePanel();}});});}
-function openAltar(n){let result='';openPanel('Tide Altar','Mossreach',()=>{const r=RODM[state.rod],e=state.ench[state.rod];
- body(`${n?npcSay(n):''}${result}<div class="card"><h3>${esc(r.n)}</h3><div class="muted">Current enchant: ${e?`<span class="ench" style="--c:${ENCH[e].c}">${ENCH[e].n}</span> ${ENCH[e].d}`:'none'}</div>
-  <div class="row"><div class="grow muted">You have <span class="big">${state.relics}</span> Tide Relic${state.relics===1?'':'s'}. Each offering gives your equipped rod a new random enchant.</div><button class="btn lav" data-act="ench" ${state.relics?'':'disabled'}>Offer a relic</button></div></div>
-  <div class="dex">${Object.entries(ENCH).map(([k,v])=>`<div class="dcard"><span class="ench" style="--c:${v.c}">${v.n}</span><small>${v.d}</small></div>`).join('')}</div>`);
- bindPanel({ench:()=>{if(!state.relics)return;state.relics--;const k=pick(Object.keys(ENCH).filter(k=>k!==state.ench[state.rod]));state.ench[state.rod]=k;equipRodModel();AU.enchant();
-  if(world.altarCrystal)splash(world.altarCrystal.position,30,7);result=`<div class="card eq"><b>The altar flares!</b><span class="muted">Your ${esc(r.n)} is now <span class="ench" style="--c:${ENCH[k].c}">${ENCH[k].n}</span> · ${ENCH[k].d}</span></div>`;save();updateHUD();rerender();}});});}
+function openAltar(n){let result='';openPanel('Tide Altar',ZONES.moss.n,()=>{panelCtx.kind='altar';const r=RODM[state.rod],e=state.ench[state.rod];
+ body(`${n?npcSay(n):''}${result}<div class="card"><h3>${esc(r.n)}</h3><div class="muted">Current enchant: ${e?`<span class="ench" style="--c:${ENCH[e].c}">${ENCH[e].n}</span> ${ENCH[e].d}`:'none'}</div></div>${relicCards(true)}`);
+ bindPanel({rx:id=>{const m=relicAct(id);if(!m)return;result=`<div class="card eq"><b>The altar flares!</b> <span class="muted">${esc(m)}</span></div>`;rerender();}});});}
+/* ---------- Tide Relics: a permanent charm, a blessing, crates and enchants ---------- */
+const CHARM_MAX=10,charmCost=l=>2+l;
+function relicCards(atAltar){const R=state.relics,lv=state.charm||0;
+ const card=(id,ttl,desc,cost,dis)=>`<div class="card"><div class="row"><div class="grow"><h3>${ttl}</h3><div class="muted">${desc}</div></div><button class="btn lav sm" data-act="rx" data-id="${id}" ${dis||R<cost?'disabled':''}>${dis&&id==='charm'?'Maxed':cost+' relic'+(cost>1?'s':'')}</button></div></div>`;
+ return `<div class="card rxHead"><div class="row"><span class="rxGem">${ICO.gem}</span><div class="grow"><h3>${R} Tide Relic${R===1?'':'s'}</h3><div class="muted">Relics come up on any line, about once in a hundred casts, and now and then in floating chests.</div></div></div></div>`+
+  card('charm',`Relic Charm · level ${lv} of ${CHARM_MAX}`,lv>=CHARM_MAX?'Fully charged: +30% luck and +4% mutation chance, for good.':`Permanent: +3% luck and +0.4% mutation chance per level (you have +${lv*3}% luck). The next level costs ${charmCost(lv)} relics.`,charmCost(lv),lv>=CHARM_MAX)+
+  card('bless','Tide Blessing','+30% luck and +3% mutation chance for 10 minutes. Stacks with brews.',2,false)+
+  card('crate','Mystery Crate','Swap a relic for a Mystery Crate: a new line or lure.',1,false)+
+  (atAltar?card('reroll','Random enchant',`Bless your ${esc(RODM[state.rod].n)} with a random enchant.`,1,false)+`<div class="muted" style="margin:8px 2px 6px">Or choose the exact enchant for 3 relics:</div><div class="dex">${Object.entries(ENCH).map(([k,v])=>`<div class="dcard"><span class="ench" style="--c:${v.c}">${v.n}</span><small>${v.d}</small><button class="btn sm ghost" data-act="rx" data-id="pick:${k}" ${R<3||state.ench[state.rod]===k?'disabled':''}>${state.ench[state.rod]===k?'On your rod':'Choose · 3'}</button></div>`).join('')}</div>`
+   :`<div class="muted" style="margin:8px 2px">Enchanting your rod with relics happens at the Tide Altar on ${esc(ZONES.moss.n)}.</div>`);}
+function relicAct(id){const R=state.relics;let msg='';
+ if(id==='charm'){const lv=state.charm||0,c=charmCost(lv);if(lv>=CHARM_MAX||R<c)return null;state.relics-=c;state.charm=lv+1;msg=`Relic Charm level ${lv+1}: +${(lv+1)*3}% luck, for good.`;AU.enchant();}
+ else if(id==='bless'){if(R<2)return null;state.relics-=2;const B=BUFFM.blessing;state.buffs.blessing=Math.min(B.dur*3,(state.buffs.blessing||0)+B.dur);msg='The tide blesses you: +30% luck for 10 minutes.';AU.enchant();renderBuffs();}
+ else if(id==='crate'){if(R<1)return null;state.relics--;grantCrate('a Tide Relic');msg='Traded a relic for a Mystery Crate.';}
+ else if(id==='reroll'||id.startsWith('pick:')){const pk=id.startsWith('pick:')?id.slice(5):null,cost=pk?3:1;if(R<cost||(pk&&(!ENCH[pk]||state.ench[state.rod]===pk)))return null;state.relics-=cost;const k=pk||pick(Object.keys(ENCH).filter(q=>q!==state.ench[state.rod]));state.ench[state.rod]=k;equipRodModel();AU.enchant();if(world.altarCrystal)splash(world.altarCrystal.position,30,7);msg=`Your ${RODM[state.rod].n} is now ${ENCH[k].n}: ${ENCH[k].d}`;}
+ else return null;save();updateHUD();return msg;}
 function openDex(){if(JOIN.on)return;let tab=player.zone&&ZONES[player.zone]?player.zone:'cove';openPanel('Bestiary','',()=>{const got=SPECIES.filter(s=>state.dex[s.id]&&state.dex[s.id].n).length;$('#pSub').textContent=`${got} of ${SPECIES.length} species caught`;
  const zs=[...ISL,'sea',...ISL.map(k=>'pond_'+k),'well','hollow','pond_hollow','abyss','pond_abyss'];const list=SPECIES.filter(s=>s.zone===tab);const cnt=z=>SPECIES.filter(s=>s.zone===z&&state.dex[s.id]&&state.dex[s.id].n).length;
  body(`<div class="tabs">${zs.map(z=>`<button class="tab ${tab===z?'on':''}" data-act="tab" data-id="${z}">${ZONES[z].n} ${cnt(z)}/${SPECIES.filter(s=>s.zone===z).length}</button>`).join('')}</div>
@@ -295,11 +308,11 @@ function onStateReplaced(){GFX.tier=state.settings.gfx;qState();rebuildPlayerRig
 
 /* ---------- main loop ---------- */
 const clock={t:0,last:performance.now(),hud:0,save:0,fpsT:0,fpsN:0,fpsW:0,steps:0};
-function frame(now){requestAnimationFrame(frame);let dt=(now-clock.last)/1000;clock.last=now;if(dt>.05)dt=.05;if(dt<=0)return;clock.t+=dt;WIND.uTime.value+=dt;
+function frame(now){requestAnimationFrame(frame);let dt=(now-clock.last)/1000;clock.last=now;if(dt>.05)dt=.05;if(dt<=0)return;if(HIT.t>0){HIT.t-=dt;dt*=HIT.k;}clock.t+=dt;WIND.uTime.value+=dt;
  if(!MENU.on&&!PAUSE.on)readInput(dt);else{input.x=input.y=input.rot=0;}checkPendingPtrs();updateEnv(dt);updatePlayer(dt);updateBoat(dt);updateFishing(dt);updateExtra(dt);updateNPCs(dt);updateInteract(dt);
  for(const r of Net.remotes.values())r.update(dt);
  if(MENU.on){menuCamera(dt);MENU.st=(MENU.st||0)-dt;if(MENU.st<=0){MENU.st=1;const ms=$('#menuStatus'),t=netLabel();if(ms.textContent!==t)ms.textContent=t;}}
- else if(JOIN.on)joinCamera(dt);else updateCamera(dt);updateLife(dt);if(!MENU.on)updateMiniHUD(dt);if(myTag)myTag.visible=state.settings.tags&&!MENU.on&&!JOIN.on&&!PHOTO.on;
+ else if(JOIN.on)joinCamera(dt);else updateCamera(dt);updateLife(dt);if(!MENU.on)updateMiniHUD(dt);if(myTag)myTag.visible=state.settings.tags&&!MENU.on&&!JOIN.on&&!PHOTO.on&&!['bite','reeling','caught'].includes(F.st);
  if(myBubbleT>0){myBubbleT-=dt;if(myBubbleT<=0&&myBubble){prig.root.remove(myBubble);myBubble=null;}}
  renderFrame();
  if(DEV.open){DEV.fT=(DEV.fT||0)+dt;DEV.fN=(DEV.fN||0)+1;if(DEV.fT>.5){const e=$('#dvFps');if(e)e.textContent=Math.round(DEV.fN/DEV.fT)+' fps';DEV.fT=0;DEV.fN=0;}}
@@ -343,7 +356,7 @@ function openShipwright(n){const line=npcSay(n);openPanel(n.name,n.title,()=>{
   use:id=>{state.boat=id;rebuildBoat();save();updateHUD();rerender();},
   up:v=>{const[id,k]=v.split(':');const B=BOATM[id];const u=state.bup[id]||(state.bup[id]={});const lv=u[k]||0;if(lv>=3)return;const c=upgCost(B,lv);if(state.coins<c)return;state.coins-=c;u[k]=lv+1;AU.coin();if(id===state.boat&&typeof rebuildBoat==='function'){rebuildBoat();toast('Your '+B.n+' looks the part now.','gold');}save();updateHUD();rerender();}});});}
 function openBuffs(n){const line=npcSay(n);openPanel(n.name,n.title,()=>{panelCtx.kind='buffs';
- body(`${line}<div class="muted">Each brew lasts a few minutes of play and stacks with your rod, boat and enchant. Buying again adds more time, up to 15 minutes.</div><div class="list">${BUFFS.map(B=>{const left=state.buffs[B.id]||0;
+ body(`${line}<div class="muted">Each brew lasts a few minutes of play and stacks with your rod, boat and enchant. Buying again adds more time, up to 15 minutes.</div><div class="list">${BUFFS.filter(B=>!B.relic).map(B=>{const left=state.buffs[B.id]||0;
   return `<div class="card ${left>0?'eq':''}"><div class="row"><img class="thumb sm" src="${potionIcon(B)}" alt=""><div class="grow"><h3>${esc(B.n)}</h3><div class="muted">${esc(B.fx.d)} · ${Math.round(B.dur/60)} min${left>0?' · '+mmss(left)+' left':''}</div></div><button class="btn sm" data-act="buy" data-id="${B.id}" ${state.coins<B.price?'disabled':''}>${fmt(B.price)}c</button></div></div>`;}).join('')}</div>`);
  bindPanel({buy:id=>{const B=BUFFM[id];if(state.coins<B.price)return;state.coins-=B.price;state.buffs[id]=Math.min(900,(state.buffs[id]||0)+B.dur);AU.enchant();toast(`${B.n}: ${B.fx.d}.`);save();updateHUD();renderBuffs();rerender();}});});}
 function openStats(){if(JOIN.on)return;openPanel('Stats & buffs','Everything affecting your fishing right now',()=>{panelCtx.kind='stats';const S=stats(true),pc=v=>Math.round(v*100)+'%';
