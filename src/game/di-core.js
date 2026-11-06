@@ -229,6 +229,7 @@ const LUREM={};LURES.forEach(l=>LUREM[l.id]=l);
 const CRATE_PRICE=25000;
 /* what's new: shown once after each update, and any time from the menus */
 const UPDATES=[
+ {v:'3.6',d:'Market day and seaplanes',items:['Every shop is now a wooden market stall with its own sign, goods on the counter and lanterns that glow at night','Rods are laid out on racks around the Tackle & Rods stall: walk up to look, buy or equip','More detail on every island: lantern-lit paths, signposts, garden fences, crates and flower boxes by the cottages','Grand Seiner: a big fishing boat that seats 6, with the most storage and a luck bonus','Surfrider Jet Ski: a fast two-seater','Lucky Duck: a giant rubber duck boat you can only win from Mystery Crates','Seaplanes: the Gull Seaplane and Albatross Flying Boat fly between islands (Space to take off or land), touch down on open water and you can fish from the floats','A calmer, simpler interface: soft see-through panels, rounder buttons and a lighter HUD']},
  {v:'3.5',d:'A fresh coat of paint',items:['A brand new look for every menu, panel and the HUD','Fishing is harder: stronger fish, head-shakes that spike the line, a slack line can lose the fish, a shorter strike window','Pull against running fish (A / D or drag) to tire them; careful anglers land the rarest catches','Sharper image, crisper shadows and denser grass on Medium']},
  {v:'3.4',d:'Rods on display',items:['Every island lays its rods out on stands by the arrival path: walk up to look, buy or equip','The Drowned Hollow and Sunless Deep remastered: brighter caves, glowworm ceilings, shafts of light, glowing moss and crystals that light the room','A separate dev profile for the game\'s owner that never reaches the leaderboards']},
  {v:'3.3',d:'Rods remastered',items:['A new signature rod for every island, sold once you hold its chart','10 coloured fishing lines with buffs, won from Mystery Crates (Common, Rare, Legendary, Secret)','6 permanent lures you can win and equip','4 new baits','Mystery Crates for finishing quests, levelling up and landing new Legendary fish','A real Tidewater Casino hall on Pebble Cove, plus a new casino game on every island','Music that changes with events, weather, Tide Wells, fights and the casino']},
@@ -247,6 +248,11 @@ const BOATS=[
  {id:'speedster',seats:2,n:'Gullwing Speedster',price:260000,speed:34,turn:1.5,storage:25,fx:{luck:25,wait:.85,d:'+25% luck and bites 15% faster from the boat'},m:{L:8.2,W:1.6,H:.9,D:-.55,hull:'#c8402e',bottom:'#1e2228',stripe:'#f2efe8',type:'speedster'}},
  {id:'pontoon',seats:8,n:'Sunset Pontoon',price:150000,speed:19,turn:1.1,storage:40,fx:{xp:.2,luck:10,d:'Party boat for 8: +20% XP and +10% luck from the deck'},m:{L:9,W:1.9,H:.95,D:-.5,hull:'#d8dcdc',bottom:'#5a6a74',stripe:'#e8a03a',type:'pontoon'}},
  {id:'jetski',seats:2,n:'Wavecutter Jet Ski',price:90000,speed:40,turn:2.3,storage:0,fx:{wait:.9,d:'The fastest thing on the water, with room for one friend. Bites 10% faster'},m:{L:3.6,W:.7,H:.55,D:-.3,hull:'#f2f2f0',bottom:'#1e2a34',stripe:'#e84a3a',type:'jetski'}},
+ {id:'surfrider',seats:2,n:'Surfrider Jet Ski',price:35000,speed:34,turn:2.4,storage:0,fx:{wait:.95,d:'A nippy jet ski for two. Bites 5% faster'},m:{L:3.3,W:.65,H:.5,D:-.28,hull:'#2a8ad8',bottom:'#1e2a34',stripe:'#f0d040',type:'jetski'}},
+ {id:'seiner',seats:6,n:'Grand Seiner',price:220000,speed:21,turn:.9,storage:60,fx:{luck:20,wt:.1,d:'A big crew fishing boat for 6: +20% luck and +10% fish weight from the deck'},m:{L:12.5,W:2.4,H:1.5,D:-1,hull:'#2e4a5a',bottom:'#8a2e24',stripe:'#e8e0d0',type:'seiner'}},
+ {id:'duck',seats:2,crate:true,r:'secret',n:'Lucky Duck',price:0,speed:24,turn:1.9,storage:5,fx:{luck:15,d:'Only from Mystery Crates. +15% luck and plenty of smiles'},m:{L:4.4,W:1.3,H:.7,D:-.4,hull:'#ffd84a',bottom:'#f0b020',stripe:'#ff8a2a',type:'duck'}},
+ {id:'gullplane',seats:2,plane:true,n:'Gull Seaplane',price:160000,speed:22,fly:70,turn:1.3,storage:5,fx:{d:'Flies between islands. Speed up, press Space to take off and again to land on open water. Fish from the floats'},m:{L:7,W:.9,H:.6,D:-.3,hull:'#f0ece2',bottom:'#c84a3a',stripe:'#c84a3a',type:'seaplane'}},
+ {id:'albatross',seats:4,plane:true,n:'Albatross Flying Boat',price:320000,speed:20,fly:85,turn:1.1,storage:20,fx:{luck:10,d:'A 4-seat flying boat: fly between islands, land on open water, +10% luck when fishing from it'},m:{L:9,W:1.1,H:.7,D:-.35,hull:'#3a5a7a',bottom:'#e8e0d0',stripe:'#f0c040',type:'seaplane'}},
  {id:'trawler',seats:6,n:'Ironkeel Trawler',price:400000,speed:22,turn:.95,storage:70,fx:{mut:.08,wt:.15,d:'+8% mutation chance and +15% weight from the boat'},m:{L:11.5,W:2.3,H:1.4,D:-.95,hull:'#5e3a30',bottom:'#2a2422',stripe:'#d6d0c4',type:'trawler'}},
 ];
 const BOATM={};BOATS.forEach(b=>BOATM[b.id]=b);
@@ -354,7 +360,7 @@ const DEV={on:false,open:false,fast:false,rar:null,ev:null};
 /* ================= STATE / SAVE ================= */
 /* The save key never changes between updates: new versions read the same save and fill in anything new.
    Before an update touches a save (and once a day) a backup copy is kept, see backupSave. */
-const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.5';
+const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.6';
 /* profiles: your normal profile (cloud save, leaderboards, no tools) and the owner's dev profile (its own save on this
    device, the dev tools, never on leaderboards and never synced to the cloud). The dev profile needs the dev key. */
 const KEY_DEV='driftwood-isles-save-dev',DEV_HASH='94d329459b6a2bde18d3336b2dbc6098cda74ec216abcc65d537c420d502e29b';

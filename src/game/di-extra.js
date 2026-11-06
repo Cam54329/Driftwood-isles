@@ -215,18 +215,25 @@ const ROD_RACKS={cove:['pine','bamboo','tidepool','coral','reed'],moss:['bogwood
 const RACK={built:false,list:[]};
 function rodState(r){return state.rod===r.id?'eq':state.rods.includes(r.id)?'own':rodLocked(r)?'lock':'buy';}
 function rackLabel(it){const r=it.r,s=rodState(r);const sub=s==='eq'?'Equipped':s==='own'?'Owned · press E to equip':s==='lock'?rodLocked(r):fmt(r.price)+' coins';const col=s==='eq'?'#9be07a':s==='own'?'#a6d4f7':s==='lock'?'#ff9a8a':'#f2c14e';
- if(it.key===s+sub)return;it.key=s+sub;if(it.label){it.g.remove(it.label);it.label.material.map.dispose();it.label.material.dispose();}it.label=tagSprite(null,r.n,sub,col);it.label.position.set(0,4.6,0);it.g.add(it.label);}
-function buildRodRacks(){RACK.built=true;for(const key in ROD_RACKS){const sp=world.spawn[key];if(!sp)continue;const ids=ROD_RACKS[key].filter(id=>RODM[id]);const fx=Math.sin(sp.yaw),fz=Math.cos(sp.yaw),sx=Math.cos(sp.yaw),sz=-Math.sin(sp.yaw);
-  let side=0;for(const sgn of[1,-1]){let ok=true;for(let i=0;i<ids.length;i++){const x=sp.x+sx*sgn*7+fx*(i-(ids.length-1)/2)*2.4,z=sp.z+sz*sgn*7+fz*(i-(ids.length-1)/2)*2.4,y=groundH(x,z);if(y<.4||world.colliders.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+.6)){ok=false;break;}}if(ok){side=sgn;break;}}if(!side)side=1;
-  const b=new Builder();
-  ids.forEach((id,i)=>{const r=RODM[id],x=sp.x+sx*side*7+fx*(i-(ids.length-1)/2)*2.4,z=sp.z+sz*side*7+fz*(i-(ids.length-1)/2)*2.4,y=groundH(x,z);
-   b.M(TL.wood);b.add(G.cyl12,'#6a4a2e',x,y+.12,z,.55,.24,.55);b.add(G.cyl12,'#8a6440',x,y+.27,z,.45,.08,.45);b.add(G.box,'#5a3a22',x,y+.9,z,.12,1.3,.12);b.add(G.box,'#5a3a22',x,y+1.5,z,.5,.08,.12);b.M(TL.paint);b.add(G.cyl12,'#c8a040',x,y+.31,z,.47,.02,.47);b.M(0);
-   const g=new THREE.Group();g.position.set(x,y,z);const rod=buildRod(r,state.ench[id]||null);rod.g.rotation.set(0,0,0);rod.g.position.set(0,.35,0);g.add(rod.g);scene.add(g);
-   const it={r,g,rod,x,z,label:null,key:''};rackLabel(it);RACK.list.push(it);world.colliders.push({x,z,r:.5});
-   world.inter.push({x,z,r:2.6,get label(){const s=rodState(r);return s==='eq'?`${r.n} (equipped)`:s==='own'?`Equip the ${r.n}`:s==='lock'?`Look at the ${r.n}`:`Buy the ${r.n} · ${fmt(r.price)}c`;},get kind(){const s=rodState(r);return s==='buy'?'Buy':s==='own'?'Equip':'Look';},act:()=>openRodView(r)});});
+ if(it.key===s+sub)return;it.key=s+sub;if(it.label){it.g.remove(it.label);it.label.material.map.dispose();it.label.material.dispose();}it.label=tagSprite(null,r.n,sub,col);it.label.position.set(0,3.9,0);it.g.add(it.label);}
+function buildRodRacks(){RACK.built=true;for(const key in ROD_RACKS){const ids=ROD_RACKS[key].filter(id=>RODM[id]);if(!ids.length)continue;const shops=world.shops[key]||[];const st=shops.find(s=>s.role==='rods')||shops.find(s=>s.role==='merchant');
+  const b=new Builder();let spots=[];
+  if(st){/* rods lean on two racks either side of the shop's stall */const c=Math.cos(st.ry),s=Math.sin(st.ry),wp=(lx,lz)=>({x:st.x+lx*c+lz*s,z:st.z-lx*s+lz*c}),half=Math.ceil(ids.length/2);
+   for(const side of[-1,1]){const n=side<0?half:ids.length-half;if(!n)continue;const rx=side*(st.W/2+1.25),z0=-.9,z1=z0+(n-1)*.85+.5;
+    for(const zz of[z0-.3,z1]){const q=wp(rx,zz),gy=groundH(q.x,q.z);b.M(TL.wood);b.add(G.box,'#5a3e26',q.x,gy+.8,q.z,.12,1.6,.12,0,st.ry,0);}
+    const qa=wp(rx,(z0-.3+z1)/2),ga=groundH(qa.x,qa.z);b.add(G.box,'#6a4a2c',qa.x,ga+1.55,qa.z,.1,.1,z1-z0+.45,0,st.ry,0);b.add(G.box,'#6a4a2c',qa.x,ga+.35,qa.z,.08,.08,z1-z0+.45,0,st.ry,0);
+    for(let i=0;i<n;i++){const q=wp(rx+side*.42,z0+i*.85);spots.push({x:q.x,z:q.z,ry:st.ry,lean:side*.2});}}}
+  else{const sp=world.spawn[key];if(!sp)continue;const fx=Math.sin(sp.yaw),fz=Math.cos(sp.yaw),sx=Math.cos(sp.yaw),sz=-Math.sin(sp.yaw);
+   ids.forEach((id,i)=>{const x=sp.x+sx*6+fx*(i-(ids.length-1)/2)*1.2,z=sp.z+sz*6+fz*(i-(ids.length-1)/2)*1.2;spots.push({x,z,ry:sp.yaw,lean:0,stand:true});});}
+  ids.forEach((id,i)=>{const r=RODM[id],sp2=spots[i];if(!sp2)return;const y=groundH(sp2.x,sp2.z);
+   if(sp2.stand){b.M(TL.wood);b.add(G.cyl12,'#6a4a2e',sp2.x,y+.12,sp2.z,.5,.24,.5);b.M(0);}
+   const g=new THREE.Group();g.position.set(sp2.x,y,sp2.z);g.rotation.y=sp2.ry;const rod=buildRod(r,state.ench[id]||null);rod.g.rotation.set(0,0,sp2.lean);rod.g.position.set(0,.05,0);g.add(rod.g);scene.add(g);
+   const it={r,g,rod,x:sp2.x,z:sp2.z,label:null,key:'',lean:sp2.lean};RACK.list.push(it);world.colliders.push({x:sp2.x,z:sp2.z,r:.3});
+   world.inter.push({x:sp2.x,z:sp2.z,r:1.9,get label(){const s=rodState(r);return s==='eq'?`${r.n} (equipped)`:s==='own'?`Equip the ${r.n}`:s==='lock'?`Look at the ${r.n}`:`Buy the ${r.n} · ${fmt(r.price)}c`;},get kind(){const s=rodState(r);return s==='buy'?'Buy':s==='own'?'Equip':'Look';},act:()=>openRodView(r)});});
   if(b.p.length){const m=b.mesh(worldMat);m.castShadow=true;m.receiveShadow=true;scene.add(m);}}}
-function updateRodRacks(dt){if(!RACK.built){if(world.spawn.cove)buildRodRacks();return;}const T=WIND.uTime.value,p=player.pos;
- for(const it of RACK.list){const d=Math.hypot(it.x-p.x,it.z-p.z);const vis=d<140;it.g.visible=vis;if(!vis)continue;it.rod.g.rotation.y=T*.6+it.x;if(it.label){it.label.visible=d<18&&state.settings.tags;if(it.label.visible)rackLabel(it);}}}
+function updateRodRacks(dt){if(!RACK.built){if(world.spawn.cove)buildRodRacks();return;}const p=player.pos;let near=null,nd=4;
+ for(const it of RACK.list){const d=Math.hypot(it.x-p.x,it.z-p.z);it.g.visible=d<160;if(d<nd){nd=d;near=it;}}
+ for(const it of RACK.list){const show=it===near&&state.settings.tags;if(show){rackLabel(it);it.label.visible=true;}else if(it.label)it.label.visible=false;}}
 function openRodView(r){openPanel(r.n,rodState(r)==='buy'?fmt(r.price)+' coins':'Rod',()=>{panelCtx.kind='rodview';const s=rodState(r),lock=rodLocked(r);
  body(`<div class="card ${s==='eq'?'eq':''}"><div class="row"><img class="thumb" src="${rodThumb(r)}" alt=""><div class="grow"><h3>${esc(r.n)}</h3>${r.perk?`<div class="muted">Perk: ${esc(r.perk.d)}</div>`:''}</div></div>${statBars(r)}
   <div class="row" style="justify-content:flex-end;gap:8px">${s==='eq'?'<span class="pill" style="--c:#9be07a">Equipped</span>':s==='own'?`<button class="btn sky" data-act="req" data-id="${r.id}">Equip</button>`:lock&&s!=='own'?`<span class="muted">${esc(lock)}</span>`:`<span class="muted">You have ${fmt(state.coins)}c</span><button class="btn" data-act="rbuy" data-id="${r.id}" ${state.coins<r.price?'disabled':''}>Buy · ${fmt(r.price)}c</button>`}</div></div>`);

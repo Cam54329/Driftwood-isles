@@ -107,6 +107,7 @@ const lineSwatch=l=>`<i class="lsw ${l.glow?'glow':''} ${l.shift?'shift':''}" st
 const rarTag=r=>`<span class="pill" style="--c:${LINE_RAR[r].c}">${LINE_RAR[r].n}</span>`;
 const DUPE_COINS={common:1500,rare:5000,legendary:18000,secret:60000};
 function rollCrate(){const pickR=(w)=>{let t=Object.values(w).reduce((a,b)=>a+b,0),x=Math.random()*t;for(const k in w){x-=w[k];if(x<=0)return k;}return 'common';};
+ if(!state.boats.includes('duck')&&Math.random()<.02)return{kind:'boat',item:BOATM.duck};
  if(Math.random()<.2){const r=pickR({common:55,rare:32,legendary:11,secret:2});const opts=LURES.filter(l=>l.r===r);return{kind:'lure',item:pick(opts.length?opts:LURES)};}
  const r=pickR({common:LINE_RAR.common.w,rare:LINE_RAR.rare.w,legendary:LINE_RAR.legendary.w,secret:LINE_RAR.secret.w});return{kind:'line',item:pick(LINES.filter(l=>l.r===r))};}
 let CRATE={busy:false,last:null};
@@ -128,10 +129,10 @@ function openGear(tab){if(JOIN.on)return;tab=tab||'rods';openPanel('Your tackle'
   luon:id=>{if(!state.lures.includes(id))return;state.lure=id;save();updateGear();rerender();},luoff:()=>{state.lure=null;save();updateGear();rerender();},
   lnon:id=>{if(!state.lines.includes(id))return;state.line=id;save();updateGear();AU.ui();rerender();},
   cratebuy:()=>{if(state.coins<CRATE_PRICE)return;state.coins-=CRATE_PRICE;state.crates=(state.crates||0)+1;AU.coin();save();updateHUD();rerender();},
-  crate:()=>{if(CRATE.busy||!state.crates)return;state.crates--;const res=rollCrate();const it=res.item,own=res.kind==='line'?state.lines.includes(it.id):state.lures.includes(it.id);
-   if(!own){if(res.kind==='line')state.lines.push(it.id);else state.lures.push(it.id);}const dupe=own?DUPE_COINS[it.r]:0;if(dupe){state.coins+=dupe;state.earned+=dupe;}save();updateHUD();
-   const tile=o=>o.kind==='line'?`<div class="crateTile" style="--rc:${LINE_RAR[o.item.r].c}">${lineSwatch(o.item)}<b>${esc(o.item.n)}</b></div>`:`<div class="crateTile" style="--rc:${LINE_RAR[o.item.r].c}"><span class="lu">🪝</span><b>${esc(o.item.n)}</b></div>`;
-   const fill=[];for(let i=0;i<34;i++)fill.push(i===30?res:rollCrate());CRATE.last={strip:fill.map(tile).join(''),msg:`${res.kind==='line'?'Line':'Lure'}: ${it.n} (${LINE_RAR[it.r].n}). ${it.fx.d}.${dupe?` You already had it, so it became ${fmt(dupe)} coins.`:' Equip it from the '+(res.kind==='line'?'Lines':'Lures')+' tab.'}`};
+  crate:()=>{if(CRATE.busy||!state.crates)return;state.crates--;const res=rollCrate();const it=res.item,own=res.kind==='line'?state.lines.includes(it.id):res.kind==='boat'?state.boats.includes(it.id):state.lures.includes(it.id);
+   if(!own){if(res.kind==='line')state.lines.push(it.id);else if(res.kind==='boat')state.boats.push(it.id);else state.lures.push(it.id);}const dupe=own?DUPE_COINS[it.r]:0;if(dupe){state.coins+=dupe;state.earned+=dupe;}save();updateHUD();
+   const tile=o=>o.kind==='line'?`<div class="crateTile" style="--rc:${LINE_RAR[o.item.r].c}">${lineSwatch(o.item)}<b>${esc(o.item.n)}</b></div>`:`<div class="crateTile" style="--rc:${LINE_RAR[o.item.r].c}"><span class="lu">${o.kind==='boat'?'🦆':'🪝'}</span><b>${esc(o.item.n)}</b></div>`;
+   const fill=[];for(let i=0;i<34;i++)fill.push(i===30?res:rollCrate());CRATE.last={strip:fill.map(tile).join(''),msg:`${res.kind==='line'?'Line':res.kind==='boat'?'Boat':'Lure'}: ${it.n} (${LINE_RAR[it.r].n}). ${it.fx.d}.${dupe?` You already had it, so it became ${fmt(dupe)} coins.`:res.kind==='boat'?' Pick it at any shipwright.':' Equip it from the '+(res.kind==='line'?'Lines':'Lures')+' tab.'}`};
    CRATE.busy=true;rerender();const row=$('#crateRow'),strip=$('#crateStrip');if(row&&strip){row.style.transition='none';row.style.transform='translateX(0)';requestAnimationFrame(()=>{const tw=row.children[0].getBoundingClientRect().width+8,target=30*tw-strip.clientWidth/2+tw/2+rand(-tw*.3,tw*.3);row.style.transition='transform 3.4s cubic-bezier(.12,.8,.2,1)';row.style.transform=`translateX(${-target}px)`;});}
    let n=0;const iv=setInterval(()=>{AU.tick();if(++n>28)clearInterval(iv);},110);
    setTimeout(()=>{CRATE.busy=false;if(it.r==='secret'||it.r==='legendary'){AU.catch(it.r==='secret'?6:4);coinBurst(10);}else AU.level();renderHotbar();if(panelCtx&&panelCtx.kind==='gear')rerender();},3600);}});});}
