@@ -21,10 +21,17 @@ function smat(c,kind='cloth'){const k=c+'|'+kind;if(matCacheS[k])return matCache
  const m=new THREE.MeshStandardMaterial({color:C,roughness:R,metalness:kind==='metal'?.85:0});if(kind==='skin')m.emissive=C.clone().multiplyScalar(.06);
  return matCacheS[k]=m;}
 const CG2=(()=>{const tp=[[0,0],[.33,.01],[.36,.12],[.34,.3],[.37,.5],[.42,.7],[.43,.8],[.38,.9],[.24,.98],[0,1]].map(p=>new THREE.Vector2(p[0],p[1]));
- return{sph:new THREE.SphereGeometry(1,22,16),hemi:new THREE.SphereGeometry(1,22,10,0,TAU,0,Math.PI/2),cap:new THREE.CapsuleGeometry(.5,1,6,14),torso:new THREE.LatheGeometry(tp,22),
-  cyl:new THREE.CylinderGeometry(1,1,1,22),cylT:new THREE.CylinderGeometry(.86,1,1,22),ring:new THREE.TorusGeometry(1,.22,8,26),smile:new THREE.TorusGeometry(1,.17,6,16,Math.PI),disc:new THREE.CircleGeometry(1,20),box:new THREE.BoxGeometry(1,1,1)};})();
+ return{sph:new THREE.SphereGeometry(1,14,10),sphS:new THREE.SphereGeometry(1,8,6),hemi:new THREE.SphereGeometry(1,14,6,0,TAU,0,Math.PI/2),cap:new THREE.CapsuleGeometry(.5,1,3,10),capS:new THREE.CapsuleGeometry(.5,1,2,6),torso:new THREE.LatheGeometry(tp,14),
+  cyl:new THREE.CylinderGeometry(1,1,1,12),cylS:new THREE.CylinderGeometry(1,1,1,7),cylT:new THREE.CylinderGeometry(.86,1,1,14),ring:new THREE.TorusGeometry(1,.22,5,16),smile:new THREE.TorusGeometry(1,.17,4,10,Math.PI),disc:new THREE.CircleGeometry(1,12),box:new THREE.BoxGeometry(1,1,1)};})();
+/* one mesh per moving body part: merges the many small pieces under each joint so a character costs ~15 draw calls, not ~80 */
+const CHAR_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7,metalness:0});
+function mergeRigGroups(root){const groups=[];root.traverse(o=>{if(!o.isMesh)groups.push(o);});const col=new THREE.Color();
+ for(const g of groups){const ms=g.children.filter(c=>c.isMesh&&c.material&&!c.material.transparent);if(ms.length<2)continue;const parts=[];
+  for(const m of ms){m.updateMatrix();const src=m.geometry,geo=src.index?src.toNonIndexed():src.clone();for(const k of Object.keys(geo.attributes))if(k!=='position'&&k!=='normal')geo.deleteAttribute(k);
+   col.copy(m.material.color);if(m.material.emissive)col.add(m.material.emissive);const n=geo.attributes.position.count,ca=new Float32Array(n*3);for(let i=0;i<n;i++){ca[i*3]=col.r;ca[i*3+1]=col.g;ca[i*3+2]=col.b;}geo.setAttribute('color',new THREE.BufferAttribute(ca,3));geo.applyMatrix4(m.matrix);parts.push(geo);g.remove(m);}
+  let merged=null;try{merged=BGU.mergeGeometries(parts,false);}catch(e){}parts.forEach(p=>p.dispose());if(!merged){for(const m of ms)g.add(m);continue;}const mesh=new THREE.Mesh(merged,CHAR_MAT);mesh.castShadow=true;mesh.userData.merged=true;g.add(mesh);}}
 function makeChar(L){const root=new THREE.Group(),body=new THREE.Group();root.add(body);const vis=new THREE.Group();vis.scale.setScalar(CHAR_S);body.add(vis);
- const mk=(geo,mat,par,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.set(rx,ry,rz);m.castShadow=true;par.add(m);return m;};
+ const mk=(geo,mat,par,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0)=>{const big=Math.max(sx,sy,sz);if(big<.13){if(geo===CG2.sph)geo=CG2.sphS;else if(geo===CG2.cap)geo=CG2.capS;else if(geo===CG2.cyl)geo=CG2.cylS;}const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.set(rx,ry,rz);m.castShadow=true;par.add(m);return m;};
  const vr=((L.shirt||'')+(L.skin||'')+(L.pants||'')).split('').reduce((a,c)=>a+c.charCodeAt(0),0)%4,hs=(L.hairStyle!=null?L.hairStyle:((L.skin||'')+(L.hat||'')).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%4;
  const hairC=L.hair||hairCols[(L.skin||'').charCodeAt(2)%hairCols.length||0],shirt=L.shirt||'#5b8fd8',sc=new THREE.Color(shirt),pants=L.pants||'#3f4a6a';
  const shirtD='#'+sc.clone().multiplyScalar(.72).getHexString(),pantsD='#'+new THREE.Color(pants).multiplyScalar(.7).getHexString(),vestC='#'+sc.clone().lerp(new THREE.Color('#5a4a36'),.72).getHexString(),vestD='#'+sc.clone().lerp(new THREE.Color('#3a2e22'),.8).getHexString();
@@ -78,7 +85,8 @@ function makeChar(L){const root=new THREE.Group(),body=new THREE.Group();root.ad
   const kn=new THREE.Group();kn.position.y=-.66;hp.add(kn);mk(CG2.sph,PA,kn,0,0,0,.14,.14,.14);mk(CG2.cap,PA,kn,0,-.25,0,.25,.26,.25);if(vr===2)mk(CG2.sph,smat(pantsD),kn,0,-.06,.1,.11,.12,.04);
   mk(CG2.cyl,BO,kn,0,-.53,0,.14,.24,.14);mk(CG2.cyl,smat('#2e2018','leather'),kn,0,-.42,0,.15,.04,.15);mk(CG2.sph,BO,kn,0,-.69,.08,.15,.11,.24);mk(CG2.box,SOLE,kn,0,-.785,.07,.22,.04,.37);return{hp,kn};};
  const blob=new THREE.Mesh(BLOBG,BLOBM);blob.rotation.x=-Math.PI/2;blob.position.y=.05;blob.renderOrder=1;root.add(blob);
- return{root,body,hips,spine,neck,head,eyes,blob,aL:arm(-1),aR:arm(1),lL:leg(-1),lR:leg(1)};}
+ const aL=arm(-1),aR=arm(1),lL=leg(-1),lR=leg(1);mergeRigGroups(vis);
+ return{root,body,hips,spine,neck,head,eyes,blob,aL,aR,lL,lR};}
 function disposeRig(rig){if(!rig)return;rig.root.parent&&rig.root.parent.remove(rig.root);}
 
 class CharAnim{constructor(rig){this.r=rig;this.t=Math.random()*10;this.ph=0;this.blink=rand(1,4);this.blinkT=0;this.lookT=rand(2,5);this.look=0;this.c=null;this.lastStep=0;this.onStep=null;}

@@ -17,10 +17,10 @@ const sstep=(a,b,x)=>{const t=Math.min(Math.max((x-a)/(b-a),0),1);return t*t*(3-
 /* ---------- PBR texture layers (albedo detail + height, normal + roughness + cavity) ----------
    World surfaces keep their colour as a vertex tint; these layers add the material: grain, planks,
    cracks, weave, roughness and micro-normals. Albedo is a multiplier centred on 0.5. */
-const TL={plain:0,sand:1,grass:2,rock:3,wood:4,bark:5,roof:6,siding:7,metal:8,snow:9,cloth:10,cobble:11,dirt:12,ice:13,paint:14,thatch:15};
-const TL_N=16;
+const TL={plain:0,sand:1,grass:2,rock:3,wood:4,bark:5,roof:6,siding:7,metal:8,snow:9,cloth:10,cobble:11,dirt:12,ice:13,paint:14,thatch:15,leaf:16};
+const TL_N=17;
 //            metres per tile, metalness, normal strength
-const TLP=[[2,0,1],[2.6,0,1.1],[2.2,0,1.2],[3.2,0,2.2],[1.7,0,1.6],[1.3,0,2.4],[2,0,2],[2.2,0,1.6],[1.4,.6,.5],[4,0,.8],[.55,0,1.1],[2.4,0,2.2],[2.8,0,1.6],[4,0,.5],[2,0,1],[1.4,0,2]];
+const TLP=[[2,0,1],[2.6,0,1.1],[2.2,0,1.2],[3.2,0,2.2],[1.7,0,1.6],[1.3,0,2.4],[2,0,2],[2.2,0,1.6],[1.4,.6,.5],[4,0,.8],[.55,0,1.1],[2.4,0,2.2],[2.8,0,1.6],[4,0,.5],[2,0,1],[1.4,0,2],[1.1,0,2.6]];
 const LAYER_GEN=[
  (u,v)=>{const n=fbmT(u,v,6,4,11);return [n*.3,.5*(.94+.12*n),.5*(.94+.12*n),.5*(.94+.12*n),.78-.1*n];},                           // plain
  (u,v,g)=>{const w=fbmT(u,v,3,3,12),rip=Math.sin((v*6+w*1.3+fbmT(u,v,4,2,14)*.4)*Math.PI*2)*.5+.5,n=fbmT(u,v,16,3,13);           // sand
@@ -57,7 +57,9 @@ const LAYER_GEN=[
   const gap=sstep(.05,0,fv)+sstep(.95,1,fv),gr=fbm2(u*30,v*90,30,90,2,143);const l=.5*(ch>.5?.62+.1*gr:.96+.05*n)*(1-.5*Math.min(gap,1));
   return [.55-.45*Math.min(gap,1)-.06*ch,l,l,l,ch>.5?.82:.48+.1*n];},
  (u,v)=>{const st=fbm2(u*110,v*5,110,5,2,151),rows=v*5,f=rows-Math.floor(rows),n=fbmT(u,v,10,3,152);                                 // thatch / straw
-  const l=.5*(.7+.46*st+.08*n)*(1-.3*sstep(.18,0,f));return [st*.7+(1-f)*.25,l*1.06,l,l*.82,.95];}];
+  const l=.5*(.7+.46*st+.08*n)*(1-.3*sstep(.18,0,f));return [st*.7+(1-f)*.25,l*1.06,l,l*.82,.95];},
+ (u,v)=>{const a=worley2(u*8,v*8,8,161),b=worley2(u*8+3.3,v*8+1.7,8,162),ua=a[0]<b[0],d=ua?a[0]:b[0],tn=ua?a[2]:b[2],dome=Math.max(0,1-d*d*4.2),n=fbmT(u,v,24,2,163); // leaves
+  const vein=sstep(.035,0,Math.abs(((ua?u*8:u*8+3.3)%1)-.5)*Math.max(.2,1-d*2)),l=.5*(.62+.42*dome+.2*tn+.06*n-.08*vein);return [dome*.85+.15*n-.1*vein,l*.94,l*1.06,l*.8,.7-.22*dome];}];
 
 const WTEX={size:256,A:null,B:null,ready:false};
 function makeArrayTex(data,S,N){const t=new THREE.DataArrayTexture(data,S,S,N);t.format=THREE.RGBAFormat;t.type=THREE.UnsignedByteType;t.wrapS=t.wrapT=THREE.RepeatWrapping;
@@ -80,10 +82,10 @@ async function genWorldTextures(S,onStep){WTEX.size=S;const N=TL_N,A=new Uint8Ar
 
 /* ---------- shared world uniforms ---------- */
 const WU={uAlb:{value:null},uNrm:{value:null},uTexScale:{value:TLP.map(p=>1/p[0])},uMetal:{value:TLP.map(p=>p[1])},uWet:{value:0},uTime:WIND.uTime,uWind:WIND.uStr,
- uSunDirW:{value:new THREE.Vector3(0,1,0)},uSunColW:{value:new THREE.Color(1,1,1)},uSnowK:{value:0},uDetail:{value:.32}};
+ uSunDirW:{value:new THREE.Vector3(0,1,0)},uSunColW:{value:new THREE.Color(1,1,1)},uSnowK:{value:0},uDetail:{value:.32},uNStr:{value:.55}};
 const GLSL_TRI_PARS=`
 precision highp sampler2DArray;
-uniform sampler2DArray uAlb;uniform sampler2DArray uNrm;uniform float uTexScale[${TL_N}];uniform float uMetal[${TL_N}];uniform float uWet;uniform float uDetail;
+uniform sampler2DArray uAlb;uniform sampler2DArray uNrm;uniform float uTexScale[${TL_N}];uniform float uMetal[${TL_N}];uniform float uWet;uniform float uDetail;uniform float uNStr;
 mat3 dwTBN(vec3 eye,vec3 N,vec2 uv){vec3 q0=dFdx(eye),q1=dFdy(eye);vec2 s0=dFdx(uv),s1=dFdy(uv);vec3 q1p=cross(q1,N),q0p=cross(N,q0);vec3 T=q1p*s0.x+q0p*s1.x,B=q1p*s0.y+q0p*s1.y;float det=max(dot(T,T),dot(B,B));float sc=det==0.?0.:inversesqrt(det);return mat3(T*sc,B*sc,N);}
 `;
 /* world material: vertex colour tint × triplanar PBR layer chosen per vertex ("mat" attribute) */
@@ -108,6 +110,8 @@ float dwWet=uWet*smoothstep(.2,.8,vUpW);`)
 diffuseColor.rgb*=mix(vec3(1.),dwA.rgb*2.*(.82+.36*dwMac),uDetail);diffuseColor.rgb*=1.-dwWet*.32;`)
   .replace('#include <roughnessmap_fragment>','float roughnessFactor=mix(mix(.86,dwB.b,uDetail+.2),.2,dwWet*.85);')
   .replace('#include <metalnessmap_fragment>','float metalnessFactor=uMetal[dwL];')
+  .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+{vec3 dwN=vec3((dwB.xy*2.-1.)*uNStr,1.);mat3 dwT=dwTBN(-vViewPosition,normal,dwUV);normal=normalize(dwT*dwN);}`)
   .replace('#include <aomap_fragment>',`#include <aomap_fragment>
 reflectedLight.indirectDiffuse*=dwB.a;reflectedLight.indirectSpecular*=mix(1.,dwB.a,.6);`)
   .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
@@ -135,6 +139,8 @@ float dtShore=1.-smoothstep(.05,.85,vWP.y);float dtWet=max(dtShore*.9,uWet*smoot
   .replace('#include <color_fragment>',`#include <color_fragment>
 diffuseColor.rgb*=mix(vec3(1.),dtA.rgb*2.*(.8+.4*dtMac),uDetail);diffuseColor.rgb*=1.-dtWet*.38;`)
   .replace('#include <roughnessmap_fragment>','float roughnessFactor=mix(dtB.b,.22,dtWet*.8);')
+  .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+{vec3 dtN=vec3((dtB.xy*2.-1.)*uNStr*(1.-dtWet*.6),1.);mat3 dtT=dwTBN(-vViewPosition,normal,dtP*uTexScale[1]);normal=normalize(dtT*dtN);}`)
   .replace('#include <aomap_fragment>',`#include <aomap_fragment>
 reflectedLight.indirectDiffuse*=dtB.a;`);};
  m.customProgramCacheKey=()=>'dwTerrain';return m;}

@@ -146,14 +146,18 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  const cp=camera.position;sky.position.copy(cp);stars.position.copy(cp);starU.uA.value=nightK*(1-env.cloud)*(1-env.fog);starU.uT.value=WIND.uTime.value;
  const md=new V3(-sunDir.x,-sunDir.y,-sunDir.z);moon.position.copy(cp).addScaledVector(md,700);moon.lookAt(cp);moonHalo.position.copy(moon.position);const mo=clamp((-sy+.12)*5,0,1)*(1-env.cloud*.85)*(1-env.fog*.8);moon.material.opacity=mo;moon.material.color.setScalar(1.2+mo*.6);moonHalo.material.opacity=mo*.35;
  glowMat.color.setScalar(lerp(.85,2.6,nightK));
- for(const h of world.halos){const b=h.userData.always?.24+nightK*.24:nightK*.42;if(b<=.003){if(h.visible)h.visible=false;continue;}const hd=h.position.distanceTo(cp);const on=hd<190;if(h.visible!==on)h.visible=on;if(on)h.material.opacity=b*smooth(1.2,6,hd);}
+ /* the water shader shapes shorelines for the five nearest islands only */
+ {const ws=LANDS.map(k=>{const I=ZONES[k];return[Math.hypot(cp.x-I.x,cp.z-I.z)-I.R,I];}).sort((a,b)=>a[0]-b[0]);for(let i=0;i<WATER_NI;i++){const I=ws[i][1];waterU.uIsl.value[i].set(I.x,I.z,I.R,I.p1);waterU.uIsl2.value[i].set(I.p2,0);waterU.uSand.value[i].set(I.sand);}}
+ /* skip whole islands that are lost in the fog, and caves unless you are inside them */
+ {const ff=scene.fog.far+70;for(const g of world.islGroups){const d=Math.hypot(cp.x-g.I.x,cp.z-g.I.z),on=g.I.cave?d<g.I.R*2.4:d-g.I.R*1.6<ff;if(g.grp.visible!==on)g.grp.visible=on;}}
+ if(world.haloPts){const u=world.haloPts.material.uniforms;u.uNight.value=nightK;u.uCave.value=0;u.uScale.value=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));}
  if(boat&&boat.g.userData.halo)boat.g.userData.halo.material.opacity=nightK*.55;
  ffU.uA.value=smooth(.5,.15,day)*(1-env.rain*.8);
  WIND.uStr.value=1+env.rain*.7+env.cloud*.3+(env.weather==='storm'?.9:0);
  WU.uWet.value=env.wet*.9;WU.uSunDirW.value.copy(lightDir);WU.uSunColW.value.copy(sun.color).multiplyScalar(sun.intensity*.3);
  puddleMat.opacity=env.wet*.85;world.puddles.forEach(p=>p.visible=env.wet>.02);
  if(GFX.rays){const u=GFX.rays.material.uniforms;_hd.copy(camera.position).addScaledVector(sunDir,500).project(camera);const onScr=_hd.z<1&&Math.abs(_hd.x)<1.6&&Math.abs(_hd.y)<1.6;camera.getWorldDirection(_fw);const facing=Math.max(0,_fw.dot(sunDir));
-  u.uSun.value.set(_hd.x*.5+.5,_hd.y*.5+.5);u.uK.value=onScr&&!isMoon?smooth(.2,.75,facing)*smooth(-.02,.06,sy)*(1-env.cloud*.85)*(1-env.fog*.8)*(.38+dusk*.55):0;u.uCol.value.copy(_sunC);u.uTh.value=lerp(1.4,.9,dusk);}
+  u.uSun.value.set(_hd.x*.5+.5,_hd.y*.5+.5);u.uK.value=onScr&&!isMoon?smooth(.2,.75,facing)*smooth(-.02,.06,sy)*(1-env.cloud*.85)*(1-env.fog*.8)*(.38+dusk*.55):0;u.uCol.value.copy(_sunC);u.uTh.value=lerp(1.4,.9,dusk);GFX.rays.enabled=u.uK.value>.003;}
  if(GFX.bloom){GFX.bloom.threshold=lerp(GFX.hdr?2.4:.92,GFX.hdr?1.5:.85,dusk);GFX.bloom.strength=.2+dusk*.12+nightK*.06;}
  if(GFX.grade){const u=GFX.grade.material.uniforms;u.uHigh.value.setRGB(1+dusk*.08+.02,1+dusk*.01,1-dusk*.08-.02);u.uShadow.value.setRGB(.95-dusk*.03,.98,1.05+dusk*.04);u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);{const zt=ZTINT[player&&player.zone];env.ztK=damp(env.ztK||0,zt?1:0,1.5,dt);if(zt)env.ztC=zt;if(env.ztK>.01&&env.ztC)u.uTint.value.lerp(_c3.set(env.ztC),env.ztK*.6*(1-nightK*.5));}u.uSat.value=1.34+dusk*.06-ov*.16-nightK*.12;u.uCon.value=1.11+day*.04-ov*.05;u.uVig.value=.5;}
  lampT-=dt;if(lampT<=0){lampT=.25;updateLampLights(Math.max(nightK,env.cave||0));}
@@ -178,7 +182,7 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
   waterU.uDeep.value.lerp(_c2.set(CL.deep),hk);waterU.uShal.value.lerp(_c3.set(CL.shal),hk);waterU.uBio.value=Math.max(waterU.uBio.value,hk*CL.bio);waterU.uAmb.value.lerp(_c1.set(CL.amb),hk*.6);
   glowMat.color.setScalar(lerp(glowMat.color.r,3.2,hk));starU.uA.value*=1-hk;moon.material.opacity*=1-hk;moonHalo.material.opacity*=1-hk;
   if(GFX.rays)GFX.rays.material.uniforms.uK.value*=1-hk;if(GFX.bloom)GFX.bloom.strength=lerp(GFX.bloom.strength,.5,hk);
-  for(const h of world.halos)if(h.userData.always)h.material.opacity=Math.max(h.material.opacity,hk*.45);
+  if(world.haloPts)world.haloPts.material.uniforms.uCave.value=hk;
   for(const r of world.caveRings)r.rotation.z+=dt*.6;}}
  ENV.t-=dt;if(ENV.t<=0||(env.flash>.9&&ENV.t<ENV.every-.1)){ENV.t=ENV.every;updateEnvMap();}}
 
@@ -516,6 +520,8 @@ function updateCamera(dt){const tgt=_camT.copy(player.mode==='boat'?boat.pos:pla
  if(ptrs.size===0&&cam.manualT>2.5&&!PHOTO.on&&F.st==='idle'){const mv=player.mode==='boat'?Math.abs(boat.speed)>3:player.mode==='walk'&&Math.hypot(input.x,input.y)>.1;if(mv){const tp=player.mode==='boat'?(boat.alt>3?.42:.54):.52;cam.pitch+=(tp-cam.pitch)*(1-Math.exp(-1.3*dt));}}
  const cp=Math.cos(cam.pitch);camera.position.set(cam.target.x+Math.sin(cam.yaw)*cp*cam.dist,cam.target.y+Math.sin(cam.pitch)*cam.dist,cam.target.z+Math.cos(cam.yaw)*cp*cam.dist);
  const minY=Math.max(groundH(camera.position.x,camera.position.z)+.8,waveH(camera.position.x,camera.position.z,WIND.uTime.value)+.8);if(camera.position.y<minY)camera.position.y=minY;
+ {const cpx=camera.position.x,cpz=camera.position.z;let blk=0;for(const c of world.colliders){const dx=c.x-cpx,dz=c.z-cpz;if(dx>4||dx<-4||dz>4||dz<-4)continue;const d=Math.hypot(dx,dz),rr=Math.max(c.r*3.2,1.4);if(d<rr&&c.r>=.35&&c.r<3)blk=Math.max(blk,1-d/rr);}cam.occ=damp(cam.occ||0,blk,6,dt);
+  if(cam.occ>.02&&!PHOTO.on){const k=1-cam.occ*.55;camera.position.lerp(cam.target,1-k);}}
  camera.lookAt(cam.target);cam.shake=Math.max(0,(cam.shake||0)-dt*1.6);if(cam.shake>0&&!PHOTO.on&&!state.settings.noShake){const s=cam.shake*cam.shake*.6,tt=performance.now()/1000;camera.rotateX(Math.sin(tt*47)*s*.1);camera.rotateY(Math.sin(tt*39+1)*s*.1);}cam.punch=Math.max(0,(cam.punch||0)-dt*2.2);const fov=55+(player.mode==='boat'?clamp(Math.abs(boat.speed)/19,0,1)*6:0)-(cam.punch||0)*7;if(Math.abs(fov-camera.fov)>.01){camera.fov=cam.punch>0?damp(camera.fov,fov,14,dt):damp(camera.fov,fov,2,dt);camera.updateProjectionMatrix();}
  if(player.mode==='boat')camera.rotateZ(boat.g.rotation.z*.25);}
 
