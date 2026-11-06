@@ -1,6 +1,6 @@
 # Builds the game and publishes a backup copy to GitHub Pages (the gh-pages branch)
 # every time main is updated, so the game is also playable at
-#   https://cam54329.github.io/driftwood-isles/
+#   https://cam54329.github.io/Driftwood-isles/
 # One-time setup: Settings -> Pages -> "Deploy from a branch" -> gh-pages / (root).
 # For online play on the backup, add the same five VITE_FIREBASE_* values you gave Vercel
 # under Settings -> Secrets and variables -> Actions. Without them it runs in solo mode.

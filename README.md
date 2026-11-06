@@ -47,7 +47,7 @@ Or from this folder with the Vercel CLI: `npx vercel --prod`.
 ## Backup copy on GitHub Pages
 
 A second copy of the game is published to GitHub Pages so there is another web address
-to play on if one gets blocked: **https://cam54329.github.io/driftwood-isles/**
+to play on if one gets blocked: **https://cam54329.github.io/Driftwood-isles/**
 
 The workflow in `.github/workflows/backup-site.yml` builds the game and pushes it to the
 `gh-pages` branch every time `main` changes. One-time setup on GitHub:
