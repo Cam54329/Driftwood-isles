@@ -155,7 +155,7 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  if(GFX.rays){const u=GFX.rays.material.uniforms;_hd.copy(camera.position).addScaledVector(sunDir,500).project(camera);const onScr=_hd.z<1&&Math.abs(_hd.x)<1.6&&Math.abs(_hd.y)<1.6;camera.getWorldDirection(_fw);const facing=Math.max(0,_fw.dot(sunDir));
   u.uSun.value.set(_hd.x*.5+.5,_hd.y*.5+.5);u.uK.value=onScr&&!isMoon?smooth(.2,.75,facing)*smooth(-.02,.06,sy)*(1-env.cloud*.85)*(1-env.fog*.8)*(.38+dusk*.55):0;u.uCol.value.copy(_sunC);u.uTh.value=lerp(1.4,.9,dusk);}
  if(GFX.bloom){GFX.bloom.threshold=lerp(GFX.hdr?2.4:.92,GFX.hdr?1.5:.85,dusk);GFX.bloom.strength=.2+dusk*.12+nightK*.06;}
- if(GFX.grade){const u=GFX.grade.material.uniforms;u.uHigh.value.setRGB(1+dusk*.08+.02,1+dusk*.01,1-dusk*.08-.02);u.uShadow.value.setRGB(.95-dusk*.03,.98,1.05+dusk*.04);u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);u.uSat.value=1.34+dusk*.06-ov*.16-nightK*.12;u.uCon.value=1.11+day*.04-ov*.05;u.uVig.value=.5;}
+ if(GFX.grade){const u=GFX.grade.material.uniforms;u.uHigh.value.setRGB(1+dusk*.08+.02,1+dusk*.01,1-dusk*.08-.02);u.uShadow.value.setRGB(.95-dusk*.03,.98,1.05+dusk*.04);u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);{const zt=ZTINT[player&&player.zone];env.ztK=damp(env.ztK||0,zt?1:0,1.5,dt);if(zt)env.ztC=zt;if(env.ztK>.01&&env.ztC)u.uTint.value.lerp(_c3.set(env.ztC),env.ztK*.6*(1-nightK*.5));}u.uSat.value=1.34+dusk*.06-ov*.16-nightK*.12;u.uCon.value=1.11+day*.04-ov*.05;u.uVig.value=.5;}
  lampT-=dt;if(lampT<=0){lampT=.25;updateLampLights(Math.max(nightK,env.cave||0));}
  /* islands glow warm at night: a soft light over the island you're on, and a warmer ground bounce */
  if(GFX.iglow){let best=null,bd=1e9;for(const k of ISL){const I=ZONES[k],d=Math.hypot(cp.x-I.x,cp.z-I.z)-I.R;if(d<bd){bd=d;best=I;}}const gl=GFX.iglow,near=best?1-smooth(best.R*.2,best.R*1.4,bd):0,nk=nightK*(1-(env.cave||0));
@@ -249,6 +249,8 @@ function twitch(){if(F.st!=='waiting'||F.twT>0)return;F.twT=.8;F.twK=1;F.twN=(F.
 
 /* ---------- strike feel: hit-stop, the fish's shadow under the float, and a screen flash ---------- */
 const HIT={t:0,k:1};
+/* each island has its own colour mood */
+const ZTINT={dune:'#fff0d4',frost:'#e6f2ff',petal:'#fff0f4',ember:'#ffe6d8',glim:'#efe8ff',moss:'#effbe8',atoll:'#eefffb',amber:'#fff4dc'};
 let BSH=null;
 function biteShadow(on){if(on&&!BSH){BSH=new THREE.Mesh(new THREE.CircleGeometry(1,20),new THREE.MeshBasicMaterial({color:0x061018,transparent:true,opacity:0,depthWrite:false,fog:false}));BSH.rotation.x=-Math.PI/2;BSH.renderOrder=2;scene.add(BSH);}
  if(!BSH)return;BSH.visible=on;if(on){const c=F.catch,s=c&&!c.relic?clamp(fishScale(c.sp,c.w)*1.1,.5,3.2):.8;BSH.userData.s=s;BSH.material.opacity=0;}}
@@ -346,7 +348,7 @@ function landCatch(){endFightUI();const c=F.catch;AU.catch(c.relic?3:c.r);buzz(c
   held=buildFish(c.sp,c.mut);held.scale.setScalar(fishScale(c.sp,c.w));
   card=`${isNew?'<div class="cc-new">NEW SPECIES</div>':''}<div class="cc-name">${c.mut?MUTS[c.mut].n+' ':''}${esc(c.sp.name)}</div><div class="cc-tags">${rarPill(c.r)}${c.mut?mutPill(c.mut):''}</div><div class="cc-stats"><span><b>${fmtW(c.w)} kg</b>Weight</span><span><b>${fmt(fishValue(f))}c</b>Value</span></div>`;
   const avg=(c.sp.minW+c.sp.maxW)/2;gainXP(RAR[c.r].xp*(c.mut?1.5:1)*clamp(c.w/avg,.6,2));F.lastCatch={i:id,sp:c.sp.id,m:c.mut||null,w:c.w};$('#catchCard').style.setProperty('--rc',RAR[c.r].c);
-  {const pz=pondAt(F.to.x,F.to.z);if(typeof bountyCatch==='function')bountyCatch(c,F.zone);questEvent('catch',{sp:c.sp.id,w:c.w,mut:c.mut,r:c.r,zone:F.zone,isl:pz?pz.isl:zoneAt(F.to.x,F.to.z),night:isNight(),sea:player.mode==='boat'&&zoneAt(player.pos.x,player.pos.z)==='sea',ev:!!(env.event&&env.event.big)});card+=catchQuestInfo();}
+  {const pz=pondAt(F.to.x,F.to.z);if(typeof bountyCatch==='function')bountyCatch(c,F.zone);if(typeof checkEarnedRods==='function')checkEarnedRods();if(typeof derbyCatch==='function')derbyCatch(c);questEvent('catch',{sp:c.sp.id,w:c.w,mut:c.mut,r:c.r,zone:F.zone,isl:pz?pz.isl:zoneAt(F.to.x,F.to.z),night:isNight(),sea:player.mode==='boat'&&zoneAt(player.pos.x,player.pos.z)==='sea',ev:!!(env.event&&env.event.big)});card+=catchQuestInfo();}
   if(F.inSchool)F.inSchool=false;
   if(isNotable(c.r,c.mut)){addFeed(profileOr().name,c.sp,c.mut,c.w,profileOr().color,true,id);if(typeof netOnMyCatch==='function')netOnMyCatch(c,id);}}
  const cc=$('#catchCard');cc.innerHTML=card;cc.hidden=false;cc.onclick=()=>finishCatch();
@@ -412,7 +414,7 @@ function updateInteract(dt){let it=null;
  if(!uiBlocked()&&!PHOTO.on&&F.st==='idle'){
   if(player.mode==='ride'){it={label:`Hop off ${RIDE?RIDE.name+'\'s':'the'} boat`,kind:'Leave',act:()=>stopRide(false)};}
   else if(player.mode==='boat'&&isPlane()&&(boat.fly||boat.speed>BOATM[state.boat].speed*.55)){it=boat.fly?(boat.land?null:{label:'Land on the water',kind:'Land',act:planeToggle}):{label:'Take off',kind:'Fly',act:planeToggle};}
-  else if(player.mode==='boat'){it=wellPrompt();if(!it){disTimer-=dt;if(disTimer<=0){disembarkSpot=findDisembark();disTimer=.3;}if(disembarkSpot&&Math.abs(boat.speed)<4)it={label:'Leave the boat',kind:'Leave',act:disembark};}}
+  else if(player.mode==='boat'){it=wellPrompt();if(!it){const pp=potPrompt();if(pp&&pp.d<5.5)it=pp;}if(!it){disTimer-=dt;if(disTimer<=0){disembarkSpot=findDisembark();disTimer=.3;}if(disembarkSpot&&Math.abs(boat.speed)<4)it={label:'Leave the boat',kind:'Leave',act:disembark};if(!it)it=potPrompt();}}
   else{let bd=1e9;for(const o of world.inter){const d=Math.hypot(o.x-player.pos.x,o.z-player.pos.z);if(d<o.r&&d<bd){bd=d;it=o;}}const db=Math.hypot(boat.pos.x-player.pos.x,boat.pos.z-player.pos.z);if(db<5.5&&db<bd)it={label:'Board the boat',kind:'Board',act:board};{const rp=ridePrompt();if(rp&&(!it||rp.d<Math.min(bd,db)))it=rp;}}}
  curInter=it;const pr=$('#prompt'),ab=$('#actBtn');
  if(it){pr.hidden=false;const html=(isTouch?'':'<kbd>E</kbd>')+esc(it.label);if(pr.dataset.h!==html){pr.innerHTML=html;pr.dataset.h=html;}ab.hidden=!isTouch;ab.textContent=it.kind||'Use';}else{pr.hidden=true;pr.dataset.h='';ab.hidden=true;}}

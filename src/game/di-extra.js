@@ -218,7 +218,7 @@ function updateCasino(){const H=world.casino;if(!H)return;const dx=player.pos.x-
    Every island lays its rods out on stands beside the arrival path. Walk up to one and press E to look it over,
    buy it or equip it. The same rods are also in the rodmakers' shops. */
 const ROD_RACKS={cove:['pine','bamboo','tidepool','coral','reed'],moss:['bogwood','willow','moss'],atoll:['reefcomber','pearl'],frost:['frostbite','glacier','auroral'],petal:['petalwind','blossom','storm'],
- amber:['harvestmoon','thornwood','magma','twin'],ember:['cinderheart','sage','star','lantern'],dune:['mirage','dune','scarab'],glim:['prismheart','amethyst','spine','celestial'],hollow:['drowncrown']};
+ amber:['harvestmoon','thornwood','magma','twin'],ember:['cinderheart','sage','star','lantern'],dune:['mirage','dune','scarab'],kelp:['kelpweaver'],ruins:['scepter'],glim:['prismheart','amethyst','spine','celestial','tidebreaker'],hollow:['drowncrown']};
 const RACK={built:false,list:[]};
 function rodState(r){return state.rod===r.id?'eq':state.rods.includes(r.id)?'own':rodLocked(r)?'lock':'buy';}
 function rackLabel(it){const r=it.r,s=rodState(r);const sub=s==='eq'?'Equipped':s==='own'?'Owned · press E to equip':s==='lock'?rodLocked(r):fmt(r.price)+' coins';const col=s==='eq'?'#9be07a':s==='own'?'#a6d4f7':s==='lock'?'#ff9a8a':'#f2c14e';
@@ -250,9 +250,9 @@ function openRodView(r){openPanel(r.n,rodState(r)==='buy'?fmt(r.price)+' coins':
 /* ================= ROD PATH: which rod to aim for next, and where it is sold ================= */
 const ROD_HOME={};for(const k in ROD_RACKS)for(const id of ROD_RACKS[k])ROD_HOME[id]=k;
 const NR={key:'',t:0,guide:null,beam:null,afford:null};
-const rodWhere=id=>{const h=ROD_HOME[id];return !h?'':h==='hollow'?'the Drowned Hollow':ZONES[h].n;};
-function rodNeed(r){const l=rodLocked(r);if(l)return l;const h=ROD_HOME[r.id];if(h&&h!=='hollow'&&!state.unlocked.includes(h))return 'Sold on '+ZONES[h].n+': buy its chart first';return null;}
-function rodPathList(){const out=[];for(const k of ISL.concat(['hollow']))for(const id of(ROD_RACKS[k]||[]).filter(i=>RODM[i]).sort((a,b)=>RODM[a].price-RODM[b].price))out.push(RODM[id]);return out;}
+const rodWhere=id=>{const h=ROD_HOME[id];return !h?'':ZONES[h].n;};
+function rodNeed(r){const l=rodLocked(r);if(l)return l;const h=ROD_HOME[r.id];if(h&&ISL.includes(h)&&!state.unlocked.includes(h))return 'Sold on '+ZONES[h].n+': buy its chart first';if(h&&!ISL.includes(h)&&!state.tips['cave_'+h]&&h!=='hollow')return 'Sold in '+ZONES[h].n;return null;}
+function rodPathList(){const out=[];for(const k of ISL.concat(['hollow','kelp','ruins']))for(const id of(ROD_RACKS[k]||[]).filter(i=>RODM[i]).sort((a,b)=>RODM[a].price-RODM[b].price))out.push(RODM[id]);return out;}
 function nextRodPick(){let best=0;for(const id of state.rods){const r=RODM[id];if(r&&r.luck>best)best=r.luck;}
  const c=rodPathList().filter(r=>r.price>0&&!state.rods.includes(r.id)&&r.luck>best).sort((a,b)=>a.price-b.price||a.luck-b.luck);return c.find(r=>!rodNeed(r))||c[0]||null;}
 const rodIcon=r=>`<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M26 6v10.5" stroke="#e8eef4" stroke-width="1" opacity=".75"/><path d="M6 26 26 6" stroke="${r.shaft}" stroke-width="2.6" stroke-linecap="round"/><path d="M5 27l5-5" stroke="${r.handle}" stroke-width="4.2" stroke-linecap="round"/><circle cx="11.6" cy="22" r="3.1" fill="${r.reelC}" stroke="#0d1117" stroke-width="1.3"/><circle cx="26" cy="18" r="1.7" fill="${r.glow||'#ff6a4a'}"/></svg>`;
@@ -267,12 +267,12 @@ function openRodPath(){openPanel('Rod path','Every rod, island by island',()=>{p
  let h=`<div class="rpTop"><div><b>${own} / ${all.length}</b><small>rods owned</small></div><div><b>+${RODM[state.rod].luck}%</b><small>luck now</small></div><div class="grow"></div><button class="btn sm ${state.settings.nextRod===false?'sky':'ghost'}" data-act="nrtog">${state.settings.nextRod===false?'Show tracker':'Hide tracker'}</button></div>`;
  if(nx){const need=rodNeed(nx);h+=`<div class="card eq rpNext"><div class="row"><span class="nrI big">${rodIcon(nx)}</span><div class="grow"><small class="kick">Aim for next</small><h3>${esc(nx.n)}</h3><div class="muted">${esc(need||(state.coins>=nx.price?'You can afford it now':'Need '+fmt(nx.price-state.coins)+' more coins'))} · sold at ${esc(rodWhere(nx.id))}</div></div><button class="btn" data-act="guide" data-id="${nx.id}">Show me the way</button></div></div>`;}
  else h+=`<div class="card eq"><h3>Every rod on the racks is yours</h3><div class="muted">Quest rods are listed at the bottom.</div></div>`;
- for(const k of ISL.concat(['hollow'])){const ids=(ROD_RACKS[k]||[]).filter(i=>RODM[i]).sort((a,b)=>RODM[a].price-RODM[b].price);if(!ids.length)continue;const open=k==='hollow'||state.unlocked.includes(k);
-  h+=`<div class="rpIsl${open?'':' shut'}"><h4><i style="--c:${ISL_COL[k]||'#6ad0e0'}"></i>${esc(k==='hollow'?'Drowned Hollow':ZONES[k].n)}${open?'':'<span>chart needed</span>'}</h4>`;
+ for(const k of ISL.concat(['hollow','kelp','ruins'])){const ids=(ROD_RACKS[k]||[]).filter(i=>RODM[i]).sort((a,b)=>RODM[a].price-RODM[b].price);if(!ids.length)continue;const open=!ISL.includes(k)||state.unlocked.includes(k);
+  h+=`<div class="rpIsl${open?'':' shut'}"><h4><i style="--c:${ISL_COL[k]||'#6ad0e0'}"></i>${esc(ZONES[k].n)}${open?'':'<span>chart needed</span>'}</h4>`;
   for(const id of ids){const r=RODM[id],s=rodState(r),need=rodNeed(r),isN=nx&&nx.id===id;
    h+=`<div class="rpRow ${s}${isN?' next':''}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}${isN?'<em>Next</em>':''}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':need?`<span class="tag lock">${esc(need)}</span>`:`<span class="tag buy">${fmt(r.price)}c</span>`}${s==='eq'||s==='own'?'':`<button class="btn sm ghost" data-act="guide" data-id="${id}" title="Mark it on your compass">Find</button>`}</div></div>`;}
   h+='</div>';}
- const qr=RODS.filter(r=>r.req&&(r.req.quest||r.req.relic||r.req.secret));if(qr.length){h+=`<div class="rpIsl"><h4><i style="--c:#ffd76e"></i>Quests, relics and secrets</h4>`+qr.map(r=>{const s=rodState(r);return `<div class="rpRow ${s}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':`<span class="tag lock">${esc(rodLocked(r)||'')}</span>`}</div></div>`;}).join('')+'</div>';}
+ const qr=RODS.filter(r=>r.req&&(r.req.quest||r.req.relic||r.req.secret||r.req.bounties||r.req.dex||r.req.derby));if(qr.length){h+=`<div class="rpIsl"><h4><i style="--c:#ffd76e"></i>Quests, relics and secrets</h4>`+qr.map(r=>{const s=rodState(r);return `<div class="rpRow ${s}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':`<span class="tag lock">${esc(rodLocked(r)||'')}</span>`}</div></div>`;}).join('')+'</div>';}
  body(h);bindPanel({guide:id=>{setRodGuide(id);closePanel();},nrtog:()=>{state.settings.nextRod=state.settings.nextRod===false;NR.key='';save();rerender();}});});}
 function guideBeam(){const g=new THREE.CylinderGeometry(.16,.3,60,12,1,true);g.translate(0,30,0);
  const m=new THREE.Mesh(g,new THREE.ShaderMaterial({uniforms:{uT:{value:0},uA:{value:1}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
@@ -333,8 +333,9 @@ function bountyCatch(c,zone){if(!c||c.relic||!state.bounty)return;makeBounties()
  if(ch)save();}
 function openBounties(){makeBounties();openPanel('Bounty Board','New bounties every day · the same for everyone',()=>{panelCtx.kind='bounty';const B=state.bounty;
  body(`<div class="muted">Finish all three for a bonus Tide Relic. Rewards grow as you unlock new islands.</div><div class="list">${B.list.map((b,i)=>{const done=b.n>=b.need;return `<div class="card ${b.claimed?'eq':''}"><div class="row"><div class="grow"><h3>${esc(b.txt)}</h3><div class="muted">${esc(b.where)} · reward ${fmt(b.coins)}c${b.crate?' + a Mystery Crate':''}</div><div class="bbar"><i style="width:${Math.min(100,b.n/b.need*100)}%"></i><span>${Math.min(b.n,b.need)} / ${b.need}</span></div></div>${b.claimed?'<span class="pill" style="--c:#9be07a">Claimed</span>':`<button class="btn sm" data-act="claim" data-id="${i}" ${done?'':'disabled'}>Claim</button>`}</div></div>`;}).join('')}</div>
+  <div class="card"><div class="row"><div class="grow"><h3>Fishing Derby</h3><div class="muted">Three minutes against four rival anglers: land the heaviest fish. Prizes for the top three, a Mystery Crate for the winner. Derby wins: ${state.derbyWins||0}.</div></div><button class="btn sm" data-act="derby" ${DERBY.on?'disabled':''}>${DERBY.on?'Running':'Start'}</button></div></div>
   <div class="card"><div class="row"><div class="grow"><h3>Daily bonus</h3><div class="muted">${B.all?'Claimed today. Come back tomorrow for new bounties.':'Claim all three bounties for a Tide Relic.'}</div></div>${B.all?'<span class="pill" style="--c:#5fd6ff">Relic claimed</span>':''}</div></div>`);
- bindPanel({claim:v=>{const b=state.bounty.list[+v];if(!b||b.claimed||b.n<b.need)return;b.claimed=true;state.coins+=b.coins;state.earned+=b.coins;AU.coin();coinBurst(8);if(b.crate)grantCrate('a bounty');
+ bindPanel({derby:()=>startDerby(),claim:v=>{const b=state.bounty.list[+v];if(!b||b.claimed||b.n<b.need)return;b.claimed=true;state.bountiesDone=(state.bountiesDone||0)+1;checkEarnedRods();state.coins+=b.coins;state.earned+=b.coins;AU.coin();coinBurst(8);if(b.crate)grantCrate('a bounty');
   if(!state.bounty.all&&state.bounty.list.every(q=>q.claimed)){state.bounty.all=true;state.relics++;toast('All bounties done! +1 Tide Relic','gold');}save();updateHUD();rerender();}});});}
 function buildBoards(){BOARD.built=true;const b=new Builder();
  for(const k of ISL){const sp=world.spawn[k];if(!sp)continue;let spot=null;for(const off of[[-4.5,1.5],[4.5,1.5],[-5.5,-2],[5.5,-2],[-3.5,4]]){const sx=Math.cos(sp.yaw),sz=-Math.sin(sp.yaw),fx=Math.sin(sp.yaw),fz=Math.cos(sp.yaw);const x=sp.x+sx*off[0]+fx*off[1],z=sp.z+sz*off[0]+fz*off[1],y=groundH(x,z);
@@ -357,8 +358,52 @@ function updateLeaps(dt){LEAP.t-=dt;const T=WIND.uTime.value;
  for(const L of LEAP.list){if(L.k>=1){if(L.m&&L.m.visible)L.m.visible=false;continue;}L.k+=dt/L.dur;const k=Math.min(1,L.k),hx=Math.cos(L.a),hz=Math.sin(L.a),x=L.x+hx*L.len*k,z=L.z+hz*L.len*k;
   L.m.visible=true;L.m.position.set(x,surfY(x,z,T)+Math.sin(k*Math.PI)*L.h-.15,z);L.m.rotation.set(0,-L.a,(.5-k)*2.4);if(L.m.userData.tail)L.m.userData.tail.rotation.y=Math.sin(L.k*40)*.6;
   if(L.k>=1){const pp=new V3(x,surfY(x,z,T),z);splash(pp,12,4);addRipple(x,z,1.1);if(Math.hypot(x-player.pos.x,z-player.pos.z)<26)AU.splash(.3);}}}
+/* rods you earn by playing rather than buying */
+function checkEarnedRods(){const got=[];for(const r of RODS){if(!r.req||state.rods.includes(r.id))continue;if(r.req.bounties&&(state.bountiesDone||0)>=r.req.bounties)got.push(r);else if(r.req.dex&&SPECIES.filter(s=>state.dex[s.id]&&state.dex[s.id].n).length>=r.req.dex)got.push(r);else if(r.req.derby&&(state.derbyWins||0)>=r.req.derby)got.push(r);}
+ for(const r of got){state.rods.push(r.id);setTimeout(()=>toast(`You earned the ${r.n}! Equip it from your tackle.`,'gold'),600);}if(got.length)save();}
+
+/* ================= FISHING DERBY: three minutes, heaviest fish wins ================= */
+const DERBY={on:false,t:0,dur:180,best:0,bestSp:'',rivals:[],isl:'cove'};
+function startDerby(){if(DERBY.on)return;const now=Date.now();if(now<(state.derbyCool||0)){toast(`The next derby can start in ${Math.ceil((state.derbyCool-now)/60000)} min.`);return;}
+ const z=zoneAt(player.pos.x,player.pos.z),isl=ISL.includes(z)?z:(state.last||'cove'),pool=SPECIES.filter(s=>s.zone===isl&&s.r<=3&&!s.cond),typ=pool.reduce((a,s)=>a+(s.minW+s.maxW)/2,0)/Math.max(1,pool.length);
+ const names=['Marlo','Tess','Kai','Wren','Rook','Hazel','Pip','Nalu','Juniper'].sort(()=>Math.random()-.5).slice(0,4);
+ DERBY.rivals=names.map((n,i)=>({n,w:0,goal:typ*rand(.7,1.5)*(1+i*.1),next:rand(12,40)}));Object.assign(DERBY,{on:true,t:DERBY.dur,best:0,bestSp:'',isl});state.derbyCool=now+8*60000;save();
+ toast(`Derby on ${ZONES[isl].n}! Land the heaviest fish in 3 minutes.`,'gold');AU.level();closePanel();}
+function derbyCatch(c){if(!DERBY.on||!c||c.relic)return;if(c.w>DERBY.best){DERBY.best=c.w;DERBY.bestSp=c.sp.name;setTimeout(()=>floatTip('Derby best: '+fmtW(c.w)+' kg'),1200);}}
+function renderDerby(){const el=document.getElementById('derbyHud');if(!el)return;if(!DERBY.on){if(!el.hidden)el.hidden=true;return;}
+ const all=[{n:'You',w:DERBY.best,me:1},...DERBY.rivals].sort((a,b)=>b.w-a.w),pl=all.findIndex(a=>a.me)+1,s=Math.max(0,Math.ceil(DERBY.t));
+ const h=`<b>Derby · ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}</b>${all.slice(0,4).map((a,i)=>`<div class="${a.me?'me':''}"><span>${i+1}. ${esc(a.n)}</span><span>${a.w>0?fmtW(a.w)+' kg':'—'}</span></div>`).join('')}${pl>4?`<div class="me"><span>${pl}. You</span><span>${DERBY.best>0?fmtW(DERBY.best)+' kg':'—'}</span></div>`:''}`;
+ if(el.dataset.h!==h){el.innerHTML=h;el.dataset.h=h;}if(el.hidden)el.hidden=false;}
+function updateDerby(dt){if(!DERBY.on)return;DERBY.t-=dt;for(const r of DERBY.rivals){r.next-=dt;if(r.next<=0){r.next=rand(16,48);const w=r.goal*rand(.35,1.05);if(w>r.w)r.w=Math.round(w*100)/100;}}renderDerby();if(DERBY.t<=0)endDerby();}
+function endDerby(){DERBY.on=false;renderDerby();const all=[{n:'You',w:DERBY.best,me:1},...DERBY.rivals].sort((a,b)=>b.w-a.w),place=all.findIndex(a=>a.me)+1,pay=bountyPay();
+ const rw=DERBY.best>0?{1:{c:Math.round(pay*120),crate:1},2:{c:Math.round(pay*60)},3:{c:Math.round(pay*30)}}[place]:null;
+ if(rw){state.coins+=rw.c;state.earned+=rw.c;if(rw.crate)grantCrate('winning a derby');AU.coin();coinBurst(8);}
+ if(place===1&&DERBY.best>0){state.derbyWins=(state.derbyWins||0)+1;if(state.derbyWins>=3&&typeof grantTitle==='function')grantTitle('Derby Champion');checkEarnedRods();}
+ save();updateHUD();openPanel('Derby results',ZONES[DERBY.isl].n,()=>{body(`<div class="list">${all.map((a,i)=>`<div class="card ${a.me?'eq':''}"><div class="row"><div class="grow"><h3>${i+1}. ${esc(a.n)}</h3>${a.me&&DERBY.bestSp?`<div class="muted">${esc(DERBY.bestSp)}</div>`:''}</div><b>${a.w>0?fmtW(a.w)+' kg':'—'}</b></div></div>`).join('')}</div>
+  <div class="muted">${DERBY.best<=0?'You didn\'t land anything this time.':rw?`You placed ${place}${['st','nd','rd'][place-1]}: +${fmt(rw.c)}c${rw.crate?' and a Mystery Crate':''}.`:'No prize this time.'} Derby wins: ${state.derbyWins||0} (5 earns the Derby Trophy Rod). The next derby can start in 8 minutes.</div>`);bindPanel({});});}
+
+/* ================= CRAB POTS: drop up to three from your boat, come back to haul them ================= */
+const POTS={list:[],built:false,FILL:6*60*1000};
+function potMesh(){const g=new THREE.Group(),m1=new THREE.MeshStandardMaterial({color:'#f07a2a',roughness:.5}),m2=new THREE.MeshStandardMaterial({color:'#f4f1ea',roughness:.6});
+ const b=new THREE.Mesh(new THREE.CylinderGeometry(.32,.38,.7,14),m1);b.position.y=.2;g.add(b);const band=new THREE.Mesh(new THREE.CylinderGeometry(.34,.36,.14,14),m2);band.position.y=.32;g.add(band);
+ const pole=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.4,6),m2);pole.position.y=1.1;g.add(pole);const flag=new THREE.Mesh(new THREE.BoxGeometry(.5,.32,.02),m1);flag.position.set(.26,1.62,0);g.add(flag);g.userData.flag=flag;scene.add(g);return g;}
+function potsSync(){for(const p of POTS.list)scene.remove(p.g);POTS.list=state.pots.map(d=>({d,g:potMesh()}));POTS.built=true;}
+function potReady(d){return Date.now()-d.t0>=POTS.FILL;}
+function dropPot(){if(state.pots.length>=3){toast('You already have three pots out. Haul one first.');return;}const p=boat.pos,fx=Math.sin(boat.yaw),fz=Math.cos(boat.yaw),x=p.x-fz*2.4,z=p.z+fx*2.4;
+ if(groundH(x,z)>-1.5){toast('Too shallow here. Drop pots in open water.');return;}const d={x,z,t0:Date.now(),zone:zoneAt(x,z)};state.pots.push(d);POTS.list.push({d,g:potMesh()});AU.splash(.8);splash(new V3(x,0,z),14,4);save();
+ toast(`Crab pot dropped. Come back in ${Math.round(POTS.FILL/60000)} minutes to haul it (${state.pots.length}/3 out).`);}
+function haulPot(it){const d=it.d;if(!potReady(d)){const left=Math.ceil((POTS.FILL-(Date.now()-d.t0))/1000);toast(`Still filling: ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} to go.`);return;}
+ const zb=Math.max(ZONE_BASE[ISL.includes(d.zone)?d.zone:'sea']||14,bountyPay()*.6),n=2+Math.floor(Math.random()*4),coins=Math.round(zb*n*rand(9,16));state.coins+=coins;state.earned+=coins;let extra='';
+ if(Math.random()<.08){state.relics++;extra=' and a Tide Relic';}else if(Math.random()<.04){grantCrate('a lucky crab pot');}
+ state.pots.splice(state.pots.indexOf(d),1);scene.remove(it.g);POTS.list.splice(POTS.list.indexOf(it),1);AU.coin();coinBurst(6);splash(it.g.position.clone(),12,4);save();updateHUD();
+ toast(`Hauled ${n} crabs and a lobster or two: +${fmt(coins)}c${extra}.`,'gold');}
+function potPrompt(){if(!POTS.built)return null;const p=player.mode==='boat'?boat.pos:player.pos;let best=null,bd=5.5;for(const it of POTS.list){const dd=Math.hypot(it.d.x-p.x,it.d.z-p.z);if(dd<bd){bd=dd;best=it;}}
+ if(best){const r=potReady(best.d),left=Math.ceil((POTS.FILL-(Date.now()-best.d.t0))/1000);return{label:r?'Haul the crab pot':`Crab pot filling (${Math.floor(left/60)}:${String(left%60).padStart(2,'0')})`,kind:'Haul',act:()=>haulPot(best),d:bd};}
+ if(player.mode==='boat'&&!boat.fly&&Math.abs(boat.speed)<2&&state.level>=5&&state.pots.length<3&&F.st==='idle'&&groundH(p.x,p.z)<-1.5&&!(env.cave>.3))return{label:`Drop a crab pot (${state.pots.length}/3 out)`,kind:'Pot',act:dropPot,d:9};return null;}
+function updatePots(){if(!POTS.built){if(world.spawn.cove&&Array.isArray(state.pots))potsSync();return;}const T=WIND.uTime.value;
+ for(const it of POTS.list){const d=it.d;it.g.position.set(d.x,waveH(d.x,d.z,T)-.05,d.z);it.g.rotation.z=Math.sin(T*1.7+d.x)*.08;it.g.userData.flag.material.color.set(potReady(d)?'#4cbb5a':'#f07a2a');}}
 /* ================= per-frame ================= */
 let updT=0;
-function updateExtra(dt){updateWells(dt);updateLittleEvents(dt);updateCasino();updateRodRacks(dt);nextRodTick(dt);guideTick();updatePages();updateBoards();updateLeaps(dt);
+function updateExtra(dt){updateWells(dt);updateLittleEvents(dt);updateCasino();updateRodRacks(dt);nextRodTick(dt);guideTick();updatePages();updateBoards();updateLeaps(dt);updateDerby(dt);updatePots();
  /* show what's new once after each update */
  if(!MENU.on&&!JOIN.on&&state.tips.joined&&state.tips.intro&&state.seenVer!==GAME_VER&&!panelCtx){if(!updT)updT=performance.now();if(performance.now()-updT>2500){state.seenVer=GAME_VER;save();openUpdates();}}if(Net.uid)noteRiders();}

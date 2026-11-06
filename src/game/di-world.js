@@ -224,6 +224,9 @@ const waterMat=new THREE.ShaderMaterial({uniforms:waterU,fog:false,
    vec3 lit=body*(uAmb*1.15+uSunCol*(.14+.36*max(dot(n,uSunDir),0.)));
    lit=mix(lit,sandC*(uAmb*.5+uSunCol*.3*max(uSunDir.y,0.)),smoothstep(1.2,0.,dep)*.5);
    float cs=texture2D(uNorm,p*.13+vec2(t*.02,t*.015)).b*texture2D(uNorm,p*.1-vec2(t*.017,-t*.011)).b;lit+=uSunCol*pow(cs*2.,4.)*smoothstep(2.4,.15,dep)*.12*sunUp;
+   /* caustics: a shimmering net of light across the shallows */
+   {vec2 k1=p*.42+vec2(t*.11,t*.06),k2=p*.71-vec2(t*.08,-t*.1);float a1=sin(k1.x*2.1+sin(k1.y*1.7+t*.55))*sin(k1.y*2.3+sin(k1.x*1.3-t*.45)),a2=sin(k2.x*1.9+sin(k2.y*2.2-t*.6))*sin(k2.y*1.6+sin(k2.x*2.4+t*.5));
+    float caus=pow(1.-abs(a1),7.)*.6+pow(1.-abs(a2),9.)*.45;float cd=smoothstep(3.2,.25,dep)*(1.-uCave*.5);lit+=(uSunCol*.2*sunUp+uAmb*.05)*caus*cd;}
    float crest=clamp(vH/(.7*A+.02),0.,1.);float sss=pow(clamp(dot(v,-uSunDir)*.5+.5,0.,1.),4.)*crest;lit+=uScatter*uSunCol*sss*.22*sunUp;lit+=uScatter*uAmb*crest*.08;
    vec3 col=mix(lit,refl,F);
    vec3 hv=normalize(uSunDir+v);float NH=max(dot(nD,hv),0.);float ro=mix(.045,.11,1.-near)+.03*uRain;float a2=ro*ro;float dn=NH*NH*(a2-1.)+1.;float D=a2/(3.14159*dn*dn);

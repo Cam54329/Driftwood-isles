@@ -652,6 +652,9 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
 .si.relic{width:auto;display:flex;align-items:center;gap:3px;color:#5fd6ff;cursor:pointer}.si.relic b{font:800 13px/1 'Nunito',system-ui,sans-serif;color:#fff;font-style:normal}
 .rxHead .row{align-items:center;gap:12px}.rxGem{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:rgba(95,214,255,.14);color:#5fd6ff}.rxGem svg{width:28px;height:28px}
 .dcard .btn{margin-top:6px}
+#derbyWrap{top:calc(150px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px))}.desk #derbyWrap{top:calc(100px + env(safe-area-inset-top,0px))}
+@media (max-width:640px){#derbyWrap{left:calc(12px + env(safe-area-inset-left,0px));right:auto;top:calc(178px + env(safe-area-inset-top,0px))}#derbyHud{width:170px;font-size:11.5px}}
+#derbyHud{width:210px;padding:9px 12px;border-radius:14px;background:var(--panel);box-shadow:inset 0 0 0 2px #f2c14e,var(--soft);backdrop-filter:blur(8px);font:700 12.5px/1.5 var(--hud)}#derbyHud b{display:block;font:600 14px var(--title);color:#ffd76e;margin-bottom:3px}#derbyHud div{display:flex;justify-content:space-between;gap:8px;color:var(--ink2)}#derbyHud .me{color:#fff;font-weight:900}
 .reel-style{font:700 11px/1.2 var(--hud);color:var(--ink3);margin:-2px 0 4px;min-height:13px}.reel-style.warn{color:#ffb08a}
 .bbar{position:relative;height:14px;margin-top:7px;border-radius:999px;background:rgba(0,0,0,.35);overflow:hidden;max-width:260px}.bbar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#f0ae36,#ffd76e)}.bbar span{position:relative;display:grid;place-items:center;height:100%;font:600 10.5px/1 var(--title);text-shadow:0 1px 2px rgba(0,0,0,.7)}
 .skinSw{display:flex;flex-direction:column;gap:3px;margin:0 4px}.skinSw i{display:block;width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.25)}
@@ -683,6 +686,7 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
   <button class="ib" id="photoBtn" title="Photo mode (P)" aria-label="Photo mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg></button>
   <button class="ib" id="setBtn" title="Menu (Esc)" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button>
 </div>
+<div class="hud" id="derbyWrap"><div id="derbyHud" hidden></div></div>
 <div class="hud" id="nrWrap"><button id="nextRod" type="button" hidden aria-label="Next rod"></button></div>
 <div class="hud" id="br">
   <div class="clock" id="stIcons"><span id="stExtra"></span><span id="clockIco"></span><span id="clockTxt">06:00</span><small id="wxTxt">Clear</small></div>

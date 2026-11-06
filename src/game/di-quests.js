@@ -110,7 +110,7 @@ const QUESTS=[
 ];
 const QM={};QUESTS.forEach(q=>QM[q.id]=q);
 const LEVEL_TITLES=[[1,'Novice Angler'],[10,'Seasoned Angler'],[25,'Master Angler'],[50,'Legend of the Isles']];
-const TITLE_COL={'Pagekeeper':'#f0d890','Ruin Diver':'#9ab8ff','Kelp Wanderer':'#c8f05a','Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Developer':'#ffcf5a','Abyss Diver':'#c890ff','Cartographer':'#8af0ff','Tidesinger':'#e8e8ff','Desert Hunter':'#f0c060','Starsmith':'#c8a8ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
+const TITLE_COL={'Derby Champion':'#ffd76e','Pagekeeper':'#f0d890','Ruin Diver':'#9ab8ff','Kelp Wanderer':'#c8f05a','Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Developer':'#ffcf5a','Abyss Diver':'#c890ff','Cartographer':'#8af0ff','Tidesinger':'#e8e8ff','Desert Hunter':'#f0c060','Starsmith':'#c8a8ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
 const ALL_TITLES=Object.keys(TITLE_COL);
 
 /* ---------- dialogue lines (extra flavour beyond the quests) ---------- */
