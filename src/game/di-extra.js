@@ -204,7 +204,7 @@ function bjFinish(B,win){while(bjTotal(B.d)<17)B.d.push(drawCard());B.done=true;
 /* the hall: hide its roof while you're inside and pull the camera in */
 const CASINO={inside:false,keep:null};
 function updateCasino(){const H=world.casino;if(!H)return;const dx=player.pos.x-H.x,dz=player.pos.z-H.z,c=Math.cos(H.ry),s=Math.sin(H.ry),lx=dx*c-dz*s,lz=dx*s+dz*c;const inside=player.mode==='walk'&&Math.abs(lx)<H.W/2&&Math.abs(lz)<H.D/2;
- if(inside!==CASINO.inside){CASINO.inside=inside;H.roof.visible=!inside;if(inside){CASINO.keep={d:cam.tdist,p:cam.pitch};cam.tdist=Math.min(cam.tdist,9);cam.pitch=Math.max(cam.pitch,.72);toast('Welcome to the Tidewater Casino!');}else if(CASINO.keep){cam.tdist=CASINO.keep.d;cam.pitch=CASINO.keep.p;CASINO.keep=null;}}}
+ if(inside!==CASINO.inside){CASINO.inside=inside;H.roof.visible=!inside;if(H.sign)H.sign.visible=!inside;if(inside){CASINO.keep={d:cam.tdist,p:cam.pitch};cam.tdist=Math.min(cam.tdist,10);cam.pitch=Math.max(cam.pitch,.8);toast('Welcome to the Tidewater Casino!');}else if(CASINO.keep){cam.tdist=CASINO.keep.d;cam.pitch=CASINO.keep.p;CASINO.keep=null;}}}
 
 /* ================= per-frame ================= */
 let updT=0;

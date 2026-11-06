@@ -342,7 +342,7 @@ function casinoHall(sb,gl,hx,hy,hz,ry,reserved){const W=16,D=12,H=5.2,P=new THRE
  sb.M(TL.siding);const wall='#e8dcc4',trim='#c8a040';
  sb.add(G.box,wall,0,H/2,-D/2,W,H,.4,0,0,0,P);for(const sx of[-1,1])sb.add(G.box,wall,sx*W/2,H/2,0,.4,H,D,0,0,0,P);
  for(const sx of[-1,1])sb.add(G.box,wall,sx*(W/4+1.1),H/2,D/2,W/2-2.2,H,.4,0,0,0,P);sb.add(G.box,wall,0,H-.7,D/2,4.4,1.4,.4,0,0,0,P);
- sb.M(TL.paint);sb.add(G.box,trim,0,H+.05,0,W+.5,.3,D+.5,0,0,0,P);for(const sx of[-1,1])for(const sz of[-1,1])sb.add(G.cyl12,'#f0e8d0',sx*W/2,H/2,sz*D/2,.5,H+.2,.5,0,0,0,P);
+ sb.M(TL.paint);for(const sz of[-1,1])sb.add(G.box,trim,0,H+.05,sz*D/2,W+.5,.3,.5,0,0,0,P);for(const sx of[-1,1])sb.add(G.box,trim,sx*W/2,H+.05,0,.5,.3,D+.5,0,0,0,P);for(const sx of[-1,1])for(const sz of[-1,1])sb.add(G.cyl12,'#f0e8d0',sx*W/2,H/2,sz*D/2,.5,H+.2,.5,0,0,0,P);
  for(const sx of[-1,1])sb.add(G.cyl12,trim,sx*2.3,H/2,D/2+.35,.3,H,.3,0,0,0,P);
  for(let i=0;i<4;i++){const x=-6+i*4;if(Math.abs(x)<3)continue;gl.add(G.box,'#ffd890',x,2.6,D/2+.22,1.4,1.6,.05,0,0,0,P);}for(const sx of[-1,1])for(let i=0;i<3;i++)gl.add(G.box,'#ffd890',sx*(W/2+.22),2.6,-3.5+i*3.5,.05,1.6,1.4,0,0,0,P);
  /* inside: a row of slot machines, the wheel on the back wall, a card table, a bar and chandeliers */
