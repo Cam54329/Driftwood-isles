@@ -44,6 +44,28 @@ The finished site is written to `dist/`. Any static host can serve it.
 
 Or from this folder with the Vercel CLI: `npx vercel --prod`.
 
+## Backup copy on GitHub Pages
+
+A second copy of the game is published to GitHub Pages so there is another web address
+to play on if one gets blocked: **https://cam54329.github.io/driftwood-isles/**
+
+The workflow in `.github/workflows/backup-site.yml` builds the game and pushes it to the
+`gh-pages` branch every time `main` changes. One-time setup on GitHub:
+
+1. **Settings → Pages → Build and deployment**: Source **Deploy from a branch**, branch
+   **gh-pages**, folder **/ (root)**, then Save.
+2. For online play on the backup, add the same five values you gave Vercel as repository
+   secrets under **Settings → Secrets and variables → Actions**: `VITE_FIREBASE_API_KEY`,
+   `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_DATABASE_URL`, `VITE_FIREBASE_PROJECT_ID`,
+   `VITE_FIREBASE_APP_ID`. Then re-run the workflow from the **Actions** tab. Without them the
+   backup still works, in solo mode.
+3. In the Firebase console, **Authentication → Settings → Authorized domains**, add
+   `cam54329.github.io`.
+
+Saves live in the browser for each web address, so progress does not move between the two
+sites on its own. To carry it over, open **Settings → Your save** on the old site and press
+**Copy save code**, then on the other site open **Settings → Your save → Load** and paste it.
+
 ## Project layout
 
 - `index.html`: page shell, HUD markup and styles.

@@ -132,28 +132,28 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  scene.fog.color.copy(_fogC);const far=TT().far;scene.fog.near=lerp(lerp(45,25,env.rain),8,env.fog);scene.fog.far=lerp(lerp(far,200,Math.min(env.rain,1)),85,env.fog);
  // lights: sun by day, a cool moon by night, sky light from the captured environment
  const isMoon=sy<-.02;if(isMoon)lightDir.set(-sunDir.x,Math.max(-sy,.3),-sunDir.z).normalize();else lightDir.copy(sunDir).setY(Math.max(sunDir.y,.05)).normalize();
- if(isMoon){sun.color.copy(EC.moon);sun.intensity=.55*(1-env.cloud*.7)*smooth(-.02,-.2,sy);}else{sun.color.copy(_sunC);sun.intensity=4.2*sunVis*(1-env.cloud*.72)*(1-env.fog*.55);}
+ if(isMoon){sun.color.copy(EC.moon);sun.intensity=.55*(1-env.cloud*.7)*smooth(-.02,-.2,sy);}else{sun.color.copy(_sunC);sun.intensity=3.3*sunVis*(1-env.cloud*.72)*(1-env.fog*.55);}
  hemi.intensity=.06+.32*nightK+env.flash*2.5;hemi.color.copy(EC.hemiN).lerp(EC.hemiD,day);hemi.groundColor.copy(EC.gN).lerp(EC.gD,day);
  scene.environmentIntensity=lerp(.45,1,day)*(1-dark*.15);
- renderer.toneMappingExposure=lerp(2.6,1.05,day)*(1+ov*.28)+env.flash*.4;
+ renderer.toneMappingExposure=lerp(2.6,.93,day)*(1+ov*.28)+env.flash*.4;
  const t=TT(),fp=player?player.pos:new V3();if(t.shadow){const snap=2*t.ext/t.shadow;const cx=Math.round(fp.x/snap)*snap,cz=Math.round(fp.z/snap)*snap;sun.target.position.set(cx,0,cz);sun.position.set(cx+lightDir.x*140,lightDir.y*140,cz+lightDir.z*140);}
  else{sun.target.position.copy(fp);sun.position.set(fp.x+lightDir.x*100,lightDir.y*100,fp.z+lightDir.z*100);}
  // ocean
- waterU.uSunDir.value.copy(lightDir);waterU.uSunCol.value.copy(sun.color).multiplyScalar(sun.intensity*.32);waterU.uAmb.value.copy(_zen).lerp(_hor,.4).multiplyScalar(1.8).add(_c1.copy(night).multiplyScalar(nightK*.3));
+ waterU.uSunDir.value.copy(lightDir);waterU.uSunCol.value.copy(sun.color).multiplyScalar(sun.intensity*.26);waterU.uAmb.value.copy(_zen).lerp(_hor,.4).multiplyScalar(1.8).add(_c1.copy(night).multiplyScalar(nightK*.3));
  waterU.uDeep.value.copy(EC.deepN).lerp(EC.deepD,day).lerp(_c3.copy(EC.grey).multiplyScalar(.35*day+.05),ov*.45);waterU.uShal.value.copy(EC.shalN).lerp(EC.shalD,day).lerp(_c3.copy(EC.grey).multiplyScalar(.6*day+.08),ov*.35);
  waterU.uScatter.value.copy(EC.scat);waterU.uFogC.value.copy(_fogC);waterU.uFogN.value=scene.fog.near;waterU.uFogF.value=scene.fog.far;waterU.uRain.value=env.rain;waterU.uSpark.value=1-env.cloud*.75;
  waterU.uAmp.value=WAVE.amp;waterU.uFoamK.value=clamp((WAVE.amp-1)*.8,0,1.2);
  const cp=camera.position;sky.position.copy(cp);stars.position.copy(cp);starU.uA.value=nightK*(1-env.cloud)*(1-env.fog);starU.uT.value=WIND.uTime.value;
  const md=new V3(-sunDir.x,-sunDir.y,-sunDir.z);moon.position.copy(cp).addScaledVector(md,700);moon.lookAt(cp);moonHalo.position.copy(moon.position);const mo=clamp((-sy+.12)*5,0,1)*(1-env.cloud*.85)*(1-env.fog*.8);moon.material.opacity=mo;moon.material.color.setScalar(1.2+mo*.6);moonHalo.material.opacity=mo*.35;
- glowMat.color.setScalar(lerp(.85,3.4,nightK));
- for(const h of world.halos)h.material.opacity=h.userData.always?.4+nightK*.3:nightK*.6;
- if(boat&&boat.g.userData.halo)boat.g.userData.halo.material.opacity=nightK*.95;
+ glowMat.color.setScalar(lerp(.85,2.6,nightK));
+ for(const h of world.halos){const b=h.userData.always?.24+nightK*.24:nightK*.42;h.material.opacity=b>.003?b*smooth(1.2,6,h.position.distanceTo(cp)):0;}
+ if(boat&&boat.g.userData.halo)boat.g.userData.halo.material.opacity=nightK*.55;
  ffU.uA.value=smooth(.5,.15,day)*(1-env.rain*.8);
  WIND.uStr.value=1+env.rain*.7+env.cloud*.3+(env.weather==='storm'?.9:0);
  WU.uWet.value=env.wet*.9;WU.uSunDirW.value.copy(lightDir);WU.uSunColW.value.copy(sun.color).multiplyScalar(sun.intensity*.3);
  puddleMat.opacity=env.wet*.85;world.puddles.forEach(p=>p.visible=env.wet>.02);
  if(GFX.rays){const u=GFX.rays.material.uniforms;_hd.copy(camera.position).addScaledVector(sunDir,500).project(camera);const onScr=_hd.z<1&&Math.abs(_hd.x)<1.6&&Math.abs(_hd.y)<1.6;camera.getWorldDirection(_fw);const facing=Math.max(0,_fw.dot(sunDir));
-  u.uSun.value.set(_hd.x*.5+.5,_hd.y*.5+.5);u.uK.value=onScr&&!isMoon?smooth(.2,.75,facing)*smooth(-.02,.06,sy)*(1-env.cloud*.85)*(1-env.fog*.8)*(.55+dusk*.7):0;u.uCol.value.copy(_sunC);u.uTh.value=lerp(1.4,.9,dusk);}
+  u.uSun.value.set(_hd.x*.5+.5,_hd.y*.5+.5);u.uK.value=onScr&&!isMoon?smooth(.2,.75,facing)*smooth(-.02,.06,sy)*(1-env.cloud*.85)*(1-env.fog*.8)*(.38+dusk*.55):0;u.uCol.value.copy(_sunC);u.uTh.value=lerp(1.4,.9,dusk);}
  if(GFX.bloom){GFX.bloom.threshold=lerp(GFX.hdr?2.4:.92,GFX.hdr?1.5:.85,dusk);GFX.bloom.strength=.2+dusk*.12+nightK*.06;}
  if(GFX.grade){const u=GFX.grade.material.uniforms;u.uHigh.value.setRGB(1+dusk*.08+.02,1+dusk*.01,1-dusk*.08-.02);u.uShadow.value.setRGB(.95-dusk*.03,.98,1.05+dusk*.04);u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);u.uSat.value=1.15+dusk*.06-ov*.16-nightK*.14;u.uCon.value=1.09+day*.04-ov*.05;u.uVig.value=.5;}
  lampT-=dt;if(lampT<=0){lampT=.25;updateLampLights(Math.max(nightK,env.cave||0));}
@@ -349,7 +349,9 @@ const xpNeed=l=>Math.round(80*Math.pow(l,1.45));
 function gainXP(n){state.xp+=Math.round(n*stats().xp);let up=false;while(state.xp>=xpNeed(state.level)){state.xp-=xpNeed(state.level);state.level++;up=true;state.crates=(state.crates||0)+1;setTimeout(()=>toast('+1 Mystery Crate for reaching level '+state.level+'! Open it from your tackle (slot 2).','gold'),1600);const bonus=state.level*50;state.coins+=bonus;state.earned+=bonus;AU.level();toast(`Level ${state.level}! +${fmt(bonus)} coins, +1.5% luck`,'gold');}if(up){checkLevelTitles();rebuildPlayerTag();}}
 function rarPill(r){const R=RAR[r];return `<span class="pill ${r===6?'secret':r===5?'exotic':''}" style="--c:${R.p}">${R.n}</span>`;}
 function mutPill(m){return `<span class="pill" style="--c:${MUTS[m].c}">${MUTS[m].n} ×${MUTS[m].m}</span>`;}
-function updateHUD(){$('#coinTxt').textContent=fmt(state.coins);$('#lvlTxt').textContent='Level '+state.level;$('#xpFill').style.width=(state.xp/xpNeed(state.level)*100)+'%';$('#relicTxt').textContent=state.relics?state.relics+' relic'+(state.relics>1?'s':''):'';updateGear();}
+const HUDC={last:null};
+function coinPop(c){const prev=HUDC.last;HUDC.last=c;if(prev===null||prev===c)return;const box=document.querySelector('.coins');if(!box)return;const d=c-prev,el=document.createElement('span');el.className='cpop'+(d<0?' neg':'');el.textContent=(d>0?'+':'−')+Math.abs(d).toLocaleString('en-US');box.appendChild(el);setTimeout(()=>el.remove(),1400);box.classList.remove('bump');void box.offsetWidth;box.classList.add('bump');}
+function updateHUD(){const c=Math.round(state.coins);$('#coinTxt').textContent=c>=1e9?fmt(c):c.toLocaleString('en-US');coinPop(c);const need=xpNeed(state.level);$('#lvlTxt').textContent='Level '+state.level;$('#lvlNum').textContent=state.level;$('#xpTxt').textContent=fmt(state.xp)+' / '+fmt(need)+' XP';$('#xpFill').style.width=Math.min(100,state.xp/need*100)+'%';$('#relicTxt').textContent=state.relics?state.relics+' relic'+(state.relics>1?'s':''):'';updateGear();}
 function updateGear(){if(typeof renderHotbar==='function')renderHotbar();const r=RODM[state.rod],e=state.ench[state.rod];const b=state.baitOn?`${BAITM[state.baitOn].n} ×${state.bait[state.baitOn]||0}`:'No bait';$('#gear').textContent=`${r.n}${e?' · '+ENCH[e].n:''} · ${b} · Bag ${state.inv.length}/${maxInv()}${state.settings.chill?' · Chill':''}`;}
 function coinBurst(n){const tgt=document.querySelector('.coins')||document.getElementById('coinTxt');if(!tgt)return;const r=tgt.getBoundingClientRect();for(let i=0;i<n;i++){const c=document.createElement('i');c.className='coinFly';c.style.left=(innerWidth/2+rand(-80,80))+'px';c.style.top=(innerHeight*.5+rand(-40,40))+'px';c.style.setProperty('--dx',(r.left+r.width/2-innerWidth/2)+'px');c.style.setProperty('--dy',(r.top+r.height/2-innerHeight*.5)+'px');c.style.animationDelay=(i*.05)+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),1100+i*50);}}
 function toast(msg,cls){const el=document.createElement('div');el.className='toast glass'+(cls?' '+cls:'');el.textContent=msg;const box=$('#toasts');box.appendChild(el);while(box.children.length>3)box.firstChild.remove();setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),450);},3000);}

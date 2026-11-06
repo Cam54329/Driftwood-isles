@@ -195,7 +195,7 @@ const skyMat=new THREE.ShaderMaterial({uniforms:skyU,side:THREE.BackSide,depthWr
   vec3 L=(Lin+.1*Fex)*.04*uK;
   float up=max(d.y,0.);L+=mix(uNightHor,uNightTop,pow(up,.4))*uNight;
   float grey=dot(L,vec3(.3,.55,.15));L=mix(L,vec3(grey)*vec3(.92,.96,1.04),uDark*.7)*(1.-uDark*.35);
-  float disc=smoothstep(.99990,.99997,ct)*uDisc;L+=disc*min(vSunE*Fex,vec3(60.))*18.*uK;
+  float disc=smoothstep(.99990,.99997,ct)*uDisc;L+=disc*min(vSunE*Fex,vec3(60.))*10.*uK;
   if(d.y>.0&&uCov>.01){vec2 cp=d.xz/(d.y+.1)*.85+vec2(uT*.006,uT*.0025);
    float n=cfbm(cp*1.15)*.85+cfbm(cp*3.1+7.)*.15;float lo=1.-uCov;float den=smoothstep(lo,lo+.3,n);
    vec2 sd=normalize(s.xz+1e-4);float n2=cfbm((cp+sd*.05)*1.15);float occ=clamp((n2-n)*3.2+.55,0.,1.);

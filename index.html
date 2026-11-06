@@ -525,6 +525,95 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
  #join{margin:0 auto;max-height:62vh;padding:16px}#joinWrap{align-items:flex-end}#join h1{font-size:22px}
  .slider{grid-template-columns:90px 1fr 40px}
 }
+
+/* =================================================================================================
+   HUD STATS — chunky game style: big outlined numbers, a coin with a fish stamp, a level gem and a
+   fat XP bar. Plus the Next rod tracker, the compass guide pin and the Rod path panel.
+   ================================================================================================= */
+:root{--olk:2px 0 0 #0d1117,-2px 0 0 #0d1117,0 2px 0 #0d1117,0 -2px 0 #0d1117,1.5px 1.5px 0 #0d1117,-1.5px 1.5px 0 #0d1117,1.5px -1.5px 0 #0d1117,-1.5px -1.5px 0 #0d1117,0 3.5px 0 rgba(0,0,0,.45);
+ --olk1:1.3px 0 0 #0d1117,-1.3px 0 0 #0d1117,0 1.3px 0 #0d1117,0 -1.3px 0 #0d1117,1px 1px 0 #0d1117,-1px 1px 0 #0d1117,1px -1px 0 #0d1117,-1px -1px 0 #0d1117,0 2px 0 rgba(0,0,0,.4)}
+.clock{font:600 15px var(--title);text-shadow:var(--olk1)}.clock small{font:600 12px var(--title);color:#dfe8f0;text-shadow:var(--olk1)}
+#wallet{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-top:6px}
+.lvlRow{display:flex;align-items:center;gap:7px}
+.lvlBadge{position:relative;width:42px;height:46px;flex:none;filter:drop-shadow(0 3px 0 rgba(0,0,0,.3))}
+.lvlBadge svg{display:block;width:100%;height:100%}
+.lvlBadge b{position:absolute;inset:0;display:grid;place-items:center;font:700 18px/1 var(--title);color:#fff;text-shadow:var(--olk1);padding-bottom:1px}
+.xpCol{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+#lvlTxt{font:700 21px/1 var(--title);color:#fff;text-shadow:var(--olk);letter-spacing:.3px}
+.xpbar{position:relative;width:172px;height:17px;border-radius:8px;background:#1b2330;box-shadow:0 0 0 2.5px #0d1117,0 3px 0 2.5px rgba(0,0,0,.3);overflow:hidden}
+.xpbar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(180deg,#a6f285 0,#62d65e 48%,#45b84d 52%,#56c95a 100%);transition:width .6s}
+#xpTxt{position:absolute;inset:0;display:grid;place-items:center;font:600 11.5px/1 var(--title);color:#fff;text-shadow:var(--olk1);letter-spacing:.2px;font-variant-numeric:tabular-nums}
+.coins{position:relative;display:flex;align-items:center;gap:7px;font:700 32px/1 var(--title);color:#ffdf5e;text-shadow:var(--olk);letter-spacing:.4px;font-variant-numeric:tabular-nums}
+.coin{width:34px;height:34px;flex:none;background:none!important;box-shadow:none!important;border-radius:0;filter:drop-shadow(0 3px 0 rgba(0,0,0,.3))}
+.coin svg{display:block;width:100%;height:100%}
+#coinTxt{display:inline-block;transform-origin:100% 50%}
+.coins.bump #coinTxt{animation:cbump .32s ease-out}
+@keyframes cbump{40%{transform:scale(1.12)}}
+.cpop{position:absolute;right:2px;bottom:100%;font:700 19px/1 var(--title);color:#8ff07a;text-shadow:var(--olk1);white-space:nowrap;pointer-events:none;animation:cpop 1.35s ease-out forwards}
+.cpop.neg{color:#ff8f80}
+@keyframes cpop{0%{opacity:0;transform:translateY(10px) scale(.7)}14%{opacity:1;transform:translateY(0) scale(1.1)}28%{transform:scale(1)}100%{opacity:0;transform:translateY(-30px)}}
+#relicTxt{font:600 13px var(--title);color:#a8ecff;text-shadow:var(--olk1)}
+/* the same crisp outline on the other floating HUD text */
+#mmZone{font:600 15px var(--title);text-shadow:var(--olk1)}.mm .n{text-shadow:var(--olk1)}
+#compassStrip{text-shadow:var(--olk1)}#compassStrip .t{opacity:.55}
+.hs .k{color:#c9d3dc}.hs b{color:#fff}
+/* hotbar: a gold dot when Mystery Crates are waiting */
+.hs.crate::after{content:'';position:absolute;left:19px;top:7px;width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px rgba(16,22,30,.9);animation:dotp 1.6s ease-in-out infinite}
+@keyframes dotp{50%{transform:scale(1.35)}}
+.hs b{max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* next rod tracker */
+#nrWrap{top:calc(66px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px))}
+#nextRod{display:grid;grid-template-columns:38px minmax(0,1fr);column-gap:10px;row-gap:1px;align-items:center;width:232px;padding:9px 11px 10px 9px;border:0;border-radius:16px;background:var(--panel);box-shadow:var(--edge),var(--soft);backdrop-filter:blur(8px);color:#fff;text-align:left;cursor:pointer;font:inherit;transition:background .2s,box-shadow .2s}
+#nextRod[hidden]{display:none}
+#nextRod:hover{background:rgba(32,42,56,.86)}#nextRod:active{transform:scale(.98)}
+.nrI{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.08);flex:none}
+.nrI svg{width:27px;height:27px}.nrI.big{width:50px;height:50px;border-radius:14px}.nrI.big svg{width:36px;height:36px}
+#nextRod .nrI{grid-row:1/span 3}
+#nextRod small{font:600 10.5px/1.1 var(--title);letter-spacing:1.1px;text-transform:uppercase;color:var(--ink3)}
+#nextRod b{font:600 15px/1.15 var(--title);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nextRod em{font:700 11.5px/1.25 var(--hud);font-style:normal;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nrBar{grid-column:1/-1;position:relative;height:16px;margin-top:7px;border-radius:999px;background:rgba(0,0,0,.38);overflow:hidden}
+.nrBar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#f0ae36,#ffd76e);transition:width .5s}
+.nrBar span{position:relative;display:grid;place-items:center;height:100%;font:600 11px/1 var(--title);text-shadow:0 1px 2px rgba(0,0,0,.7);font-variant-numeric:tabular-nums}
+#nextRod.ready{box-shadow:inset 0 0 0 2px #7bd987,var(--soft)}#nextRod.ready small{color:#9be07a}
+#nextRod.ready .nrBar i{background:linear-gradient(90deg,#4cbb5a,#9be07a)}
+#nextRod.lock .nrBar i{background:rgba(255,255,255,.14)}#nextRod.lock em{color:#ffb4a6}
+/* compass guide pin */
+#guidePin{position:absolute;top:22px;left:50%;display:flex;align-items:center;gap:4px;padding:2px 8px 2px 5px;border-radius:999px;background:rgba(16,22,30,.78);box-shadow:inset 0 0 0 1.5px #ffd76e;pointer-events:none;white-space:nowrap}
+#guidePin[hidden]{display:none}
+#guidePin i{width:9px;height:9px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#ffd76e}
+#guidePin small{font:600 11px/1.2 var(--title);color:#ffe9a8}
+#guidePin.edge{box-shadow:inset 0 0 0 1.5px #ffb04a}#guidePin.edge i{background:#ffb04a}
+/* rod path panel */
+.rpLink{justify-content:space-between;align-items:center;margin:0 0 10px;gap:10px}
+.rpTop{display:flex;align-items:center;gap:18px;margin:0 0 12px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.05)}
+.rpTop b{display:block;font:600 20px/1.1 var(--title)}.rpTop small{font:700 11px var(--hud);color:var(--ink3);text-transform:uppercase;letter-spacing:.8px}
+.rpNext{margin-bottom:14px}.rpNext .row{align-items:center;gap:12px}.kick{display:block;font:700 10.5px var(--title);letter-spacing:1.1px;text-transform:uppercase;color:#9be07a;margin-bottom:1px}
+.rpIsl{margin:0 0 14px}
+.rpIsl h4{display:flex;align-items:center;gap:8px;margin:0 0 6px;padding:0 4px;font:600 14px var(--title);color:var(--ink2)}
+.rpIsl h4 i{width:10px;height:10px;border-radius:50%;background:var(--c);box-shadow:0 0 0 2px rgba(255,255,255,.15)}
+.rpIsl h4 span{margin-left:auto;font:700 11px var(--hud);color:#ffb4a6}
+.rpIsl.shut .rpRow{opacity:.62}
+.rpRow{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:5px;border-radius:12px;background:rgba(255,255,255,.045)}
+.rpRow .grow{min-width:0}
+.rpRow b{display:flex;align-items:center;gap:6px;font:600 14.5px/1.2 var(--title)}
+.rpRow b em{font:600 10px/1 var(--title);font-style:normal;letter-spacing:.8px;text-transform:uppercase;color:#2a2008;background:#ffd76e;border-radius:999px;padding:3px 7px}
+.rpRow small{display:block;font:700 11.5px/1.3 var(--hud);color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rpRow.next{background:rgba(255,215,110,.1);box-shadow:inset 0 0 0 1.5px rgba(255,215,110,.55)}
+.rpRow.eq{background:rgba(76,187,90,.12)}
+.rpR{display:flex;align-items:center;gap:8px;flex:none}
+.tag{font:600 12px/1 var(--title);padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.08);white-space:nowrap;max-width:190px;overflow:hidden;text-overflow:ellipsis}
+.tag.ok{color:#9be07a;background:rgba(76,187,90,.16)}.tag.own{color:#a6d4f7;background:rgba(74,155,232,.16)}.tag.lock{color:#ffb4a6;background:rgba(232,88,74,.14);font-size:11px}.tag.buy{color:#ffd76e;background:rgba(255,200,74,.14)}
+@media (max-width:640px){
+ .lvlBadge{width:32px;height:35px}.lvlBadge b{font-size:14px}#lvlTxt{font-size:16px}.xpbar{width:120px;height:13px}#xpTxt{font-size:9.5px}
+ .coins{font-size:23px}.coin{width:25px;height:25px}
+ #nrWrap{top:calc(96px + env(safe-area-inset-top,0px))}#nextRod{width:170px;padding:6px 8px 7px;grid-template-columns:28px minmax(0,1fr);column-gap:7px}#nextRod .nrI{width:28px;height:28px;border-radius:9px}#nextRod .nrI svg{width:21px;height:21px}#nextRod em{display:none}#nextRod b{font-size:13px}.nrBar{height:12px;margin-top:4px}.nrBar span{font-size:9.5px}
+ .rpRow small{white-space:normal}.tag.lock{max-width:120px;white-space:normal;line-height:1.2}
+}
+@media (max-width:480px){#nrWrap{display:none}}
+@media (max-width:640px){#tc{top:calc(160px + env(safe-area-inset-top,0px))}#feed{top:calc(222px + env(safe-area-inset-top,0px))}}
+/* phones held upright: the touch buttons own the bottom right, so coins and level sit on the left above the joystick */
+@media (max-width:640px){body:not(.desk) #br{left:calc(12px + env(safe-area-inset-left,0px));right:auto;bottom:calc(300px + env(safe-area-inset-bottom,0px));align-items:flex-start;text-align:left}body:not(.desk) #wallet,body:not(.desk) .xpCol{align-items:flex-start}body:not(.desk) .cpop{right:auto;left:30px}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -539,6 +628,7 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
 </div>
 <div class="hud" id="tc">
   <div id="compass"><div id="compassStrip"></div></div>
+  <div id="guidePin" hidden><i></i><small></small></div>
   <div id="eventBan" hidden></div>
 </div>
 <div class="hud" id="tr">
@@ -548,13 +638,18 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
   <button class="ib" id="photoBtn" title="Photo mode (P)" aria-label="Photo mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg></button>
   <button class="ib" id="setBtn" title="Menu (Esc)" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg></button>
 </div>
+<div class="hud" id="nrWrap"><button id="nextRod" type="button" hidden aria-label="Next rod"></button></div>
 <div class="hud" id="br">
   <div class="clock"><span id="clockIco"></span><span id="clockTxt">06:00</span><small id="wxTxt">Clear</small></div>
   <div class="br-desk-gap"></div>
-  <div id="lvlTxt">Level 1</div>
-  <div class="xpbar"><i id="xpFill"></i></div>
-  <div class="coins"><span class="coin"></span><span id="coinTxt">0</span></div>
-  <span id="relicTxt"></span>
+  <div id="wallet">
+   <div class="lvlRow">
+    <div class="lvlBadge" aria-hidden="true"><svg viewBox="0 0 40 44"><path d="M20 2.5 36.5 12v20L20 41.5 3.5 32V12z" fill="#1b2a4a" stroke="#0d1117" stroke-width="3" stroke-linejoin="round"/><path d="M20 6.5 33 14v16L20 37.5 7 30V14z" fill="url(#lvlG)"/><path d="M20 6.5 33 14 20 21.5 7 14z" fill="#fff" opacity=".18"/><defs><linearGradient id="lvlG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6fc2ff"/><stop offset="1" stop-color="#2f6fe0"/></linearGradient></defs></svg><b id="lvlNum">1</b></div>
+    <div class="xpCol"><div id="lvlTxt">Level 1</div><div class="xpbar"><i id="xpFill"></i><span id="xpTxt">0 / 100 XP</span></div></div>
+   </div>
+   <div class="coins"><span class="coin" aria-hidden="true"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="#f0a514" stroke="#0d1117" stroke-width="2.6"/><circle cx="16" cy="16" r="10.4" fill="#ffd44f" stroke="#d98a0c" stroke-width="1.6"/><path d="M9.2 16.2c2.7-3.6 7-4.1 10.2-1.3l2.9-2.3v7.6l-2.9-2.3c-3.2 2.9-7.5 2.2-10.2-1.7z" fill="#e3900e"/><circle cx="12.8" cy="15.6" r="1" fill="#7a4a08"/><ellipse cx="11.6" cy="9.4" rx="4.2" ry="1.5" fill="#fff8d0" opacity=".75" transform="rotate(-28 11.6 9.4)"/></svg></span><span id="coinTxt">0</span></div>
+   <span id="relicTxt"></span>
+  </div>
 </div>
 <div class="hud" id="bottom">
   <div id="power" hidden><div class="pl"><span>Cast power</span><span id="powTxt">0%</span></div><div class="pb"><i id="powFill"></i></div></div>
@@ -629,7 +724,7 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
   <input type="range" id="photoTime" min="0" max="1" step="0.001" aria-label="Time of day">
   <button class="btn sm sky" id="photoExit">Exit</button>
 </div>
-<div id="pause" hidden><div class="pz"><h2>Paused</h2><button data-p="resume">Resume</button><button data-p="settings">Settings</button><button data-p="controls">Controls</button><button data-p="tackle">Tackle &amp; crates</button><button data-p="news">What's new</button><button data-p="look">Change look</button><button data-p="menu">Main menu</button></div></div>
+<div id="pause" hidden><div class="pz"><h2>Paused</h2><button data-p="resume">Resume</button><button data-p="settings">Settings</button><button data-p="controls">Controls</button><button data-p="tackle">Tackle &amp; crates</button><button data-p="rods">Rod path</button><button data-p="news">What's new</button><button data-p="look">Change look</button><button data-p="menu">Main menu</button></div></div>
 <div id="menu" hidden>
   <div class="mm-box">
     <div class="mm-title">

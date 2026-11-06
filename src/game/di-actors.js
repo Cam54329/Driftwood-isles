@@ -8,7 +8,7 @@ function pbr(c,kind='cloth'){const k=c+'|'+kind;if(matCacheA[k])return matCacheA
  return matCacheA[k]=m;}
 const toon=c=>pbr(c,'cloth');
 function outline(){}
-const BLOBG=new THREE.CircleGeometry(.62,20);const BLOBM=new THREE.MeshBasicMaterial({map:TEX.soft,color:0x000000,transparent:true,opacity:.3,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+const BLOBG=new THREE.CircleGeometry(.62,20);const BLOBM=new THREE.MeshBasicMaterial({map:TEX.soft,color:0x000000,transparent:true,opacity:.3,depthWrite:false,fog:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
 const CG={sph:new THREE.IcosahedronGeometry(1,1),sphL:new THREE.SphereGeometry(1,7,5),limb:new THREE.CylinderGeometry(1,1,1,7),limbT:new THREE.CylinderGeometry(.82,1,1,7),torso:new THREE.CylinderGeometry(.46,.36,.95,8),
  cap:new THREE.SphereGeometry(1,9,4,0,TAU,0,Math.PI/2),brim:new THREE.CylinderGeometry(1,1,1,12),box:new THREE.BoxGeometry(1,1,1),cone:new THREE.ConeGeometry(1,1,5),boot:new THREE.BoxGeometry(1,1,1)};
 const hairCols=['#4a3326','#2e2420','#7a4a2a','#b88a50','#3a2e2a'];

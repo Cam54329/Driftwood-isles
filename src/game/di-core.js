@@ -229,6 +229,7 @@ const LUREM={};LURES.forEach(l=>LUREM[l.id]=l);
 const CRATE_PRICE=25000;
 /* what's new: shown once after each update, and any time from the menus */
 const UPDATES=[
+ {v:'3.7',d:'Know your next rod',items:['A Next rod tracker in the top corner shows the rod to aim for, where it is sold and how close you are to affording it','The Rod path lists every rod island by island; press Find and a gold pin on your compass leads you to its rack','A chunkier coin counter and level badge, with a fat XP bar and coin pops when you earn or spend','Lanterns and lamps now give a soft, natural glow instead of a bright bubble, and the midday sun is gentler on the eyes','Docks have rope coils, buckets, tackle boxes, flags and gulls on the posts; beaches have starfish, crabs, upturned boats and umbrellas','A backup copy of the game on a second web address, in case one is blocked']},
  {v:'3.6',d:'Market day and seaplanes',items:['Every shop is now a wooden market stall with its own sign, goods on the counter and lanterns that glow at night','Rods are laid out on racks around the Tackle & Rods stall: walk up to look, buy or equip','More detail on every island: lantern-lit paths, signposts, garden fences, crates and flower boxes by the cottages','Grand Seiner: a big fishing boat that seats 6, with the most storage and a luck bonus','Surfrider Jet Ski: a fast two-seater','Lucky Duck: a giant rubber duck boat you can only win from Mystery Crates','Seaplanes: the Gull Seaplane and Albatross Flying Boat fly between islands (Space to take off or land), touch down on open water and you can fish from the floats','A calmer, simpler interface: soft see-through panels, rounder buttons and a lighter HUD']},
  {v:'3.5',d:'A fresh coat of paint',items:['A brand new look for every menu, panel and the HUD','Fishing is harder: stronger fish, head-shakes that spike the line, a slack line can lose the fish, a shorter strike window','Pull against running fish (A / D or drag) to tire them; careful anglers land the rarest catches','Sharper image, crisper shadows and denser grass on Medium']},
  {v:'3.4',d:'Rods on display',items:['Every island lays its rods out on stands by the arrival path: walk up to look, buy or equip','The Drowned Hollow and Sunless Deep remastered: brighter caves, glowworm ceilings, shafts of light, glowing moss and crystals that light the room','A separate dev profile for the game\'s owner that never reaches the leaderboards']},
@@ -360,7 +361,7 @@ const DEV={on:false,open:false,fast:false,rar:null,ev:null};
 /* ================= STATE / SAVE ================= */
 /* The save key never changes between updates: new versions read the same save and fill in anything new.
    Before an update touches a save (and once a day) a backup copy is kept, see backupSave. */
-const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.6';
+const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.7';
 /* profiles: your normal profile (cloud save, leaderboards, no tools) and the owner's dev profile (its own save on this
    device, the dev tools, never on leaderboards and never synced to the cloud). The dev profile needs the dev key. */
 const KEY_DEV='driftwood-isles-save-dev',DEV_HASH='94d329459b6a2bde18d3336b2dbc6098cda74ec216abcc65d537c420d502e29b';

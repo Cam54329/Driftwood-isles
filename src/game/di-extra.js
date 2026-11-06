@@ -239,8 +239,53 @@ function openRodView(r){openPanel(r.n,rodState(r)==='buy'?fmt(r.price)+' coins':
   <div class="row" style="justify-content:flex-end;gap:8px">${s==='eq'?'<span class="pill" style="--c:#9be07a">Equipped</span>':s==='own'?`<button class="btn sky" data-act="req" data-id="${r.id}">Equip</button>`:lock&&s!=='own'?`<span class="muted">${esc(lock)}</span>`:`<span class="muted">You have ${fmt(state.coins)}c</span><button class="btn" data-act="rbuy" data-id="${r.id}" ${state.coins<r.price?'disabled':''}>Buy · ${fmt(r.price)}c</button>`}</div></div>`);
  bindPanel({rbuy:id=>{const R=RODM[id];if(state.coins<R.price||rodLocked(R)||state.rods.includes(id))return;state.coins-=R.price;state.rods.push(id);state.rod=id;equipRodModel();AU.coin();coinBurst(6);questEvent('rod');toast(`You bought the ${R.n}!`,'gold');save();updateHUD();rerender();},
   req:id=>{if(!state.rods.includes(id))return;state.rod=id;equipRodModel();AU.ui();save();updateHUD();rerender();}});});}
+
+/* ================= ROD PATH: which rod to aim for next, and where it is sold ================= */
+const ROD_HOME={};for(const k in ROD_RACKS)for(const id of ROD_RACKS[k])ROD_HOME[id]=k;
+const NR={key:'',t:0,guide:null,beam:null,afford:null};
+const rodWhere=id=>{const h=ROD_HOME[id];return !h?'':h==='hollow'?'the Drowned Hollow':ZONES[h].n;};
+function rodNeed(r){const l=rodLocked(r);if(l)return l;const h=ROD_HOME[r.id];if(h&&h!=='hollow'&&!state.unlocked.includes(h))return 'Sold on '+ZONES[h].n+': buy its chart first';return null;}
+function rodPathList(){const out=[];for(const k of ISL.concat(['hollow']))for(const id of(ROD_RACKS[k]||[]).filter(i=>RODM[i]).sort((a,b)=>RODM[a].price-RODM[b].price))out.push(RODM[id]);return out;}
+function nextRodPick(){let best=0;for(const id of state.rods){const r=RODM[id];if(r&&r.luck>best)best=r.luck;}
+ const c=rodPathList().filter(r=>r.price>0&&!state.rods.includes(r.id)&&r.luck>best).sort((a,b)=>a.price-b.price||a.luck-b.luck);return c.find(r=>!rodNeed(r))||c[0]||null;}
+const rodIcon=r=>`<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M26 6v10.5" stroke="#e8eef4" stroke-width="1" opacity=".75"/><path d="M6 26 26 6" stroke="${r.shaft}" stroke-width="2.6" stroke-linecap="round"/><path d="M5 27l5-5" stroke="${r.handle}" stroke-width="4.2" stroke-linecap="round"/><circle cx="11.6" cy="22" r="3.1" fill="${r.reelC}" stroke="#0d1117" stroke-width="1.3"/><circle cx="26" cy="18" r="1.7" fill="${r.glow||'#ff6a4a'}"/></svg>`;
+function nextRodTick(dt){NR.t-=dt;if(NR.t>0)return;NR.t=.4;const el=document.getElementById('nextRod');if(!el)return;
+ const r=state.settings.nextRod===false?null:nextRodPick();if(!r){if(!el.hidden){el.hidden=true;NR.key='';}return;}
+ const need=rodNeed(r),where=rodWhere(r.id),ready=!need&&state.coins>=r.price,pct=need?1:Math.min(1,state.coins/r.price);
+ const key=[r.id,need,ready,fmt(state.coins),Math.round(pct*200)].join('|');
+ if(key!==NR.key){NR.key=key;el.hidden=false;el.className=ready?'ready':need?'lock':'';el.title='Open the rod path';
+  el.innerHTML=`<span class="nrI">${rodIcon(r)}</span><small>${ready?'Ready to buy':'Next rod'}</small><b>${esc(r.n)}</b><em>${esc(need||'Tackle & Rods · '+where)}</em><span class="nrBar"><i style="width:${(pct*100).toFixed(1)}%"></i><span>${need?'Locked':ready?'Go get it · '+fmt(r.price)+'c':fmt(state.coins)+' / '+fmt(r.price)+'c'}</span></span>`;}
+ if(NR.afford===null)NR.afford=ready?r.id:'';else if(ready&&NR.afford!==r.id){NR.afford=r.id;toast(`You can afford the ${r.n}! It's on the rod rack at ${where}.`,'gold');AU.ui&&AU.ui();}else if(!ready)NR.afford='';}
+function openRodPath(){openPanel('Rod path','Every rod, island by island',()=>{panelCtx.kind='rodpath';const nx=nextRodPick(),all=rodPathList();const own=all.filter(r=>state.rods.includes(r.id)).length;
+ let h=`<div class="rpTop"><div><b>${own} / ${all.length}</b><small>rods owned</small></div><div><b>+${RODM[state.rod].luck}%</b><small>luck now</small></div><div class="grow"></div><button class="btn sm ${state.settings.nextRod===false?'sky':'ghost'}" data-act="nrtog">${state.settings.nextRod===false?'Show tracker':'Hide tracker'}</button></div>`;
+ if(nx){const need=rodNeed(nx);h+=`<div class="card eq rpNext"><div class="row"><span class="nrI big">${rodIcon(nx)}</span><div class="grow"><small class="kick">Aim for next</small><h3>${esc(nx.n)}</h3><div class="muted">${esc(need||(state.coins>=nx.price?'You can afford it now':'Need '+fmt(nx.price-state.coins)+' more coins'))} · sold at ${esc(rodWhere(nx.id))}</div></div><button class="btn" data-act="guide" data-id="${nx.id}">Show me the way</button></div></div>`;}
+ else h+=`<div class="card eq"><h3>Every rod on the racks is yours</h3><div class="muted">Quest rods are listed at the bottom.</div></div>`;
+ for(const k of ISL.concat(['hollow'])){const ids=(ROD_RACKS[k]||[]).filter(i=>RODM[i]).sort((a,b)=>RODM[a].price-RODM[b].price);if(!ids.length)continue;const open=k==='hollow'||state.unlocked.includes(k);
+  h+=`<div class="rpIsl${open?'':' shut'}"><h4><i style="--c:${ISL_COL[k]||'#6ad0e0'}"></i>${esc(k==='hollow'?'Drowned Hollow':ZONES[k].n)}${open?'':'<span>chart needed</span>'}</h4>`;
+  for(const id of ids){const r=RODM[id],s=rodState(r),need=rodNeed(r),isN=nx&&nx.id===id;
+   h+=`<div class="rpRow ${s}${isN?' next':''}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}${isN?'<em>Next</em>':''}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':need?`<span class="tag lock">${esc(need)}</span>`:`<span class="tag buy">${fmt(r.price)}c</span>`}${s==='eq'||s==='own'?'':`<button class="btn sm ghost" data-act="guide" data-id="${id}" title="Mark it on your compass">Find</button>`}</div></div>`;}
+  h+='</div>';}
+ const qr=RODS.filter(r=>r.req&&r.req.quest);if(qr.length){h+=`<div class="rpIsl"><h4><i style="--c:#ffd76e"></i>Quest rewards</h4>`+qr.map(r=>{const s=rodState(r);return `<div class="rpRow ${s}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':`<span class="tag lock">${esc(rodLocked(r)||'')}</span>`}</div></div>`;}).join('')+'</div>';}
+ body(h);bindPanel({guide:id=>{setRodGuide(id);closePanel();},nrtog:()=>{state.settings.nextRod=state.settings.nextRod===false;NR.key='';save();rerender();}});});}
+function guideBeam(){const g=new THREE.CylinderGeometry(.16,.3,60,12,1,true);g.translate(0,30,0);
+ const m=new THREE.Mesh(g,new THREE.ShaderMaterial({uniforms:{uT:{value:0},uA:{value:1}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
+  vertexShader:'varying float vY;void main(){vY=uv.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:'uniform float uT;uniform float uA;varying float vY;void main(){float a=pow(1.-vY,2.6)*(.3+.1*sin(uT*2.6-vY*14.))*uA;gl_FragColor=vec4(vec3(1.,.72,.3)*a,1.);}'}));
+ m.frustumCulled=false;m.renderOrder=5;reflHide.push(m);scene.add(m);return m;}
+function setRodGuide(id){const it=RACK.list.find(i=>i.r.id===id);if(!it){toast('That rod is not on display yet.');return;}
+ NR.guide={x:it.x,z:it.z,id};if(!NR.beam)NR.beam=guideBeam();NR.beam.position.set(it.x,groundH(it.x,it.z),it.z);NR.beam.visible=true;
+ const h=ROD_HOME[id],far=h&&h!=='hollow'&&zoneAt(player.pos.x,player.pos.z)!==h;toast(far?`The ${RODM[id].n} is on ${rodWhere(id)}. Follow the gold pin on your compass.`:`Follow the gold pin on your compass to the ${RODM[id].n}.`);}
+function clearRodGuide(){NR.guide=null;if(NR.beam)NR.beam.visible=false;const pin=document.getElementById('guidePin');if(pin)pin.hidden=true;}
+function guideTick(){const pin=document.getElementById('guidePin');if(!pin)return;if(!NR.guide){if(!pin.hidden)pin.hidden=true;return;}
+ const g=NR.guide,p=player.mode==='boat'?boat.pos:player.pos,dx=g.x-p.x,dz=g.z-p.z,d=Math.hypot(dx,dz);
+ if(d<3||state.rods.includes(g.id)||(env.cave&&ROD_HOME[g.id]!=='hollow')){if(d<3||state.rods.includes(g.id))clearRodGuide();else pin.hidden=true;return;}
+ camera.getWorldDirection(_cf);const head=Math.atan2(_cf.x,-_cf.z)*180/Math.PI,brg=Math.atan2(dx,-dz)*180/Math.PI,rel=((brg-head)%360+540)%360-180;
+ const w=document.getElementById('compass').clientWidth,max=w/2-18,x=clamp(rel*COMP.ppd,-max,max);
+ pin.hidden=false;pin.style.transform=`translateX(calc(-50% + ${x.toFixed(1)}px))`;pin.classList.toggle('edge',Math.abs(rel*COMP.ppd)>max);
+ const t=d>=1000?(d/1000).toFixed(1)+' km':Math.round(d)+' m';const s=pin.lastChild;if(s.textContent!==t)s.textContent=t;
+ if(NR.beam){const u=NR.beam.material.uniforms;u.uT.value=performance.now()/1000;u.uA.value=smooth(4,16,d)*(1-env.day*.35);}}
 /* ================= per-frame ================= */
 let updT=0;
-function updateExtra(dt){updateWells(dt);updateLittleEvents(dt);updateCasino();updateRodRacks(dt);
+function updateExtra(dt){updateWells(dt);updateLittleEvents(dt);updateCasino();updateRodRacks(dt);nextRodTick(dt);guideTick();
  /* show what's new once after each update */
  if(!MENU.on&&!JOIN.on&&state.tips.joined&&state.tips.intro&&state.seenVer!==GAME_VER&&!panelCtx){if(!updT)updT=performance.now();if(performance.now()-updT>2500){state.seenVer=GAME_VER;save();openUpdates();}}if(Net.uid)noteRiders();}
