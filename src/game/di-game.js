@@ -146,6 +146,8 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  const cp=camera.position;sky.position.copy(cp);stars.position.copy(cp);starU.uA.value=nightK*(1-env.cloud)*(1-env.fog);starU.uT.value=WIND.uTime.value;
  const md=new V3(-sunDir.x,-sunDir.y,-sunDir.z);moon.position.copy(cp).addScaledVector(md,700);moon.lookAt(cp);moonHalo.position.copy(moon.position);const mo=clamp((-sy+.12)*5,0,1)*(1-env.cloud*.85)*(1-env.fog*.8);moon.material.opacity=mo;moon.material.color.setScalar(1.2+mo*.6);moonHalo.material.opacity=mo*.35;
  glowMat.color.setScalar(lerp(.85,2.6,nightK));
+ /* distance LOD for the small details in each tile */
+ GFX.lodT=(GFX.lodT||0)-dt;if(GFX.lodT<=0){GFX.lodT=.3;const ld=GFX.tier==='ultra'?110:GFX.tier==='high'?80:GFX.tier==='medium'?60:40;for(const m of world.lodMeshes){const bs=m.geometry.boundingSphere,on=Math.hypot(bs.center.x-cp.x,bs.center.z-cp.z)-bs.radius<ld;if(m.visible!==on)m.visible=on;}}
  /* the water shader shapes shorelines for the five nearest islands only */
  {const ws=LANDS.map(k=>{const I=ZONES[k];return[Math.hypot(cp.x-I.x,cp.z-I.z)-I.R,I];}).sort((a,b)=>a[0]-b[0]);for(let i=0;i<WATER_NI;i++){const I=ws[i][1];waterU.uIsl.value[i].set(I.x,I.z,I.R,I.p1);waterU.uIsl2.value[i].set(I.p2,0);waterU.uSand.value[i].set(I.sand);}}
  /* skip whole islands that are lost in the fog, and caves unless you are inside them */
@@ -413,7 +415,7 @@ function updateClockHUD(){const h=env.t*24,hh=Math.floor(h),mm=Math.floor((h-hh)
 
 /* ---------- interaction ---------- */
 let curInter=null,disembarkSpot=null,disTimer=0;
-function findDisembark(p=boat.pos){let best=null,bd=1e9;for(let a=0;a<20;a++){for(const r of[3,4.5,6,7.5]){const x=p.x+Math.cos(a/20*TAU)*r,z=p.z+Math.sin(a/20*TAU)*r;const g=groundH(x,z);if(g>.35&&r<bd&&!world.colliders.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+.6)){bd=r;best={x,z,g};}}}return best;}
+function findDisembark(p=boat.pos){let best=null,bd=1e9;for(let a=0;a<20;a++){for(const r of[3,4.5,6,7.5]){const x=p.x+Math.cos(a/20*TAU)*r,z=p.z+Math.sin(a/20*TAU)*r;const g=groundH(x,z);if(g>.35&&r<bd&&!eachColNear(x,z,1,c=>Math.hypot(c.x-x,c.z-z)<c.r+.6)){bd=r;best={x,z,g};}}}return best;}
 function updateInteract(dt){let it=null;
  if(!uiBlocked()&&!PHOTO.on&&F.st==='idle'){
   if(player.mode==='ride'){it={label:`Hop off ${RIDE?RIDE.name+'\'s':'the'} boat`,kind:'Leave',act:()=>stopRide(false)};}
@@ -461,7 +463,7 @@ function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].in
   if(mag>.08){player.face=Math.atan2(mv.x,mv.z);player.dx=mv.x/mag;player.dz=mv.z/mag;}
   if(player.speed>.05&&player.dx!=null){const st=player.speed*dt,nx=player.pos.x+player.dx*st,nz=player.pos.z+player.dz*st;const ok=(x,z)=>{const g=groundH(x,z);return g>.1&&g<player.pos.y+.95;};
    if(ok(nx,nz)){player.pos.x=nx;player.pos.z=nz;}else if(ok(nx,player.pos.z))player.pos.x=nx;else if(ok(player.pos.x,nz))player.pos.z=nz;
-   for(const c of world.colliders){const dx=player.pos.x-c.x,dz=player.pos.z-c.z,rr=c.r+.55,d2=dx*dx+dz*dz;if(d2<rr*rr&&d2>1e-6){const d=Math.sqrt(d2);const px=c.x+dx/d*rr,pz=c.z+dz/d*rr;if(ok(px,pz)){player.pos.x=px;player.pos.z=pz;}}}}
+   eachColNear(player.pos.x,player.pos.z,1.5,c=>{const dx=player.pos.x-c.x,dz=player.pos.z-c.z,rr=c.r+.55,d2=dx*dx+dz*dz;if(d2<rr*rr&&d2>1e-6){const d=Math.sqrt(d2);const px=c.x+dx/d*rr,pz=c.z+dz/d*rr;if(ok(px,pz)){player.pos.x=px;player.pos.z=pz;}}});}
   const g=groundH(player.pos.x,player.pos.z);player.vy-=32*dt;player.pos.y+=player.vy*dt;const was=player.onGround;
   if(player.pos.y<=g){player.pos.y=g;player.vy=0;player.onGround=true;if(!was){AU.step('grass');if(player.zone!=='sea'&&!onDock(player.pos.x,player.pos.z))for(let i=0;i<3;i++)spawnPuff(player.pos.x,player.pos.y,player.pos.z,player.zone==='frost'?'#f4f8ff':'#d8d0b0');}}else if(player.onGround&&player.pos.y-g<.6&&player.vy<=0){player.pos.y=g;player.vy=0;}else player.onGround=false;
   if(g<-1){const sp=world.spawn[zoneAt(player.pos.x,player.pos.z)]||world.spawn.cove;player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);}
@@ -520,7 +522,7 @@ function updateCamera(dt){const tgt=_camT.copy(player.mode==='boat'?boat.pos:pla
  if(ptrs.size===0&&cam.manualT>2.5&&!PHOTO.on&&F.st==='idle'){const mv=player.mode==='boat'?Math.abs(boat.speed)>3:player.mode==='walk'&&Math.hypot(input.x,input.y)>.1;if(mv){const tp=player.mode==='boat'?(boat.alt>3?.42:.54):.52;cam.pitch+=(tp-cam.pitch)*(1-Math.exp(-1.3*dt));}}
  const cp=Math.cos(cam.pitch);camera.position.set(cam.target.x+Math.sin(cam.yaw)*cp*cam.dist,cam.target.y+Math.sin(cam.pitch)*cam.dist,cam.target.z+Math.cos(cam.yaw)*cp*cam.dist);
  const minY=Math.max(groundH(camera.position.x,camera.position.z)+.8,waveH(camera.position.x,camera.position.z,WIND.uTime.value)+.8);if(camera.position.y<minY)camera.position.y=minY;
- {const cpx=camera.position.x,cpz=camera.position.z;let blk=0;for(const c of world.colliders){const dx=c.x-cpx,dz=c.z-cpz;if(dx>4||dx<-4||dz>4||dz<-4)continue;const d=Math.hypot(dx,dz),rr=Math.max(c.r*3.2,1.4);if(d<rr&&c.r>=.35&&c.r<3)blk=Math.max(blk,1-d/rr);}cam.occ=damp(cam.occ||0,blk,6,dt);
+ {const cpx=camera.position.x,cpz=camera.position.z;let blk=0;eachColNear(cpx,cpz,4,c=>{const dx=c.x-cpx,dz=c.z-cpz;if(dx>4||dx<-4||dz>4||dz<-4)return;const d=Math.hypot(dx,dz),rr=Math.max(c.r*3.2,1.4);if(d<rr&&c.r>=.35&&c.r<3)blk=Math.max(blk,1-d/rr);});cam.occ=damp(cam.occ||0,blk,6,dt);
   if(cam.occ>.02&&!PHOTO.on){const k=1-cam.occ*.55;camera.position.lerp(cam.target,1-k);}}
  camera.lookAt(cam.target);cam.shake=Math.max(0,(cam.shake||0)-dt*1.6);if(cam.shake>0&&!PHOTO.on&&!state.settings.noShake){const s=cam.shake*cam.shake*.6,tt=performance.now()/1000;camera.rotateX(Math.sin(tt*47)*s*.1);camera.rotateY(Math.sin(tt*39+1)*s*.1);}cam.punch=Math.max(0,(cam.punch||0)-dt*2.2);const fov=55+(player.mode==='boat'?clamp(Math.abs(boat.speed)/19,0,1)*6:0)-(cam.punch||0)*7;if(Math.abs(fov-camera.fov)>.01){camera.fov=cam.punch>0?damp(camera.fov,fov,14,dt):damp(camera.fov,fov,2,dt);camera.updateProjectionMatrix();}
  if(player.mode==='boat')camera.rotateZ(boat.g.rotation.z*.25);}
@@ -570,4 +572,4 @@ function updateLife(dt){const T=WIND.uTime.value,cp=camera.position;updateFishSh
  if(world.windmill)world.windmill.rotateZ(dt*(.35+WIND.uStr.value*.25));
  for(const m of animMats)m.color.setHSL((T*.25+m.userData.prism)%1,.85,.6);}
 
-function renderFrame(){GFX.fc=(GFX.fc||0)+1;const every=GFX.tier==='ultra'?1:2;if(renderer.shadowMap.enabled&&(GFX.fc%every===0||GFX.tier==='high'))renderer.shadowMap.needsUpdate=true;if(GFX.refl&&(GFX.fc%every===0))renderRefl();if(GFX.composer)GFX.composer.render();else renderer.render(scene,camera);}
+function renderFrame(){GFX.fc=(GFX.fc||0)+1;renderer.info.autoReset=false;renderer.info.reset();const every=GFX.tier==='ultra'?1:2;if(renderer.shadowMap.enabled&&GFX.fc%every===0)renderer.shadowMap.needsUpdate=true;if(GFX.refl&&(GFX.fc%every===0))renderRefl();if(GFX.composer)GFX.composer.render();else renderer.render(scene,camera);}

@@ -65,7 +65,14 @@ const WTEX={size:256,A:null,B:null,ready:false};
 function makeArrayTex(data,S,N){const t=new THREE.DataArrayTexture(data,S,S,N);t.format=THREE.RGBAFormat;t.type=THREE.UnsignedByteType;t.wrapS=t.wrapT=THREE.RepeatWrapping;
  t.minFilter=THREE.LinearMipmapLinearFilter;t.magFilter=THREE.LinearFilter;t.generateMipmaps=true;t.anisotropy=8;t.colorSpace=THREE.NoColorSpace;t.needsUpdate=true;return t;}
 /* generates all layers; yields between layers so the loading bar keeps moving */
-async function genWorldTextures(S,onStep){WTEX.size=S;const N=TL_N,A=new Uint8Array(S*S*4*N),B=new Uint8Array(S*S*4*N);
+/* the generated textures are cached in the browser (IndexedDB), so after the first visit the game skips making them */
+const WTEX_HASH=(()=>{const src=LAYER_GEN.map(String).join('|')+JSON.stringify(TLP);let h=2166136261;for(let i=0;i<src.length;i++){h^=src.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36);})();
+function idbOpen(){return new Promise(res=>{try{const r=indexedDB.open('driftwood-cache',1);r.onupgradeneeded=()=>{try{r.result.createObjectStore('kv');}catch(e){}};r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);r.onblocked=()=>res(null);}catch(e){res(null);}});}
+async function idbGet(k){const db=await idbOpen();if(!db)return null;return new Promise(res=>{try{const q=db.transaction('kv','readonly').objectStore('kv').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null);}catch(e){res(null);}});}
+async function idbPut(k,v){const db=await idbOpen();if(!db)return;try{db.transaction('kv','readwrite').objectStore('kv').put(v,k);}catch(e){}}
+async function genWorldTextures(S,onStep){WTEX.size=S;const N=TL_N,ck='wtex-'+WTEX_HASH+'-'+S;
+ {const hit=await Promise.race([idbGet('wtex'),new Promise(r=>setTimeout(()=>r(null),1500))]);if(hit&&hit.k===ck&&hit.A&&hit.B&&hit.A.length===S*S*4*N){WTEX.A=makeArrayTex(hit.A,S,N);WTEX.B=makeArrayTex(hit.B,S,N);WTEX.ready=true;WU.uAlb.value=WTEX.A;WU.uNrm.value=WTEX.B;WTEX.cached=true;return;}}
+ const A=new Uint8Array(S*S*4*N),B=new Uint8Array(S*S*4*N);
  const H=new Float32Array(S*S),Hb=new Float32Array(S*S),T=new Float32Array(S*S);
  for(let L=0;L<N;L++){const gen=LAYER_GEN[L],ns=TLP[L][2],base=L*S*S*4;
   for(let y=0;y<S;y++)for(let x=0;x<S;x++){const r=gen(x/S,y/S,hashI(x,y,L*7+3)),i=y*S+x,o=base+i*4;H[i]=r[0];
@@ -78,7 +85,7 @@ async function genWorldTextures(S,onStep){WTEX.size=S;const N=TL_N,A=new Uint8Ar
    let nx=-dx*k,ny=-dy*k;const l=Math.hypot(nx,ny,1);nx/=l;ny/=l;B[o]=((nx*.5+.5)*255)|0;B[o+1]=((ny*.5+.5)*255)|0;
    const ao=Math.min(1,Math.max(.35,1-(Hb[i]-H[i])*2.6));B[o+3]=(ao*255)|0;A[o+3]=(Math.min(1,Math.max(0,H[i]))*255)|0;}
   if(onStep&&L%4===3)await onStep(L/N);}
- WTEX.A=makeArrayTex(A,S,N);WTEX.B=makeArrayTex(B,S,N);WTEX.ready=true;WU.uAlb.value=WTEX.A;WU.uNrm.value=WTEX.B;}
+ WTEX.A=makeArrayTex(A,S,N);WTEX.B=makeArrayTex(B,S,N);WTEX.ready=true;WU.uAlb.value=WTEX.A;WU.uNrm.value=WTEX.B;idbPut('wtex',{k:ck,A,B});}
 
 /* ---------- shared world uniforms ---------- */
 const WU={uAlb:{value:null},uNrm:{value:null},uTexScale:{value:TLP.map(p=>1/p[0])},uMetal:{value:TLP.map(p=>p[1])},uWet:{value:0},uTime:WIND.uTime,uWind:WIND.uStr,

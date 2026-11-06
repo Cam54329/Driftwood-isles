@@ -9,9 +9,16 @@ const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xcfe8f5,80,380);
 const camera=new THREE.PerspectiveCamera(55,1,.3,1600);
 const hemi=new THREE.HemisphereLight(0xeaf6ff,0x6a8a5a,.4);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff2dc,3);sun.shadow.bias=-.0003;sun.shadow.normalBias=.045;sun.shadow.radius=2.5;scene.add(sun);scene.add(sun.target);
+/* which GPU is this? Chrome on a Mac reports e.g. "ANGLE (Apple, ANGLE Metal Renderer: Apple M2, ...)" or "Intel(R) Iris(TM) Plus Graphics" */
+function detectGPU(){try{const gl=renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');return String((ext&&gl.getParameter(ext.UNMASKED_RENDERER_WEBGL))||gl.getParameter(gl.RENDERER)||'');}catch(e){return '';}}
+function gpuTier(r){const s=(r||'').toLowerCase();
+ if(/apple m\d+ (pro|max|ultra)|rtx|radeon rx [5-9]\d{3}|geforce gtx 1[06-9]|geforce rtx/.test(s))return 'ultra';
+ if(/apple m\d|apple gpu|radeon pro|radeon rx|geforce|nvidia/.test(s))return 'high';
+ if(/iris|intel.*\bxe\b|uhd graphics (6[3-9]\d|7\d\d)|arc/.test(s))return 'medium';
+ if(/intel|hd graphics|uhd|mali|adreno|powervr|swiftshader|llvmpipe|software/.test(s))return 'low';return isMobile?'medium':'high';}
 const TIERS={
  ultra:{pr:2,shadow:4096,ext:58,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.7,fxaa:false,wr:112,ws:160,grass:42000,flowers:3200,rain:2800,ff:520,birds:24,far:900,lamps:4,cloud:6,env:1,tex:512,leaf:1},
- high:{pr:1.5,shadow:2048,ext:48,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.5,fxaa:false,wr:96,ws:128,grass:26000,flowers:2000,rain:2000,ff:360,birds:18,far:780,lamps:3,cloud:5,env:1.5,tex:256,leaf:1},
+ high:{pr:1.5,shadow:2048,ext:48,post:true,msaa:0,ao:false,bloom:true,refl:true,rs:.42,fxaa:true,wr:96,ws:128,grass:18000,flowers:2000,rain:2000,ff:360,birds:18,far:780,lamps:3,cloud:5,env:1.5,tex:256,leaf:1},
  medium:{pr:1.25,shadow:1536,ext:42,post:true,msaa:0,ao:false,bloom:true,refl:false,fxaa:true,wr:72,ws:96,grass:10000,flowers:1000,rain:1200,ff:220,birds:12,far:600,lamps:2,cloud:4,env:3,tex:256,leaf:.8},
  low:{pr:1,shadow:0,ext:0,post:false,msaa:0,ao:false,bloom:false,refl:false,fxaa:false,wr:52,ws:64,grass:2600,flowers:300,rain:600,ff:120,birds:6,far:420,lamps:0,cloud:3,env:6,tex:256,leaf:.6}};
 const GFX={tier:'high',composer:null,bloom:null,grade:null,fxaa:null,ao:null,refl:null,reflCam:new THREE.PerspectiveCamera(),texMat:new THREE.Matrix4(),hdr:false,lamps:[]};
@@ -121,6 +128,13 @@ class Builder{constructor(){this.p=[];this.n=[];this.c=[];this.s=[];this.m=[];th
   const h=Math.sin(p0.x*12.9898+p0.z*78.233)*43758.5;_tm.makeScale(sx,len,r0).setPosition((h-Math.floor(h))*9,0,0);this.addM(geo,color,_m,.02,_tm);}
  tri(a,b,c,col,sa=0,sb=0,sc=0){this.p.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);this.t.push(a.x,a.y,a.z,b.x,b.y,b.z,c.x,c.y,c.z);_v3.subVectors(b,a).cross(_v4.subVectors(c,a)).normalize();
   for(let i=0;i<3;i++){this.c.push(col.r,col.g,col.b);this.n.push(_v3.x,_v3.y,_v3.z);this.m.push(this.mt);}this.s.push(sa,sb,sc);}
+ meshChunks(mat,sway,cell=40){const T=this.p.length/9,cells=new Map(),A=this.p;
+  for(let t=0;t<T;t++){const o=t*9,cx=(A[o]+A[o+3]+A[o+6])/3,cz=(A[o+2]+A[o+5]+A[o+8])/3;
+   let e=0;for(const[a,b]of[[0,3],[3,6],[6,0]]){const dx=A[o+a]-A[o+b],dy=A[o+a+1]-A[o+b+1],dz=A[o+a+2]-A[o+b+2];e=Math.max(e,dx*dx+dy*dy+dz*dz);}
+   const det=e<.09,k=(Math.floor(cx/cell)*4096+Math.floor(cz/cell))*2+(det?1:0);let L=cells.get(k);if(!L){L={det,t:[]};cells.set(k,L);}L.t.push(t);}
+  const out=[];for(const L of cells.values()){const b=new Builder(),n=L.t.length;b.p=new Array(n*9);b.n=new Array(n*9);b.c=new Array(n*9);b.t=new Array(n*9);b.m=new Array(n*3);b.s=new Array(n*3);
+   let i=0;for(const t of L.t){for(let j=0;j<9;j++){b.p[i*9+j]=this.p[t*9+j];b.n[i*9+j]=this.n[t*9+j];b.c[i*9+j]=this.c[t*9+j];b.t[i*9+j]=this.t[t*9+j];}for(let j=0;j<3;j++){b.m[i*3+j]=this.m[t*3+j];b.s[i*3+j]=this.s[t*3+j]||0;}i++;}
+   const m=b.mesh(mat,sway);if(L.det){m.userData.lod=1;world.lodMeshes.push(m);}out.push(m);}return out;}
  mesh(mat,sway){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(this.p,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(this.n,3));g.setAttribute('color',new THREE.Float32BufferAttribute(this.c,3));
   g.setAttribute('mat',new THREE.Float32BufferAttribute(this.m,1));g.setAttribute('tp',new THREE.Float32BufferAttribute(this.t,3));if(sway)g.setAttribute('sway',new THREE.Float32BufferAttribute(this.s,1));g.computeBoundingSphere();return new THREE.Mesh(g,mat);}}
 const worldMat=makeWorldMat(),worldMatS=makeWorldMat({sway:true}),worldMatDS=makeWorldMat({side:THREE.DoubleSide});
@@ -145,7 +159,7 @@ function profile(I,f,x,z){let h;
  if(I.ponds)for(const p of I.ponds){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r*1.6){const fl=Math.max(p.y-1.1,.85);h=Math.min(h,lerp(fl,h,smooth(p.r*.75,p.r*1.6,d)));}}
  return h;}
 function terrainH(I,x,z){const dx=x-I.x,dz=z-I.z,d2=dx*dx+dz*dz,Rm=I.R*1.42;if(d2>Rm*Rm)return -60;const d=Math.sqrt(d2),th=Math.atan2(dz,dx);return profile(I,d/islandR(I,th),x,z);}
-const world={islGroups:[],shops:{},caveRings:[],floors:[],ponds:[],docks:[],colliders:[],inter:[],npcs:[],floaters:[],seaRocks:[],reserved:{},spawn:{},boatDock:{},halos:[],chimneys:[],puddles:[],smoke:[],altarCrystal:null,lamps:[]};
+const world={lodMeshes:[],islGroups:[],shops:{},caveRings:[],floors:[],ponds:[],docks:[],colliders:[],inter:[],npcs:[],floaters:[],seaRocks:[],reserved:{},spawn:{},boatDock:{},halos:[],chimneys:[],puddles:[],smoke:[],altarCrystal:null,lamps:[]};
 function dockH(x,z){for(const d of world.docks){const dx=x-d.x,dz=z-d.z;const u=dx*d.cx+dz*d.sz,v=-dx*d.sz+dz*d.cx;if(u>=-1&&u<=d.len&&Math.abs(v)<=d.w/2)return d.h;}return -60;}
 function onDock(x,z){return dockH(x,z)>-1;}
 function pondAt(x,z){for(const p of world.ponds)if(Math.hypot(x-p.x,z-p.z)<p.r*1.02)return p;return null;}
@@ -512,6 +526,11 @@ function labelSprite(name,sub,dot){const t=nameTex(name,sub,dot);const s=new THR
 
 /* ---------- world build ---------- */
 const solidMeshes=[];
+/* a spatial grid over the colliders so "is anything here?" checks look at a handful nearby instead of all 5000+ */
+const CGRID={map:null,n:-1};
+function colGridBuild(){const m=new Map();for(const c of world.colliders){const r=c.r+2,x0=Math.floor((c.x-r)/8),x1=Math.floor((c.x+r)/8),z0=Math.floor((c.z-r)/8),z1=Math.floor((c.z+r)/8);for(let i=x0;i<=x1;i++)for(let j=z0;j<=z1;j++){const k=i*65536+j;let a=m.get(k);if(!a)m.set(k,a=[]);a.push(c);}}CGRID.map=m;CGRID.n=world.colliders.length;}
+function eachColNear(x,z,rad,fn){if(CGRID.n!==world.colliders.length)colGridBuild();const x0=Math.floor((x-rad)/8),x1=Math.floor((x+rad)/8),z0=Math.floor((z-rad)/8),z1=Math.floor((z+rad)/8);
+ for(let i=x0;i<=x1;i++)for(let j=z0;j<=z1;j++){const a=CGRID.map.get(i*65536+j);if(a)for(let q=0;q<a.length;q++)if(fn(a[q])===true)return true;}return false;}
 function buildWorld(){LEAFK=TT().leaf;
  for(const key of LANDS){const I=ZONES[key];const dT=key==='cove'?-.25:Math.atan2(-I.z,-I.x);const th=dT+Math.PI+(key==='moss'?.5:key==='dune'?.6:0),f=I.volcano?.52:I.mesa?.52:key==='moss'?.32:key==='glim'?.38:.24,R=islandR(I,th);const px=I.x+Math.cos(th)*R*f,pz=I.z+Math.sin(th)*R*f;
   const pr=I.volcano?5.5:I.cave?9:key==='atoll'?13:key==='dune'?11:key==='petal'?10:7.5;let rim=1e9;for(let a=0;a<16;a++){const rx=px+Math.cos(a/16*TAU)*pr*1.4,rz=pz+Math.sin(a/16*TAU)*pr*1.4;const dd=Math.hypot(rx-I.x,rz-I.z),ta=Math.atan2(rz-I.z,rx-I.x);rim=Math.min(rim,profile(I,dd/islandR(I,ta),rx,rz));}
@@ -722,8 +741,8 @@ function buildWorld(){LEAFK=TT().leaf;
   {const dk=world.docks[world.docks.length-1];crabPot(sb,dk.x+dk.cx*6-dk.sz*1.2,dk.h,dk.z+dk.sz*6+dk.cx*1.2,r);crabPot(sb,dk.x+dk.cx*6.9-dk.sz*1.15,dk.h,dk.z+dk.sz*6.9+dk.cx*1.15,r);
    const rx=dk.x-dk.cx*4+dk.sz*5,rz=dk.z-dk.sz*4-dk.cx*5,ry=groundH(rx,rz);if(ry>.4){dryRack(sb,rx,ry,rz,Math.atan2(dk.cx,dk.sz),r);world.colliders.push({x:rx,z:rz,r:1.3});}}
   if(key!=='ember'&&!I.cave)for(let i=0;i<9;i++){const th=r()*TAU,f=.2+r()*.38,R=islandR(I,th),x=I.x+Math.cos(th)*R*f,z=I.z+Math.sin(th)*R*f;if(!ok(x,z,1.2))continue;addPuddle(x,groundH(x,z),z,1.1+r()*1.4);}
-  const pm=sb.mesh(worldMat);pm.castShadow=true;pm.receiveShadow=true;scene.add(pm);solidMeshes.push(pm);
-  if(fb.p.length){const fm=fb.mesh(worldMatS,true);fm.castShadow=true;fm.receiveShadow=true;scene.add(fm);}
+  for(const pm of sb.meshChunks(worldMat,false)){pm.castShadow=!pm.userData.lod;pm.receiveShadow=true;scene.add(pm);solidMeshes.push(pm);}
+  if(fb.p.length)for(const fm of fb.meshChunks(worldMatS,true)){fm.castShadow=!fm.userData.lod;fm.receiveShadow=true;scene.add(fm);}
   if(gl.p.length){const gm=gl.mesh(glowMat);gm.userData.noAO=true;scene.add(gm);}if(lv.p.length){const lm=lv.mesh(lavaMat);lm.userData.noAO=true;scene.add(lm);}
   /* gather everything built for this island into one group, so the whole island can be skipped when it is lost in the fog */
   {const kids=scene.children.slice(_c0),grp=new THREE.Group();grp.name='isl:'+key;for(const k of kids){scene.remove(k);grp.add(k);}scene.add(grp);world.islGroups.push({grp,I,key});}}
@@ -769,7 +788,7 @@ function buildGrass(){const bg=new THREE.BufferGeometry(),P=[],C=[],Nn=[];const 
  const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),S=new THREE.Vector3(),Vv=new THREE.Vector3(),col=new THREE.Color();const r=rng(1234);
  const tint={cove:['#d8d6c4','#c8ccae','#bec6a4'],moss:['#b8d090','#a0c078','#c8d8a0'],frost:['#e8f4ff','#d4e8fa','#f4fbff'],ember:['#c8a870','#b89058','#d0b880'],atoll:['#d8e8b0','#c8e0a0','#e0ecc0'],amber:['#e8c880','#d8b060','#f0d890'],petal:['#d8e0b0','#c8d4a0','#e8e8c0'],dune:['#e8d090','#d8c080','#f0dca0'],glim:['#a8c8c0','#98b8c0','#b8c8e0']};
  const isl=['cove','cove','cove','moss','moss','frost','ember','atoll','amber','amber','petal','petal','dune','glim','glim'];let gi=0,fi=0,tries=0;
- const valid=(k,x,z)=>{const g=groundH(x,z);if(g<.85||onDock(x,z))return null;if(world.colliders.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+.35))return null;if(world.reserved[k].some(p=>p.r>=6&&Math.hypot(p.x-x,p.z-z)<p.r*.75))return null;return g;};
+ const valid=(k,x,z)=>{const g=groundH(x,z);if(g<.85||onDock(x,z))return null;if(eachColNear(x,z,.5,c=>Math.hypot(c.x-x,c.z-z)<c.r+.35))return null;if(world.reserved[k].some(p=>p.r>=6&&Math.hypot(p.x-x,p.z-z)<p.r*.75))return null;return g;};
  while((gi<N||fi<FN)&&tries<N*4){tries++;const k=isl[Math.floor(r()*isl.length)],I=ZONES[k];const th=r()*TAU,f=Math.sqrt(r())*.76,R=islandR(I,th);const x=I.x+Math.cos(th)*R*f,z=I.z+Math.sin(th)*R*f;
   if(I.volcano&&f<.36)continue;const g=valid(k,x,z);if(g==null)continue;
   if(gi<N&&(k!=='frost'||r()<.3)&&(k!=='atoll'||r()<.5)&&(k!=='dune'||r()<.25)){const s=k==='frost'?.45:k==='ember'?.55:.6+r()*.55;M.compose(Vv.set(x,g-.02,z),Q.setFromAxisAngle(_up,r()*TAU),S.set(s,s*(.8+r()*.7),s));gm.setMatrixAt(gi,M);gm.setColorAt(gi,col.set(pick(tint[k])).multiplyScalar(.82+r()*.32));gi++;}
