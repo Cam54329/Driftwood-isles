@@ -246,7 +246,7 @@ function makeLine(){const lg=new THREE.BufferGeometry();lg.setAttribute('positio
 function drawLine(line,a,b,sag,top=.3){const arr=line.geometry.attributes.position.array;const d=a.distanceTo(b);for(let i=0;i<24;i++){const k=i/23;arr[i*3]=lerp(a.x,b.x,k);arr[i*3+1]=lerp(a.y,b.y+top,k)-Math.sin(k*Math.PI)*sag*Math.min(d/8,1.5);arr[i*3+2]=lerp(a.z,b.z,k);}line.geometry.attributes.position.needsUpdate=true;}
 
 /* boats */
-function makeBoat(accent,type){const BT=BOATM[type]||BOATS[0],M=BT.m,b=new Builder(),N=16,st=[];b.M(TL.paint);const L=M.L,W=M.W,H=M.H,D=M.D,z0=-L*.45;
+function makeBoat(accent,type,up){const BT=BOATM[type]||BOATS[0],M=BT.m,b=new Builder(),N=16,st=[];b.M(TL.paint);const L=M.L,W=M.W,H=M.H,D=M.D,z0=-L*.45;
  const white=new THREE.Color(M.hull),acc=new THREE.Color(M.stripe||accent||'#8a4a3a'),bot=new THREE.Color(M.bottom||'#4a3a32'),wood=new THREE.Color('#6e5a46');
  for(let i=0;i<=N;i++){const t=i/N,z=z0+t*L;const bowK=clamp((t-.55)/.45,0,1);const w=W*Math.sqrt(Math.max(0,1-bowK*bowK))*(t<.1?.88+t*1.2:1);const top=H+bowK*bowK*H*.5,bt=D-bowK*bowK*D*1.4;st.push({z,w,top,bt,chY:lerp(bt,top,.45)});}
  const T=M.type,V=THREE.Vector3,hulls=T==='catamaran'?[[-W*1.25,.5],[W*1.25,.5]]:T==='pontoon'?[[-W*1.05,.34],[W*1.05,.34]]:T==='seaplane'?[[-W*1.8,.45],[W*1.8,.45]]:[[0,1]];
@@ -302,6 +302,25 @@ function makeBoat(accent,type){const BT=BOATM[type]||BOATS[0],M=BT.m,b=new Build
   b.M(TL.cloth);b.add(G.box,'#1e2228',0,fl+.36,seatZ-.25,W*.75,.22,1.5);b.M(TL.paint);b.add(G.box,M.stripe,0,fl+.25,seatZ+.75,W*.9,.35,.7,-.3);
   b.M(TL.metal);b.seg(G.cyl,'#2a2e34',new V(0,fl+.4,seatZ+.75),new V(0,fl+.95,seatZ+.6),.05);b.add(G.cyl,'#2a2e34',0,fl+.97,seatZ+.6,.03,.9,.03,0,0,Math.PI/2);
   b.add(G.box,'#9adcf0',0,fl+.62,seatZ+1.1,W*.7,.3,.08,-.7);}
+
+ /* upgrades you can see. Engine: racing stripes, then chrome exhausts, then gold stripes and a stern wing.
+    Hull: fenders, then chrome rails and a bow plate, then gold trim and a lashed cargo chest.
+    Sonar: a whip antenna, then a radar dome, then a spinning scanner with a sonar light. */
+ const ue=clamp((up&&up.e)|0,0,3),uh=clamp((up&&up.h)|0,0,3),us=clamp((up&&up.s)|0,0,3),trimC=uh>=3?'#d8b040':'#c8ccd0',accHex='#'+acc.getHexString();let radarY=0,mb=null;
+ if(ue||uh)for(const[ox,wk]of hulls){const Pu=(s,i,k)=>{const S=st[i];return k?new V(ox+s*S.w*.9*wk*1.04,S.chY+.03,S.z):new V(ox+s*S.w*wk,S.top+.05,S.z);};
+  for(const s of[-1,1]){const outer=ox===0||Math.sign(ox)===s;
+   if(ue&&outer&&T!=='duck'){b.M(TL.paint);const sc=ue>=3?'#f0c040':(white.r>.3&&white.r>white.g*1.5?'#f4f1ea':'#e8483a');for(let i=2;i<N-3;i++)b.seg(G.cyl,sc,Pu(s,i,1),Pu(s,i+1,1),.055);}
+   if(uh>=2&&T!=='duck'){b.M(TL.metal);for(let i=0;i<N-1;i++)b.seg(G.cyl,trimC,Pu(s,i,0),Pu(s,i+1,0),.05);}
+   if(uh&&outer&&T!=='seaplane'&&T!=='duck'){b.M(TL.plain);for(const t of[.28,.5,.72]){const S=st[Math.round(t*N)];b.add(G.cyl12,'#262a30',ox+s*(S.w*wk+.1),S.top-.32,S.z,.13,.46,.13);b.M(TL.cloth);b.seg(G.cyl,'#cdb88e',new V(ox+s*(S.w*wk+.1),S.top-.08,S.z),new V(ox+s*S.w*wk,S.top+.06,S.z),.02);b.M(TL.plain);}}}
+  if(uh>=2){const S=st[N];b.M(TL.metal);b.add(G.box,trimC,ox,(S.top+S.bt)/2+.1,S.z-.06,.18,Math.max(.3,S.top-S.bt-.1),.34);}}
+ if(ue>=2&&T!=='duck'){b.M(TL.metal);const pl=T==='seaplane',ey=pl?H+1.2:st[0].top-.22,ez=pl?z0+L*.84:z0-.05,dz=pl?1:-1;
+  for(const sx of[-1,1]){const ex=pl?sx*.6:sx*W*.55;b.add(G.cyl12,'#d4d8dc',ex,ey,ez+dz*.28,.085,.6,.085,Math.PI/2,0,0);b.add(G.cyl12,'#1e2226',ex,ey,ez+dz*.58,.07,.03,.07,Math.PI/2,0,0);}}
+ if(ue>=3&&!['seaplane','duck','sail','catamaran','trawler','seiner','pontoon'].includes(T)){b.M(TL.paint);const wy=st[0].top+.75,wz=z0+.3;b.add(G.box,accHex,0,wy,wz,W*1.55,.07,.42,-.14,0,0);for(const sx of[-1,1])b.add(G.box,'#22262c',sx*W*.55,wy-.36,wz+.04,.07,.66,.14);}
+ if(uh>=3&&!['seaplane','duck','jetski'].includes(T)){b.M(TL.wood);const cz=z0+L*.8,cy=fl+.04;b.add(G.box,'#7a5232',0,cy+.2,cz,.62,.4,.42);b.add(G.box,'#8a6038',0,cy+.44,cz,.64,.1,.44);b.M(TL.metal);b.add(G.box,'#d8b040',0,cy+.24,cz+.215,.12,.14,.02);b.add(G.box,'#3a3a40',0,cy+.2,cz,.66,.05,.46);}
+ if(us){if(T==='cabin'||T==='runner'){const rn=T==='runner';mb=[0,fl+(rn?1.1:1.5)+.2,z0+L*(rn?.5:.55)-.1,true];}else if(T==='trawler'||T==='seiner')mb=[0,fl+2.4,z0+L*.45,true];
+  else if(T==='seaplane')mb=[0,H+2.42,z0+L*.6,true];else if(T==='duck')mb=[0,H+1.12,z0+L*.3,true];else if(T==='pontoon')mb=[0,fl+2.78,z0+L*.5,true];else mb=[-W*.55,fl,z0+L*.3,false];
+  const roof=mb[3],py=roof?.35:1.25;b.M(TL.metal);b.add(G.cyl,'#2a2e34',mb[0]+(roof?.45:0),mb[1]+1,mb[2]-(roof?0:.45),.022,2,.022);b.M(TL.paint);b.add(G.sph,'#e8483a',mb[0]+(roof?.45:0),mb[1]+2.02,mb[2]-(roof?0:.45),.05,.05,.05);
+  if(us>=2){b.M(TL.metal);b.add(G.cyl,'#3a3e44',mb[0],mb[1]+py/2,mb[2],.05,py,.05);b.M(TL.paint);b.add(G.hemi,'#eef0f2',mb[0],mb[1]+py,mb[2],.3,.34,.3);b.add(G.cyl12,'#c8ccd0',mb[0],mb[1]+py,mb[2],.31,.06,.31);radarY=mb[1]+py+.36;}}
  const lz=z0+L*.9,ly=st[N-1].top;b.M(TL.metal);b.add(G.cyl,'#3a3a40',0,ly+.6,lz,.05,1.3,.05);const m=b.mesh(worldMatDS);BGU.toCreasedNormals(m.geometry,.75);m.castShadow=true;m.receiveShadow=true;
  const g=new THREE.Group();g.add(m);const lt=new THREE.Mesh(new THREE.BoxGeometry(.24,.3,.24),new THREE.MeshBasicMaterial({color:new THREE.Color(3.2,2.6,1.5)}));lt.position.set(0,ly+1.3,lz);g.add(lt);
  const hl=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX.halo,color:0xffd9a0,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.2}));hl.position.copy(lt.position);hl.scale.set(2.6,2.6,1);g.add(hl);
@@ -317,7 +336,9 @@ function makeBoat(accent,type){const BT=BOATM[type]||BOATS[0],M=BT.m,b=new Build
  if(T==='seaplane'){const prop=new THREE.Group();const pm=new THREE.MeshStandardMaterial({color:'#2a2a2e',roughness:.4,metalness:.6});for(let i=0;i<3;i++){const bl=new THREE.Mesh(new THREE.BoxGeometry(.12,1.5,.05),pm);bl.position.y=.7;const arm=new THREE.Group();arm.rotation.z=i/3*TAU;arm.add(bl);prop.add(arm);}
   const sp=new THREE.Mesh(new THREE.ConeGeometry(.2,.4,10),new THREE.MeshStandardMaterial({color:M.stripe,roughness:.4}));sp.rotation.x=Math.PI/2;sp.position.z=.1;prop.add(sp);prop.position.set(0,H+1.35,z0+L*.9+.75);g.add(prop);g.userData.prop=prop;
   seats.length=0;seats.push([0,z0+L*.7],[0,z0+L*.5],[-.3,z0+L*.36],[.3,z0+L*.36]);}
- g.userData={halo:hl,lamp:lt,len:L*.5,seat:seats[0][1],seatY:seatTop-.53,seats,prop:g.userData.prop};scene.add(g);return g;}
+ let radar=null;if(us>=3&&mb){radar=new THREE.Group();const rm=new THREE.MeshStandardMaterial({color:'#2a2e34',roughness:.45,metalness:.5});const bar=new THREE.Mesh(new THREE.BoxGeometry(1.15,.08,.16),rm);bar.position.y=.1;radar.add(bar);const pin=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.14,8),rm);radar.add(pin);
+  const sl=new THREE.Mesh(new THREE.BoxGeometry(.12,.08,.12),new THREE.MeshBasicMaterial({color:new THREE.Color(.6,2.6,2.4)}));sl.position.set(.5,.16,0);radar.add(sl);radar.position.set(mb[0],radarY,mb[2]);g.add(radar);}
+ g.userData={halo:hl,lamp:lt,len:L*.5,seat:seats[0][1],seatY:seatTop-.53,seats,prop:g.userData.prop,radar};scene.add(g);return g;}
 
 /* chat bubble */
 function bubbleSprite(text){const c=document.createElement('canvas');c.width=512;c.height=192;const x=c.getContext('2d');x.font='700 30px Manrope, sans-serif';
@@ -361,7 +382,7 @@ class RemotePlayer{constructor(peer){this.peer=peer;this.rig=null;this.anim=null
    const idx=this.buf.indexOf(a);if(idx>1)this.buf.splice(0,idx-1);}
   const moved=Math.hypot(this.pos.x-this.lastPos.x,this.pos.z-this.lastPos.z);this.spd=damp(this.spd,dt>0?moved/dt:0,10,dt);this.lastPos.copy(this.pos);
   const R=this.rig.root;const T=WIND.uTime.value;
-  if(this.onBoat){{const bt=BOATM[this.p.bt]?this.p.bt:'dinghy';if(!this.boat||this.boatT!==bt){if(this.boat)scene.remove(this.boat);this.boat=makeBoat(this.color,bt);this.boatT=bt;}}this.boat.visible=true;const al=clamp(num(this.p.al,0),0,120),wy=waveH(this.pos.x,this.pos.z,T)*Math.max(0,1-al/3)+al;this.boat.position.set(this.pos.x,wy-.15,this.pos.z);if(this.boat.userData.prop)this.boat.userData.prop.rotation.z+=dt*(al>.1?55:8);this.boat.rotation.set(0,this.byaw,0);
+  if(this.onBoat){{const bt=BOATM[this.p.bt]?this.p.bt:'dinghy';const bu=typeof this.p.bu==='string'?this.p.bu.slice(0,3):'',bk=bt+'|'+bu;if(!this.boat||this.boatT!==bk){if(this.boat)scene.remove(this.boat);this.boat=makeBoat(this.color,bt,{e:+bu[0]||0,h:+bu[1]||0,s:+bu[2]||0});this.boatT=bk;}if(this.boat.userData.radar)this.boat.userData.radar.rotation.y+=.04;}this.boat.visible=true;const al=clamp(num(this.p.al,0),0,120),wy=waveH(this.pos.x,this.pos.z,T)*Math.max(0,1-al/3)+al;this.boat.position.set(this.pos.x,wy-.15,this.pos.z);if(this.boat.userData.prop)this.boat.userData.prop.rotation.z+=dt*(al>.1?55:8);this.boat.rotation.set(0,this.byaw,0);
    {const ud=this.boat.userData;R.position.set(this.pos.x+Math.sin(this.byaw)*ud.seat,wy-.15+ud.seatY,this.pos.z+Math.cos(this.byaw)*ud.seat);}}
   else if(typeof remoteSeat==='function'&&remoteSeat(this,R.position)){if(this.boat)this.boat.visible=false;this.riding=true;}
   else{if(this.boat)this.boat.visible=false;R.position.copy(this.pos);this.riding=false;}
