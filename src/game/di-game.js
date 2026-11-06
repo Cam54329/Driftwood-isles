@@ -381,9 +381,9 @@ function doInteract(){if(uiBlocked()||PHOTO.on)return;if(curInter){AU.ui();curIn
 /* seaplanes: Space or E takes off once you're up to speed, and lands again on open water */
 const isPlane=()=>!!(BOATM[state.boat]&&BOATM[state.boat].plane);
 function planeToggle(){if(!isPlane())return;const B=BOATM[state.boat];
- if(!boat.fly){if(F.st!=='idle')cancelFishing();if(boat.speed<B.speed*.55){toast('Hold W to get up to speed, then take off.');return;}boat.fly=true;boat.land=false;AU.leap();splash(boat.pos.clone(),20,5);toast('Airborne! Steer with A / D, hold W for full speed. Press Space or E over open water to land.');}
+ if(!boat.fly){if(F.st!=='idle')cancelFishing();if(boat.speed<B.speed*.55){toast('Hold W to get up to speed, then take off.');return;}boat.fly=true;boat.land=false;boat.vy=2.5;boat.climb=0;AU.leap();splash(boat.pos.clone(),20,5);toast('Airborne! A / D to steer, W for full speed, S to slow down. Press Space or E over open water to land.');}
  else if(!boat.land){if(groundH(boat.pos.x,boat.pos.z)>-1.2){toast('Find open water to land.');return;}boat.land=true;toast('Coming in to land…');}}
-function board(){stopEmote();player.mode='boat';cam.tdist=17;boat.speed=0;boat.alt=0;boat.fly=false;if(isPlane())setTimeout(()=>toast('Seaplane: hold W to speed up, then press Space or E to take off.'),2600);toast(isTouch?'Joystick up to sail, left and right to steer.':'W/S to sail, A/D to steer, arrow keys turn the camera. Press E near land to get off.');}
+function board(){stopEmote();player.mode='boat';cam.tdist=17;boat.speed=0;boat.alt=0;boat.fly=false;boat.land=false;boat.vy=0;boat.climb=0;boat.bank=0;if(isPlane())setTimeout(()=>toast('Seaplane: hold W to speed up, then press Space or E to take off.'),2600);toast(isTouch?'Joystick up to sail, left and right to steer.':'W/S to sail, A/D to steer, arrow keys turn the camera. Press E near land to get off.');}
 function disembark(){const s=disembarkSpot||findDisembark();if(!s){toast('Steer closer to land or a dock to get off.');return;}player.mode='walk';player.pos.set(s.x,s.g,s.z);player.vy=0;cam.tdist=12;boat.speed=0;}
 
 /* ---------- emotes ---------- */
@@ -420,13 +420,21 @@ function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].in
   if(g<-1){const sp=world.spawn[zoneAt(player.pos.x,player.pos.z)]||world.spawn.cove;player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);}
   R.position.copy(player.pos);
  }else if(player.mode==='ride'){updateRide(dt);R.position.copy(player.pos);}
- else if(isPlane()&&(boat.fly||boat.alt>.05)){/* seaplane in the air: always moving, climbs over land, lands only on open water */
-  const th=iy,steer=ix,B=BOATM[state.boat],fly=B.fly*(DEV.fast?2:1);boat.speed=damp(boat.speed,boat.land?Math.max(B.speed*.8,fly*.35):fly*(.6+.4*Math.max(0,th)),.8,dt);boat.yaw-=steer*B.turn*.75*dt;boat.bank=damp(boat.bank||0,-steer*.45,4,dt);
+ else if(isPlane()&&(boat.fly||boat.alt>.05)){/* seaplane in the air: steady cruise, smooth climbs, keeps clear of land, lands only on open water */
+  const th=iy,steer=ix,B=BOATM[state.boat],cruise=B.fly*(DEV.fast?2:1);
+  const tgtS=boat.land?Math.max(B.speed*.75,cruise*.5):cruise*(th>.1?1:th<-.1?.6:.8);boat.speed=damp(boat.speed,tgtS,.7,dt);
+  boat.yaw-=steer*B.turn*.8*dt;boat.bank=damp(boat.bank||0,-steer*.42,3,dt);
   const fx=Math.sin(boat.yaw),fz=Math.cos(boat.yaw);boat.pos.x+=fx*boat.speed*dt;boat.pos.z+=fz*boat.speed*dt;
-  let clear=0;for(let i=0;i<=3;i++)clear=Math.max(clear,groundH(boat.pos.x+fx*i*8,boat.pos.z+fz*i*8));const tgt=boat.land?0:Math.max(30,clear+16);boat.alt=damp(boat.alt,tgt,boat.land?1.1:.9,dt);boat.climb=(tgt-boat.alt)*.02;
-  if(boat.land&&boat.alt<.25){if(groundH(boat.pos.x,boat.pos.z)>-1.2){boat.land=false;toast('Find open water to land.');}else{boat.fly=false;boat.land=false;boat.alt=0;boat.speed*=.45;splash(boat.pos.clone(),26,6);AU.splash(1);camShake(.2);toast('Landed. You can fish from the floats.');}}
-  lockToastT-=dt;for(const k of ISL){if(state.unlocked.includes(k))continue;const I=ZONES[k];const dx=boat.pos.x-I.x,dz=boat.pos.z-I.z,d=Math.hypot(dx,dz),lim=I.R*1.8;if(d<lim){boat.pos.x=I.x+dx/d*lim;boat.pos.z=I.z+dz/d*lim;boat.yaw+=Math.PI*.6;if(lockToastT<=0){toast(`${I.n} needs a sea chart. Buy one from a Harbormaster (${fmt(I.price)}c).`);lockToastT=4;}}}
-  const bd=Math.hypot(boat.pos.x,boat.pos.z);if(bd>1250){boat.pos.x*=1250/bd;boat.pos.z*=1250/bd;boat.yaw+=Math.PI*.5;if(lockToastT<=0){toast('Too far out. Turning back.');lockToastT=4;}}
+  /* look up to three seconds ahead so hills never take the plane by surprise */
+  const look=Math.max(24,boat.speed*3);let clear=-5,near=-5;for(let i=0;i<=8;i++){const d=look*i/8,g=groundH(boat.pos.x+fx*d,boat.pos.z+fz*d);clear=Math.max(clear,g);if(d<=boat.speed*1.4)near=Math.max(near,g);}
+  if(boat.land&&near>-1.2&&boat.alt>1.5){boat.land=false;toast('Land ahead, pulling up. Line up over open water to land.');}
+  const tgt=boat.land?0:Math.max(26,clear+14),want=clamp((tgt-boat.alt)*.8,boat.land?-3.5:-4.5,6.5);
+  boat.vy=damp(boat.vy||0,want,2.2,dt);boat.alt=Math.max(0,boat.alt+boat.vy*dt);
+  {const floor=groundH(boat.pos.x,boat.pos.z)+3.5;if(boat.alt<floor&&!(boat.land&&floor<2.4)){boat.alt=lerp(boat.alt,floor,Math.min(1,dt*8));boat.vy=Math.max(boat.vy,3);}}
+  boat.climb=clamp(Math.atan2(boat.vy,Math.max(10,boat.speed)),-.28,.28);
+  if(boat.land&&boat.alt<.3){if(groundH(boat.pos.x,boat.pos.z)>-1.2){boat.land=false;boat.vy=3;toast('Find open water to land.');}else{boat.fly=false;boat.land=false;boat.alt=0;boat.vy=0;boat.climb=0;boat.bank=0;boat.speed=Math.min(boat.speed,B.speed*.5);splash(boat.pos.clone(),26,6);AU.splash(1);camShake(.15);toast('Landed. You can fish from the floats.');}}
+  lockToastT-=dt;for(const k of ISL){if(state.unlocked.includes(k))continue;const I=ZONES[k];const dx=boat.pos.x-I.x,dz=boat.pos.z-I.z,d=Math.hypot(dx,dz),lim=I.R*1.8;if(d<lim){boat.pos.x=I.x+dx/d*lim;boat.pos.z=I.z+dz/d*lim;boat.yaw+=angDiff(boat.yaw,Math.atan2(dx,dz))*Math.min(1,dt*2.5);if(lockToastT<=0){toast(`${I.n} needs a sea chart. Buy one from a Harbormaster (${fmt(I.price)}c).`);lockToastT=4;}}}
+  const bd=Math.hypot(boat.pos.x,boat.pos.z);if(bd>1250){boat.pos.x*=1250/bd;boat.pos.z*=1250/bd;boat.yaw+=angDiff(boat.yaw,Math.atan2(-boat.pos.x,-boat.pos.z))*Math.min(1,dt*2.5);if(lockToastT<=0){toast('Too far out. Turning back.');lockToastT=4;}}
   if(F.st!=='idle')cancelFishing();player.pos.copy(boat.pos);player.face=boat.yaw;{const ud=boat.g.userData;R.position.set(boat.pos.x+fx*ud.seat,boat.g.position.y+ud.seatY,boat.pos.z+fz*ud.seat);}}
  else{const th=iy,steer=ix;const bs=boatStats();boat.speed=damp(boat.speed,th*(th<0?bs.speed*.35:bs.speed)*(DEV.fast?2.5:1),1.3,dt);const tk=clamp(Math.abs(boat.speed)/5,.35,1)*(boat.speed<-.3?-1:1);boat.yaw-=steer*bs.turn*dt*tk;
   if(Math.abs(th)>.1&&['charging','casting','waiting'].includes(F.st))cancelFishing();
@@ -446,9 +454,9 @@ function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].in
   rodObj.bend=damp(rodObj.bend||0,bend,16,dt);setRodBend(rodObj,rodObj.bend);rg.rotation.x=Math.PI/2;if(rodObj.crank&&F.st==='reeling'&&R&&R.hold)rodObj.crank.rotation.x-=dt*R.reelSpd*5;
   if(rg.userData.ench){rg.userData.ench.rotation.y+=dt*3;rg.userData.ench.scale.setScalar(1+Math.sin(WIND.uTime.value*5)*.2);}}
  const z=zoneAt(player.pos.x,player.pos.z);if(z!==player.zone){player.zone=z;if(!MENU.on)showZone(z);if(z!=='sea')questEvent('visit',{zone:z});if(z!=='sea'&&state.unlocked.includes(z))state.last=z;}}
-function updateBoat(dt){const T=WIND.uTime.value,p=boat.pos;const alt=boat.alt||0,y=waveH(p.x,p.z,T)*Math.max(0,1-alt/3);boat.g.position.set(p.x,y-.15+alt,p.z);boat.g.rotation.set(0,boat.yaw,0);
+function updateBoat(dt){const T=WIND.uTime.value,p=boat.pos;if(boat.g.rotation.order!=='YXZ')boat.g.rotation.order='YXZ';const alt=boat.alt||0,y=waveH(p.x,p.z,T)*Math.max(0,1-alt/3);boat.g.position.set(p.x,y-.15+alt,p.z);boat.g.rotation.set(0,boat.yaw,0);
  if(boat.g.userData.prop)boat.g.userData.prop.rotation.z+=dt*(alt>.1?55:6+Math.abs(boat.speed)*1.6);if(boat.g.userData.radar)boat.g.userData.radar.rotation.y+=dt*2.4;
- if(alt>.3){boat.g.rotation.x=-(boat.climb||0)*4-.04;boat.g.rotation.z=boat.bank||0;return;}
+ if(alt>.3||boat.fly){const k=Math.min(1,alt/2);boat.g.rotation.x=-(boat.climb||0)*k-.03*k;boat.g.rotation.z=(boat.bank||0)*k;return;}
  const fx=Math.sin(boat.yaw),fz=Math.cos(boat.yaw);const pitch=(waveH(p.x+fx*2,p.z+fz*2,T)-waveH(p.x-fx*2,p.z-fz*2,T))/4;const roll=(waveH(p.x+fz,p.z-fx,T)-waveH(p.x-fz,p.z+fx,T))/2;
  boat.g.rotation.x=-pitch-boat.speed*.004;boat.g.rotation.z=roll;}
 function updateNPCs(dt){for(const n of world.npcs){const d=Math.hypot(player.pos.x-n.x,player.pos.z-n.z);const R=n.rig.root;if(camera.position.distanceTo(R.position)>200){R.visible=false;continue;}R.visible=true;
