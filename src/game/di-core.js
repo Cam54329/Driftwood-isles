@@ -229,6 +229,7 @@ const LUREM={};LURES.forEach(l=>LUREM[l.id]=l);
 const CRATE_PRICE=25000;
 /* what's new: shown once after each update, and any time from the menus */
 const UPDATES=[
+ {v:'3.5',d:'A fresh coat of paint',items:['A brand new look for every menu, panel and the HUD','Fishing is harder: stronger fish, head-shakes that spike the line, a slack line can lose the fish, a shorter strike window','Pull against running fish (A / D or drag) to tire them; careful anglers land the rarest catches','Sharper image, crisper shadows and denser grass on Medium']},
  {v:'3.4',d:'Rods on display',items:['Every island lays its rods out on stands by the arrival path: walk up to look, buy or equip','The Drowned Hollow and Sunless Deep remastered: brighter caves, glowworm ceilings, shafts of light, glowing moss and crystals that light the room','A separate dev profile for the game\'s owner that never reaches the leaderboards']},
  {v:'3.3',d:'Rods remastered',items:['A new signature rod for every island, sold once you hold its chart','10 coloured fishing lines with buffs, won from Mystery Crates (Common, Rare, Legendary, Secret)','6 permanent lures you can win and equip','4 new baits','Mystery Crates for finishing quests, levelling up and landing new Legendary fish','A real Tidewater Casino hall on Pebble Cove, plus a new casino game on every island','Music that changes with events, weather, Tide Wells, fights and the casino']},
  {v:'3.2',d:'Into the deep',items:['Tide Wells open off every island; dive in to find the Drowned Hollow','Floating chests, messages in bottles and fish schools','Boats have seats: ride along in a friend\'s boat','Sunset Pontoon (8 seats) and Wavecutter Jet Ski','Rare fish are three times harder to find and pay double','Dev bar for the game\'s owner, and clearing chat']},
@@ -353,7 +354,7 @@ const DEV={on:false,open:false,fast:false,rar:null,ev:null};
 /* ================= STATE / SAVE ================= */
 /* The save key never changes between updates: new versions read the same save and fill in anything new.
    Before an update touches a save (and once a day) a backup copy is kept, see backupSave. */
-const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.4';
+const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.5';
 /* profiles: your normal profile (cloud save, leaderboards, no tools) and the owner's dev profile (its own save on this
    device, the dev tools, never on leaderboards and never synced to the cloud). The dev profile needs the dev key. */
 const KEY_DEV='driftwood-isles-save-dev',DEV_HASH='94d329459b6a2bde18d3336b2dbc6098cda74ec216abcc65d537c420d502e29b';

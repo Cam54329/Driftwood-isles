@@ -12,7 +12,7 @@ const sun=new THREE.DirectionalLight(0xfff2dc,3);sun.shadow.bias=-.0003;sun.shad
 const TIERS={
  ultra:{pr:2,shadow:4096,ext:58,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.7,fxaa:false,wr:112,ws:160,grass:42000,flowers:3200,rain:2800,ff:520,birds:24,far:900,lamps:6,cloud:6,env:1,tex:512,leaf:1},
  high:{pr:1.75,shadow:2048,ext:48,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.5,fxaa:false,wr:96,ws:128,grass:26000,flowers:2000,rain:2000,ff:360,birds:18,far:780,lamps:4,cloud:5,env:1.5,tex:256,leaf:1},
- medium:{pr:1.5,shadow:1024,ext:40,post:true,msaa:0,ao:false,bloom:true,refl:false,fxaa:true,wr:72,ws:96,grass:9000,flowers:900,rain:1200,ff:220,birds:12,far:600,lamps:2,cloud:4,env:3,tex:256,leaf:.8},
+ medium:{pr:1.5,shadow:2048,ext:42,post:true,msaa:0,ao:false,bloom:true,refl:false,fxaa:true,wr:72,ws:96,grass:14000,flowers:1400,rain:1200,ff:220,birds:12,far:600,lamps:2,cloud:4,env:3,tex:256,leaf:.8},
  low:{pr:1,shadow:0,ext:0,post:false,msaa:0,ao:false,bloom:false,refl:false,fxaa:false,wr:52,ws:64,grass:2600,flowers:300,rain:600,ff:120,birds:6,far:420,lamps:0,cloud:3,env:6,tex:256,leaf:.6}};
 const GFX={tier:'high',composer:null,bloom:null,grade:null,fxaa:null,ao:null,refl:null,reflCam:new THREE.PerspectiveCamera(),texMat:new THREE.Matrix4(),hdr:false,lamps:[]};
 const TT=()=>TIERS[GFX.tier]||TIERS.high;
@@ -32,9 +32,16 @@ const GradeShader={uniforms:{tDiffuse:{value:null},uSat:{value:1},uVig:{value:.4
  fragmentShader:`uniform sampler2D tDiffuse;uniform float uSat;uniform float uVig;uniform float uCon;uniform vec3 uTint;uniform vec3 uShadow;uniform vec3 uHigh;varying vec2 vUv;
  void main(){vec4 t=texture2D(tDiffuse,vUv);vec3 c=clamp(t.rgb,0.,6e4);if(any(isnan(c)))c=vec3(0.);float l=dot(c,vec3(.2126,.7152,.0722));c=max(mix(vec3(l),c,uSat),0.)*uTint*mix(uShadow,uHigh,smoothstep(.02,.7,l));c=pow(c/.18+1e-6,vec3(uCon))*.18;
   vec2 d=vUv-.5;c*=1.-dot(d,d)*uVig;gl_FragColor=vec4(c,t.a);}`};
+/* contrast-adaptive sharpening: crisper edges and texture detail without halos, strongest where the image is soft */
+const SharpenShader={uniforms:{tDiffuse:{value:null},uPx:{value:new THREE.Vector2(1/1280,1/720)},uK:{value:.18}},
+ vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+ fragmentShader:`uniform sampler2D tDiffuse;uniform vec2 uPx;uniform float uK;varying vec2 vUv;
+ void main(){vec4 t=texture2D(tDiffuse,vUv);vec3 c=t.rgb,n=texture2D(tDiffuse,vUv+vec2(0.,uPx.y)).rgb,s=texture2D(tDiffuse,vUv-vec2(0.,uPx.y)).rgb,e=texture2D(tDiffuse,vUv+vec2(uPx.x,0.)).rgb,w=texture2D(tDiffuse,vUv-vec2(uPx.x,0.)).rgb;
+  vec3 mn=min(c,min(min(n,s),min(e,w))),mx=max(c,max(max(n,s),max(e,w)));vec3 amp=sqrt(clamp(min(mn,1.-mx)/max(mx,vec3(1e-4)),0.,1.));vec3 wg=-amp*uK;
+  gl_FragColor=vec4(clamp((c+(n+s+e+w)*wg)/(1.+4.*wg),0.,1.),t.a);}`};
 const SanitizeShader={uniforms:{tDiffuse:{value:null}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
  fragmentShader:'uniform sampler2D tDiffuse;varying vec2 vUv;void main(){vec4 t=texture2D(tDiffuse,vUv);vec3 c=t.rgb;if(any(isnan(c))||any(isinf(c))||!(c.r+c.g+c.b<1e5))c=vec3(0.);gl_FragColor=vec4(min(max(c,vec3(0.)),vec3(2e4)),1.);}'};
-function disposePost(){GFX.rays=null;if(!GFX.composer)return;try{GFX.composer.renderTarget1.dispose();GFX.composer.renderTarget2.dispose();if(GFX.ao)GFX.ao.dispose();if(GFX.bloom)GFX.bloom.dispose();}catch(e){}GFX.composer=null;GFX.bloom=GFX.grade=GFX.fxaa=GFX.ao=null;}
+function disposePost(){GFX.rays=null;GFX.sharp=null;if(!GFX.composer)return;try{GFX.composer.renderTarget1.dispose();GFX.composer.renderTarget2.dispose();if(GFX.ao)GFX.ao.dispose();if(GFX.bloom)GFX.bloom.dispose();}catch(e){}GFX.composer=null;GFX.bloom=GFX.grade=GFX.fxaa=GFX.ao=null;}
 function buildPost(){disposePost();const t=TT();if(!t.post)return;
  const pr=renderer.getPixelRatio(),w=innerWidth,h=innerHeight;GFX.hdr=halfFloatOK();
  const rt=new THREE.WebGLRenderTarget(Math.round(w*pr),Math.round(h*pr),{type:GFX.hdr?THREE.HalfFloatType:THREE.UnsignedByteType,samples:GFX.hdr?(t.msaa||0):0});
@@ -45,8 +52,9 @@ function buildPost(){disposePost();const t=TT();if(!t.post)return;
  if(GFX.tier!=='low'){const rays=new THREE.ShaderPass(RaysShader);rays.material.defines.N=GFX.tier==='ultra'?48:GFX.tier==='high'?32:18;comp.addPass(rays);GFX.rays=rays;}
  const grade=new THREE.ShaderPass(GradeShader);comp.addPass(grade);GFX.grade=grade;comp.addPass(new THREE.OutputPass());
  if(t.fxaa){const fx=new THREE.ShaderPass(THREE.FXAAShader);comp.addPass(fx);GFX.fxaa=fx;}
+ {const sh=new THREE.ShaderPass(SharpenShader);sh.material.uniforms.uK.value=t.fxaa?.2:.14;comp.addPass(sh);GFX.sharp=sh;}
  GFX.composer=comp;sizePost();}
-function sizePost(){if(!GFX.composer)return;const pr=renderer.getPixelRatio(),w=innerWidth,h=innerHeight;GFX.composer.setPixelRatio(pr);GFX.composer.setSize(w,h);if(GFX.fxaa)GFX.fxaa.material.uniforms.resolution.value.set(1/(w*pr),1/(h*pr));}
+function sizePost(){if(!GFX.composer)return;const pr=renderer.getPixelRatio(),w=innerWidth,h=innerHeight;GFX.composer.setPixelRatio(pr);GFX.composer.setSize(w,h);if(GFX.fxaa)GFX.fxaa.material.uniforms.resolution.value.set(1/(w*pr),1/(h*pr));if(GFX.sharp)GFX.sharp.material.uniforms.uPx.value.set(1/(w*pr),1/(h*pr));}
 function buildRefl(){if(GFX.refl){GFX.refl.dispose();GFX.refl=null;}if(!TT().refl)return;const pr=renderer.getPixelRatio();const rs=TT().rs||.5;
  GFX.refl=new THREE.WebGLRenderTarget(Math.round(innerWidth*pr*rs),Math.round(innerHeight*pr*rs),{type:halfFloatOK()?THREE.HalfFloatType:THREE.UnsignedByteType});}
 const _rp=new THREE.Plane(),_rn=new THREE.Vector3(0,1,0),_rlook=new THREE.Vector3(),_rrot=new THREE.Matrix4(),_rq=new THREE.Vector4(),_rclip=new THREE.Vector4(),_rpt=new THREE.Vector3(0,.05,0);

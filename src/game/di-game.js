@@ -155,7 +155,7 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  if(GFX.rays){const u=GFX.rays.material.uniforms;_hd.copy(camera.position).addScaledVector(sunDir,500).project(camera);const onScr=_hd.z<1&&Math.abs(_hd.x)<1.6&&Math.abs(_hd.y)<1.6;camera.getWorldDirection(_fw);const facing=Math.max(0,_fw.dot(sunDir));
   u.uSun.value.set(_hd.x*.5+.5,_hd.y*.5+.5);u.uK.value=onScr&&!isMoon?smooth(.2,.75,facing)*smooth(-.02,.06,sy)*(1-env.cloud*.85)*(1-env.fog*.8)*(.55+dusk*.7):0;u.uCol.value.copy(_sunC);u.uTh.value=lerp(1.4,.9,dusk);}
  if(GFX.bloom){GFX.bloom.threshold=lerp(GFX.hdr?2.4:.92,GFX.hdr?1.5:.85,dusk);GFX.bloom.strength=.2+dusk*.12+nightK*.06;}
- if(GFX.grade){const u=GFX.grade.material.uniforms;u.uHigh.value.setRGB(1+dusk*.08+.02,1+dusk*.01,1-dusk*.08-.02);u.uShadow.value.setRGB(.95-dusk*.03,.98,1.05+dusk*.04);u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);u.uSat.value=1.1+dusk*.06-ov*.16-nightK*.14;u.uCon.value=1.07+day*.04-ov*.05;}
+ if(GFX.grade){const u=GFX.grade.material.uniforms;u.uHigh.value.setRGB(1+dusk*.08+.02,1+dusk*.01,1-dusk*.08-.02);u.uShadow.value.setRGB(.95-dusk*.03,.98,1.05+dusk*.04);u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);u.uSat.value=1.15+dusk*.06-ov*.16-nightK*.14;u.uCon.value=1.09+day*.04-ov*.05;u.uVig.value=.5;}
  lampT-=dt;if(lampT<=0){lampT=.25;updateLampLights(Math.max(nightK,env.cave||0));}
  {const fz=ZONES.frost,em=ZONES.ember,cv=ZONES.cove,am=ZONES.amber,px=cp.x,pz=cp.z;const na=1-smooth(am.R*1.2,am.R*2.4,Math.hypot(px-am.x,pz-am.z));const nf=1-smooth(fz.R*1.4,fz.R*3,Math.hypot(px-fz.x,pz-fz.z)),ne=1-smooth(em.R*1.2,em.R*2.6,Math.hypot(px-em.x,pz-em.z)),nc=Math.max(1-smooth(cv.R*1.1,cv.R*2.2,Math.hypot(px-cv.x,pz-cv.z)),(1-smooth(ZONES.petal.R*1.2,ZONES.petal.R*2.4,Math.hypot(px-ZONES.petal.x,pz-ZONES.petal.z)))*1.6);env.snowK=nf;
   const set=(k,a)=>{const d=drifts[k];if(!d)return;d.u.uAmt.value=a;d.pts.visible=a>.01;d.u.uCam.value.copy(cp);d.u.uLit.value=k==='ember'?1:lerp(.3,1,day);};set('snow',nf*(.35+Math.min(env.rain,1.3)*.8));set('ember',ne*(.7+(1-day)*.5));set('petal',nc*day*(1-Math.min(env.rain,1))*.8);set('leaf',na*(.4+.6*day)*(1-Math.min(env.rain,1)*.5));
@@ -233,15 +233,15 @@ function buzz(p){try{if(isTouch&&navigator.vibrate)navigator.vibrate(p);}catch(e
 const RE={};const re=id=>RE[id]||(RE[id]=document.getElementById(id));
 function fishTip(html,cls){const el=re('fishTip');if(!html){if(!el.hidden)el.hidden=true;return;}if(el.dataset.h!==html){el.innerHTML=html;el.dataset.h=html;}const c=cls||'';if(el.className!==c)el.className=c;if(el.hidden)el.hidden=false;}
 function twitch(){if(F.st!=='waiting'||F.twT>0)return;F.twT=.8;F.twK=1;F.wait-=(state.settings.chill?1.3:1.1)*stats().shake;if(F.nib>0)F.wait=Math.min(F.wait,rand(.15,.45));AU.twitch();splash(bobber.position,4,2);addRipple(bobber.position.x,bobber.position.z,.6);}
-function startBite(){F.catch=rollCatch(F.zone);F.st='bite';F.t=0;F.ripT=0;const S=stats();F.hookWin=(state.settings.chill?1.7:1.05)+S.ctrl*1.5+S.hook;AU.bite();splash(bobber.position,18,5);addRipple(bobber.position.x,bobber.position.z,1.4);fishTip(null);
+function startBite(){F.catch=rollCatch(F.zone);F.st='bite';F.t=0;F.ripT=0;const S=stats();F.hookWin=(state.settings.chill?1.4:.8)+S.ctrl*1.2+S.hook;AU.bite();splash(bobber.position,18,5);addRipple(bobber.position.x,bobber.position.z,1.4);fishTip(null);
  const h=re('hook');h.style.setProperty('--hw',F.hookWin.toFixed(2)+'s');h.innerHTML=`<div class="hk-ring"></div><div class="hk-core">STRIKE!<small>${isTouch?'Tap anywhere':'Click or Space'}</small></div>`;h.hidden=false;re('reelCatch').hidden=false;buzz(25);camShake(.12);}
-function setHook(){if(F.st!=='bite')return;const perfect=F.t<F.hookWin*.38;re('hook').hidden=true;startFight(perfect);}
+function setHook(){if(F.st!=='bite')return;const perfect=F.t<F.hookWin*.3;re('hook').hidden=true;startFight(perfect);}
 function missBite(){re('hook').hidden=true;re('reelCatch').hidden=true;exclaim.visible=false;F.st='retract';F.t=0;F.retFrom.copy(bobber.position);AU.escape();toast(F.catch&&F.catch.relic?'Too slow… something shiny slipped away.':'Too slow! The fish stole the bait.');}
 function fightBase(){return player.mode==='boat'?boat.pos:player.pos;}
 function startFight(perfect){const c=F.catch,R=RAR[c.r],S=stats(),ch=state.settings.chill;const wN=c.relic?.4:clamp((c.w-c.sp.minW)/(c.sp.maxW-c.sp.minW||1),0,1.5);
- const base=fightBase(),d=clamp(Math.hypot(F.to.x-base.x,F.to.z-base.z),4,30),str=.3+R.spd*2.3+wN*.3;
- F.reel={dist:d,max:d+9+str*5,tens:0,stam:perfect?.75:1,str,run:0,rest:R.int*rand(.6,1.2),runDir:1,danger:0,ang:0,
-  reelSpd:2.5*S.reel*(ch?1.15:1),snapT:.5*(1+S.res)*(ch?2:1),restBase:R.int*1.5*(ch?1.3:1),runBase:1+R.err*2.4,stamK:(ch?1.4:1)*S.tire,riseK:S.barMul*(1+S.res*.8)*(ch?1.35:1),ctrl:S.ctrl,
+ const base=fightBase(),d=clamp(Math.hypot(F.to.x-base.x,F.to.z-base.z),4,30),str=.35+R.spd*2.6+wN*.35;
+ F.reel={dist:d,max:d+7+str*4,slack:0,jerk:rand(.7,1.6),tens:0,stam:perfect?.75:1,str,run:0,rest:R.int*rand(.6,1.2),runDir:1,danger:0,ang:0,
+  reelSpd:2.3*S.reel*(ch?1.15:1),snapT:.36*(1+S.res)*(ch?2:1),restBase:R.int*1.2*(ch?1.3:1),runBase:1.2+R.err*2.8,stamK:(ch?1.4:1)*S.tire,riseK:S.barMul*(1+S.res*.8)*(ch?1.35:1),ctrl:S.ctrl,
   hold:false,steer:0,touchSteer:0,t:0,click:0,drag:0,yank:1,jumpT:(c.r>=2&&!c.relic)?rand(1.5,3.5):1e9,jump:-1,ja:0,jx:0,jz:0,fishM:null,known:false,hot:0,pull:0};
  F.st='reeling';F.t=0;exclaim.visible=false;re('reel').hidden=false;re('reelCatch').hidden=false;
  re('reelRar').innerHTML=c.relic?'<span class="pill" style="--c:#c6f4ff">Relic</span>':rarPill(c.r);re('reelName').textContent=c.relic?'Something glimmers…':'???';
@@ -258,13 +258,17 @@ function updateReel(dt){const R=F.reel,T=WIND.uTime.value;R.t+=dt;R.yank=Math.ma
  else{R.rest-=dt;if(R.rest<=0){R.run=R.runBase*rand(.7,1.3)*(.45+R.stam*.55);R.runDir=Math.abs(R.ang)>.45?-Math.sign(R.ang):Math.random()<.5?-1:1;splash(bobber.position,8,3.5);AU.splash(.35);AU.run();camShake(.1);if(R.jumpT<=0&&R.jump<0)startJump();}}
  const running=R.run>0,pull=R.str*(running?1:.2)*(.3+.7*R.stam);R.pull=pull;
  const counter=running&&R.steer*R.runDir<-.3,along=running&&R.steer*R.runDir>.3;
- let tgt=R.hold?.16+pull*.66:pull*.24;if(counter)tgt*=.68-R.ctrl;if(along)tgt*=1.15;
- R.tens+=(tgt-R.tens)*(1-Math.exp(-(R.hold?3/R.riseK:3.4)*dt));
- const before=R.dist,wind=R.reelSpd*clamp(1-pull*.55,.1,1);
+ let tgt=R.hold?.2+pull*.72:pull*.24;if(counter)tgt*=.68-R.ctrl;if(along)tgt*=1.15;
+ R.tens+=(tgt-R.tens)*(1-Math.exp(-(R.hold?3.8/R.riseK:3.4)*dt));
+ /* head-shakes: a running fish jerks the line, spiking the tension without warning */
+ if(running){R.jerk-=dt;if(R.jerk<=0){R.jerk=rand(.7,1.8);const k=rand(.1,.24)*Math.min(1.2,pull)*(state.settings.chill?.5:1);R.tens+=k;if(k>.12){camShake(.12);AU.creak(R.tens);splash(bobber.position,6,3.5);}}}
+ const before=R.dist,wind=R.reelSpd*clamp(1-pull*.6,.1,1);
  if(R.hold)R.dist-=wind*dt;else R.dist+=(running?pull*1.25:.08)*dt;
  let slip=0;if(R.tens>.86){slip=(R.tens-.86)*7*pull;R.dist+=slip*dt;}
  if(R.tens>.98)R.danger+=dt;else R.danger=Math.max(0,R.danger-dt*1.5);
- const work=R.tens>.28?(R.tens<.9?1.5:.9):.3;R.stam=Math.max(0,R.stam-dt*.07*work*(counter?1.8:1)*R.stamK/Math.sqrt(R.str));
+ /* a slack line during a run lets the fish throw the hook */
+ if(running&&!R.hold&&R.tens<.12&&!state.settings.chill){R.slack+=dt;if(R.slack>1.3&&Math.random()<dt*.4){loseFish('The line went slack and the fish shook the hook. Keep a little tension on it.');return;}}else R.slack=Math.max(0,R.slack-dt*2);
+ const work=R.tens>.28?(R.tens<.9?1.5:.9):.3;R.stam=Math.max(0,R.stam-dt*.055*work*(counter?1.8:1)*R.stamK/Math.sqrt(R.str));
  // the fish swings left and right on its runs; pulling the other way brings it back in line
  if(running)R.ang+=R.runDir*dt*.32*(pull/R.str);R.ang-=R.steer*dt*.18;R.ang*=1-dt*.15;R.ang=clamp(R.ang,-.75,.75);R.jumpT-=dt;
  const base=fightBase(),ca=Math.cos(R.ang),sa=Math.sin(R.ang),dx=F.dir.x*ca-F.dir.z*sa,dz=F.dir.x*sa+F.dir.z*ca,fx=base.x+dx*R.dist,fz=base.z+dz*R.dist;F.to.set(fx,0,fz);
@@ -284,7 +288,7 @@ function drawReelHUD(R,running){const t=clamp(R.tens,0,1),arc=re('rfArc');
  re('rfNeedle').style.transform=`rotate(${(-90+t*180+(t>.9?Math.sin(R.t*70)*3:0)).toFixed(1)}deg)`;re('rfGauge').classList.toggle('hot',t>.86);
  re('rfDist').textContent=R.dist.toFixed(1);re('rfStam').style.width=(R.stam*100).toFixed(0)+'%';re('rfFish').style.left=clamp(R.dist/R.max*100,3,97).toFixed(1)+'%';
  const hint=re('reelHint');let h,w=false;
- if(t>.86){h='Ease off! The line is about to snap';w=true;}else if(R.max-R.dist<4){h='Reel in! It has almost all your line';w=true;}
+ if(t>.86){h='Ease off! The line is about to snap';w=true;}else if(R.slack>.6){h='The line is going slack. Reel a little!';w=true;}else if(R.max-R.dist<4){h='Reel in! It has almost all your line';w=true;}
  else if(running)h=R.hold&&R.pull>.7?'It\'s running. Let go and let the drag work':isTouch?'Hold to reel · drag against the run':'Hold to reel · A / D against the run';
  else h=R.stam<.25?'It\'s tired. Wind it in!':isTouch?'Hold anywhere to reel in':'Hold click or Space to reel in';
  if(hint.textContent!==h)hint.textContent=h;hint.classList.toggle('warn',w);

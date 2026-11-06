@@ -318,7 +318,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){save();clo
 /* ---------- boot ---------- */
 const nextFrame=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
 async function boot(data){loadStep(15,'Loading the islands…');const loaded=(data&&data.state)?sanitize(data.state):loadLocal();if(loaded)state=loaded;GFX.tier=state.settings.gfx;
- try{await Promise.race([Promise.all([document.fonts.load('900 40px Nunito'),document.fonts.load('800 30px Nunito'),document.fonts.load('600 40px "Josefin Sans"')]),new Promise(r=>setTimeout(r,1800))]);}catch(e){}qState();initNpcIndex();
+ try{await Promise.race([Promise.all([document.fonts.load('900 40px Nunito'),document.fonts.load('800 30px Nunito'),document.fonts.load('600 40px "Josefin Sans"'),document.fonts.load('700 30px Fraunces'),document.fonts.load('700 14px "Barlow Semi Condensed"')]),new Promise(r=>setTimeout(r,1800))]);}catch(e){}qState();initNpcIndex();
  initWeather();loadStep(22,'Weathering the rocks…');await nextFrame();await genWorldTextures(TT().tex,async f=>{loadStep(22+f*24,'Weathering the rocks…');await nextFrame();});loadStep(48,'Growing palm trees…');await nextFrame();buildWorld();loadStep(75,'Filling the sea…');await nextFrame();initEnv();setupPlayer();applyTier();resize();WAVE.amp=WAVE_W[env.weather]||1;updateEnv(0);updateEnvMap();loadStep(90,'Lighting the sky…');await nextFrame();
  cam.yaw=player.face+Math.PI;cam.target.copy(player.pos).add(new V3(0,2.5,0));updateHUD();updateClockHUD();renderChatLog();loadStep(100,'Ready');
  requestAnimationFrame(t=>{clock.last=t;frame(t);});setTimeout(()=>{const l=$('#loading');l.classList.add('out');setTimeout(()=>l.remove(),900);},200);
