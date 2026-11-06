@@ -132,7 +132,7 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  scene.fog.color.copy(_fogC);const far=TT().far;scene.fog.near=lerp(lerp(45,25,env.rain),8,env.fog);scene.fog.far=lerp(lerp(far,200,Math.min(env.rain,1)),85,env.fog);
  // lights: sun by day, a cool moon by night, sky light from the captured environment
  const isMoon=sy<-.02;if(isMoon)lightDir.set(-sunDir.x,Math.max(-sy,.3),-sunDir.z).normalize();else lightDir.copy(sunDir).setY(Math.max(sunDir.y,.05)).normalize();
- if(isMoon){sun.color.copy(EC.moon);sun.intensity=.9*(1-env.cloud*.6)*smooth(-.02,-.2,sy);}else{sun.color.copy(_sunC);sun.intensity=3.3*sunVis*(1-env.cloud*.72)*(1-env.fog*.55);}
+ if(isMoon){sun.color.copy(EC.moon);sun.intensity=.75*(1-env.cloud*.6)*smooth(-.02,-.2,sy);}else{sun.color.copy(_sunC);sun.intensity=3.3*sunVis*(1-env.cloud*.72)*(1-env.fog*.55);}
  hemi.intensity=.08+.52*nightK+env.flash*2.5;hemi.color.copy(EC.hemiN).lerp(EC.hemiD,day);hemi.groundColor.copy(EC.gN).lerp(EC.gD,day);
  scene.environmentIntensity=lerp(.62,1,day)*(1-dark*.15);
  renderer.toneMappingExposure=lerp(2.6,.97,day)*(1+ov*.28)+env.flash*.4;
@@ -157,6 +157,9 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  if(GFX.bloom){GFX.bloom.threshold=lerp(GFX.hdr?2.4:.92,GFX.hdr?1.5:.85,dusk);GFX.bloom.strength=.2+dusk*.12+nightK*.06;}
  if(GFX.grade){const u=GFX.grade.material.uniforms;u.uHigh.value.setRGB(1+dusk*.08+.02,1+dusk*.01,1-dusk*.08-.02);u.uShadow.value.setRGB(.95-dusk*.03,.98,1.05+dusk*.04);u.uTint.value.copy(EC.white).lerp(EC.duskTint,dusk).lerp(EC.nightTint,nightK*.7);u.uSat.value=1.34+dusk*.06-ov*.16-nightK*.12;u.uCon.value=1.11+day*.04-ov*.05;u.uVig.value=.5;}
  lampT-=dt;if(lampT<=0){lampT=.25;updateLampLights(Math.max(nightK,env.cave||0));}
+ /* islands glow warm at night: a soft light over the island you're on, and a warmer ground bounce */
+ if(GFX.iglow){let best=null,bd=1e9;for(const k of ISL){const I=ZONES[k],d=Math.hypot(cp.x-I.x,cp.z-I.z)-I.R;if(d<bd){bd=d;best=I;}}const gl=GFX.iglow,near=best?1-smooth(best.R*.2,best.R*1.4,bd):0,nk=nightK*(1-(env.cave||0));
+  if(best){gl.position.set(best.x,best.R*.32+14,best.z);gl.distance=best.R*3;}gl.intensity=nk*near*78;if(nk*near>.01){hemi.groundColor.lerp(_c2.set('#7a4a24'),nk*near*.6);hemi.color.lerp(_c2.set('#8a6a58'),nk*near*.25);}}
  {const fz=ZONES.frost,em=ZONES.ember,cv=ZONES.cove,am=ZONES.amber,px=cp.x,pz=cp.z;const na=1-smooth(am.R*1.2,am.R*2.4,Math.hypot(px-am.x,pz-am.z));const nf=1-smooth(fz.R*1.4,fz.R*3,Math.hypot(px-fz.x,pz-fz.z)),ne=1-smooth(em.R*1.2,em.R*2.6,Math.hypot(px-em.x,pz-em.z)),nc=Math.max(1-smooth(cv.R*1.1,cv.R*2.2,Math.hypot(px-cv.x,pz-cv.z)),(1-smooth(ZONES.petal.R*1.2,ZONES.petal.R*2.4,Math.hypot(px-ZONES.petal.x,pz-ZONES.petal.z)))*1.6);env.snowK=nf;
   const set=(k,a)=>{const d=drifts[k];if(!d)return;d.u.uAmt.value=a;d.pts.visible=a>.01;d.u.uCam.value.copy(cp);d.u.uLit.value=k==='ember'?1:lerp(.3,1,day);};set('snow',nf*(.35+Math.min(env.rain,1.3)*.8));set('ember',ne*(.7+(1-day)*.5));set('petal',nc*day*(1-Math.min(env.rain,1))*.8);set('leaf',na*(.4+.6*day)*(1-Math.min(env.rain,1)*.5));
   if(rainbow){const ra=clamp(env.rainbow/10,0,1)*clamp((80-env.rainbow)/6,0,1)*day*(1-Math.min(env.rain,1));rainbow.visible=ra>.01;if(rainbow.visible){const ax=-sunDir.x,az=-sunDir.z,l=Math.hypot(ax,az)||1;rainbow.position.set(cp.x+ax/l*650,cp.y-90,cp.z+az/l*650);rainbow.lookAt(cp.x,cp.y-90,cp.z);rainbow.material.uniforms.uA.value=ra;}}
@@ -165,14 +168,14 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  // refresh the captured sky (reflections + lighting) every so often, sooner after a lightning flash
  updateBigFx(dt);
  /* inside a sea cave the cave takes over the lighting: teal in the Drowned Hollow, violet and ember in the Sunless Deep */
- {let hk=0,deep=false;for(const k of['hollow','abyss']){const H=ZONES[k],v=1-smooth(H.R*1.6,H.R*1.85,Math.hypot(cp.x-H.x,cp.z-H.z));if(v>hk){hk=v;deep=k==='abyss';}}env.cave=hk;waterU.uCave.value=hk;
+ {let hk=0,ck='hollow';for(const k in CAVE_LOOK){const H=ZONES[k],v=1-smooth(H.R*1.6,H.R*1.85,Math.hypot(cp.x-H.x,cp.z-H.z));if(v>hk){hk=v;ck=k;}}const CL=CAVE_LOOK[ck],deep=CL.mote==='moteV';env.cave=hk;env.caveK=ck;waterU.uCave.value=hk;
   for(const[k,on]of[['mote',!deep],['moteV',deep]]){const d=drifts[k];if(!d)continue;const a=on?hk:0;d.u.uAmt.value=a;d.pts.visible=a>.01;d.u.uCam.value.copy(cp);d.u.uLit.value=1;}
   if(hk>0){
-  _c1.set(deep?'#2a1430':'#14444c');scene.fog.color.lerp(_c1,hk);scene.fog.near=lerp(scene.fog.near,10,hk);scene.fog.far=lerp(scene.fog.far,deep?190:230,hk);
-  sun.intensity*=1-hk*.94;hemi.intensity=lerp(hemi.intensity,deep?1.1:1.35,hk);hemi.color.lerp(_c2.set(deep?'#c08aff':'#7aeee4'),hk);hemi.groundColor.lerp(_c3.set(deep?'#4a1a30':'#1e4a50'),hk);
+  _c1.set(CL.fog);scene.fog.color.lerp(_c1,hk);scene.fog.near=lerp(scene.fog.near,10,hk);scene.fog.far=lerp(scene.fog.far,CL.far,hk);
+  sun.intensity*=1-hk*.94;hemi.intensity=lerp(hemi.intensity,CL.hemiI,hk);hemi.color.lerp(_c2.set(CL.hemi),hk);hemi.groundColor.lerp(_c3.set(CL.gnd),hk);
   scene.environmentIntensity*=1-hk*.75;renderer.toneMappingExposure=lerp(renderer.toneMappingExposure,1.85,hk);
   waterU.uFogC.value.lerp(_c1,hk);waterU.uFogN.value=scene.fog.near;waterU.uFogF.value=scene.fog.far;waterU.uSunCol.value.multiplyScalar(1-hk);waterU.uSpark.value*=1-hk;
-  waterU.uDeep.value.lerp(_c2.set(deep?'#1a0820':'#063038'),hk);waterU.uShal.value.lerp(_c3.set(deep?'#5a1a40':'#16807a'),hk);waterU.uBio.value=Math.max(waterU.uBio.value,hk*(deep?.3:.45));waterU.uAmb.value.lerp(_c1.set(deep?'#6a3a8a':'#3a9a9a'),hk*.6);
+  waterU.uDeep.value.lerp(_c2.set(CL.deep),hk);waterU.uShal.value.lerp(_c3.set(CL.shal),hk);waterU.uBio.value=Math.max(waterU.uBio.value,hk*CL.bio);waterU.uAmb.value.lerp(_c1.set(CL.amb),hk*.6);
   glowMat.color.setScalar(lerp(glowMat.color.r,3.2,hk));starU.uA.value*=1-hk;moon.material.opacity*=1-hk;moonHalo.material.opacity*=1-hk;
   if(GFX.rays)GFX.rays.material.uniforms.uK.value*=1-hk;if(GFX.bloom)GFX.bloom.strength=lerp(GFX.bloom.strength,.5,hk);
   for(const h of world.halos)if(h.userData.always)h.material.opacity=Math.max(h.material.opacity,hk*.45);
@@ -265,10 +268,13 @@ function startFight(perfect,grade){if(grade===undefined)grade=perfect?2:1;const 
  F.reel={dist:d,max:d+6+str*3.6,slack:0,jerk:rand(.7,1.6),tens:0,stam:grade===2?.72:grade===1?.88:1,loose:grade===0&&!ch?2.8:0,str,run:0,rest:grade===0?.05:R.int*rand(.6,1.2),runDir:1,danger:0,ang:0,
   reelSpd:2.3*S.reel*(ch?1.15:1),snapT:.36*(1+S.res)*(ch?2:1),restBase:R.int*(ch?1.56:1.05),runBase:1.35+R.err*3,stamK:(ch?1.4:1)*S.tire,riseK:S.barMul*(1+S.res*.8)*(ch?1.35:1),ctrl:S.ctrl,
   hold:false,steer:0,touchSteer:0,t:0,click:0,drag:0,yank:1,jumpT:(c.r>=2&&!c.relic)?rand(1.5,3.5):1e9,jump:-1,ja:0,jx:0,jz:0,fishM:null,known:false,hot:0,pull:0};
+ {const sh=c.relic?'fish':c.sp.shape,Rf=F.reel;Rf.style=sh==='eel'?'eel':sh==='shark'?'shark':sh==='ray'?'ray':sh==='long'?'long':sh==='flat'?'flat':'fish';if(Rf.style==='long'&&Rf.jumpT<1e8)Rf.jumpT=rand(1,2.2);if(Rf.style==='shark'){Rf.runBase*=1.5;Rf.restBase*=.8;}
+  const rd=RODM[state.rod],cap=6+rd.luck*1.7+(S.res||0)*40;Rf.heavy=c.relic||ch?0:Math.max(0,c.w/cap-1);if(Rf.heavy>0){const h=Math.min(1.5,Rf.heavy);Rf.riseK/=1+h*.45;Rf.snapT/=1+h*.35;Rf.str*=1+h*.2;}}
  F.st='reeling';F.t=0;exclaim.visible=false;re('reel').hidden=false;re('reelCatch').hidden=false;
  re('reelRar').innerHTML=c.relic?'<span class="pill" style="--c:#c6f4ff">Relic</span>':rarPill(c.r);re('reelName').textContent=c.relic?'Something glimmers…':'???';
  re('reel').style.setProperty('--rc',c.relic?'#9eeaff':RAR[c.r].c);re('reel').classList.toggle('big',c.r>=3||!!c.relic);
  AU.hookSet(perfect);buzz(perfect?[20,40,20]:30);camShake(grade===2?.34:.25);splash(bobber.position,c.r>=3||c.relic?24:14,c.r>=3?6:4.5);
+ {const Rf=F.reel,st={eel:'Zigzags',shark:'Long runs',ray:'Dives deep',long:'Leaper',flat:'Stubborn',fish:''}[Rf.style];re('reelStyle').textContent=(Rf.heavy>0?'Heavy for your rod · ':'')+(st||'');re('reelStyle').classList.toggle('warn',Rf.heavy>0);if(Rf.heavy>.15)setTimeout(()=>floatTip('Heavy fish for this rod! Ease off early'),700);}
  if(!state.tips.reel2){state.tips.reel2=1;toast(isTouch?'Hold to reel in. Let go when the needle reaches red. Drag left or right against the fish.':'Hold click or Space to reel. Let go when the needle reaches red. A and D pull against the fish.');}}
 function floatTip(txt){const el=document.createElement('div');el.className='floatTip';el.textContent=txt;document.body.appendChild(el);setTimeout(()=>el.remove(),1300);}
 function reelHold(on){if(F.reel)F.reel.hold=on;}
@@ -279,12 +285,14 @@ function updateReel(dt){const R=F.reel,T=WIND.uTime.value;R.t+=dt;R.yank=Math.ma
  if(R.run>0){R.run-=dt;if(R.run<=0)R.rest=R.restBase*rand(.7,1.4)*(1+(1-R.stam)*1.2);}
  else{R.rest-=dt;if(R.rest<=0){R.run=R.runBase*rand(.7,1.3)*(.45+R.stam*.55);R.runDir=Math.abs(R.ang)>.45?-Math.sign(R.ang):Math.random()<.5?-1:1;splash(bobber.position,8,3.5);AU.splash(.35);AU.run();camShake(.1);if(R.jumpT<=0&&R.jump<0)startJump();}}
  const running=R.run>0,pull=R.str*(running?1:.2)*(.3+.7*R.stam);R.pull=pull;
- const counter=running&&R.steer*R.runDir<-.3,along=running&&R.steer*R.runDir>.3;
- let tgt=R.hold?.2+pull*.72:pull*.24;if(counter)tgt*=.68-R.ctrl;if(along)tgt*=1.15;
+ /* eels zigzag mid-run; rays dive, so pulling sideways does nothing and reeling into a dive strains the line */
+ if(running&&R.style==='eel'){R.zz=(R.zz||rand(.5,.9))-dt;if(R.zz<=0){R.zz=rand(.42,.8);R.runDir*=-1;}}
+ const dive=running&&R.style==='ray';const counter=running&&!dive&&R.steer*R.runDir<-.3,along=running&&!dive&&R.steer*R.runDir>.3;
+ let tgt=R.hold?.2+pull*.72:pull*.24;if(counter)tgt*=.68-R.ctrl;if(along)tgt*=1.15;if(dive&&R.hold)tgt*=1.28;if(!running&&R.style==='flat'&&R.hold)tgt+=.08;if(R.heavy>0)tgt*=1+Math.min(.3,R.heavy*.2);
  R.tens+=(tgt-R.tens)*(1-Math.exp(-(R.hold?3.8/R.riseK:3.4)*dt));
  /* head-shakes: a running fish jerks the line, spiking the tension without warning */
  if(running){R.jerk-=dt;if(R.jerk<=0){R.jerk=rand(.7,1.8);const k=rand(.12,.28)*Math.min(1.2,pull)*(state.settings.chill?.5:1);R.tens+=k;if(k>.12){camShake(.12);AU.creak(R.tens);splash(bobber.position,6,3.5);}}}
- const before=R.dist,wind=R.reelSpd*clamp(1-pull*.6,.1,1);
+ const before=R.dist,wind=R.reelSpd*clamp(1-pull*.6,.1,1)*(!running&&R.style==='flat'?.65:1);
  if(R.hold)R.dist-=wind*dt;else R.dist+=(running?pull*1.25:.08)*dt;
  let slip=0;if(R.tens>.86){slip=(R.tens-.86)*7*pull;R.dist+=slip*dt;}
  if(R.tens>.98)R.danger+=dt;else R.danger=Math.max(0,R.danger-dt*1.5);
@@ -294,7 +302,7 @@ function updateReel(dt){const R=F.reel,T=WIND.uTime.value;R.t+=dt;R.yank=Math.ma
  // the fish swings left and right on its runs; pulling the other way brings it back in line
  if(running)R.ang+=R.runDir*dt*.32*(pull/R.str);R.ang-=R.steer*dt*.18;R.ang*=1-dt*.15;R.ang=clamp(R.ang,-.75,.75);R.jumpT-=dt;
  const base=fightBase(),ca=Math.cos(R.ang),sa=Math.sin(R.ang),dx=F.dir.x*ca-F.dir.z*sa,dz=F.dir.x*sa+F.dir.z*ca,fx=base.x+dx*R.dist,fz=base.z+dz*R.dist;F.to.set(fx,0,fz);
- bobber.position.set(fx+Math.sin(R.t*9)*.08*pull,Math.max(surfY(fx,fz,T)-.25-R.tens*.25+Math.sin(R.t*13)*.05,groundH(fx,fz)+.15),fz);player.face=Math.atan2(fx-base.x,fz-base.z);
+ bobber.position.set(fx+Math.sin(R.t*9)*.08*pull,Math.max(surfY(fx,fz,T)-.25-R.tens*.25-(dive?.4:0)+Math.sin(R.t*13)*.05,groundH(fx,fz)+.15),fz);player.face=Math.atan2(fx-base.x,fz-base.z);
  if(R.jump>=0)updateJump(dt);else surfaceFish(R,dt,fx,fz,base,running);
  F.ripT-=dt;if(F.ripT<=0){F.ripT=running?.22:.5;addRipple(fx,fz,running?.9:.6);}if(running&&Math.random()<dt*6)splash(bobber.position,3,2.5);
  // sound: the reel clicks as you wind, the drag buzzes when the fish takes line, the line creaks near breaking point
@@ -311,11 +319,12 @@ function drawReelHUD(R,running){const t=clamp(R.tens,0,1),arc=re('rfArc');
  re('rfDist').textContent=R.dist.toFixed(1);re('rfStam').style.width=(R.stam*100).toFixed(0)+'%';re('rfFish').style.left=clamp(R.dist/R.max*100,3,97).toFixed(1)+'%';
  const hint=re('reelHint');let h,w=false;
  if(t>.86){h='Ease off! The line is about to snap';w=true;}else if(R.slack>.6){h='The line is going slack. Reel a little!';w=true;}else if(R.max-R.dist<4){h='Reel in! It has almost all your line';w=true;}
+ else if(running&&R.style==='ray')h=R.hold?'It\'s diving! Let go until it stops':'It\'s diving. Wait it out';
  else if(running)h=R.hold&&R.pull>.7?'It\'s running. Let go and let the drag work':isTouch?'Hold to reel · drag against the run':'Hold to reel · A / D against the run';
  else h=R.stam<.25?'It\'s tired. Wind it in!':isTouch?'Hold anywhere to reel in':'Hold click or Space to reel in';
  if(hint.textContent!==h)hint.textContent=h;hint.classList.toggle('warn',w);
  const sEl=re('rfSteer');if(running&&R.pull>.25){const want=-R.runDir,ok=R.steer*want>.3;const txt=ok?`<span class="ok">${want<0?'◀ ':''}Good pull!${want>0?' ▶':''}</span>`:want<0?'◀ Pull left':'Pull right ▶';if(sEl.dataset.h!==txt){sEl.innerHTML=txt;sEl.dataset.h=txt;}if(sEl.className!=='on')sEl.className='on';}else if(sEl.className)sEl.className='';}
-function startJump(){const R=F.reel,c=F.catch;R.jumpT=rand(4,8);R.jump=0;if(!R.fishM){R.fishM=buildFish(c.sp,c.mut);R.fishM.scale.setScalar(fishScale(c.sp,c.w));scene.add(R.fishM);}R.fishM.visible=true;
+function startJump(){const R=F.reel,c=F.catch;R.jumpT=R.style==='long'?rand(2.4,4.5):rand(4,8);R.jump=0;if(!R.fishM){R.fishM=buildFish(c.sp,c.mut);R.fishM.scale.setScalar(fishScale(c.sp,c.w));scene.add(R.fishM);}R.fishM.visible=true;
  R.ja=Math.atan2(F.dir.z,F.dir.x)+R.runDir*Math.PI/2;R.jx=bobber.position.x;R.jz=bobber.position.z;AU.leap();splash(bobber.position,16,5);
  if(!R.known){R.known=true;re('reelName').textContent=c.sp.name;}}
 function updateJump(dt){const R=F.reel,T=WIND.uTime.value;R.jump+=dt;const k=R.jump/.9,hx=Math.cos(R.ja),hz=Math.sin(R.ja);
@@ -437,12 +446,14 @@ addEventListener('pointermove',()=>{if(PHOTO.on){PHOTO.idle=0;$('#photoBar').cla
 
 /* ---------- player / boat / camera updates ---------- */
 let lockToastT=0;
+const _rgt=new V3(),_camT=new V3();
 function updatePlayer(dt){const lock=uiBlocked()||['reeling','caught','bite'].includes(F.st);const ix=lock?0:input.x,iy=lock?0:input.y;const R=prig.root;
  if(player.mode==='walk'){const mag=Math.hypot(ix,iy);
   if(mag>.08){if(['charging','casting','waiting'].includes(F.st))cancelFishing();stopEmote();}
-  const fwd=camFwd(),right=new V3(Math.cos(cam.yaw),0,-Math.sin(cam.yaw));const mv=fwd.multiplyScalar(iy).add(right.multiplyScalar(ix));
+  const fwd=camFwd(),right=_rgt.set(Math.cos(cam.yaw),0,-Math.sin(cam.yaw));const mv=fwd.multiplyScalar(iy).add(right.multiplyScalar(ix));
   const run=!!(keys.ShiftLeft||keys.ShiftRight)||Math.hypot(joy.x,joy.y)>.95;player.speed=damp(player.speed,(run?12.5:7)*mag*(DEV.fast?3:1),run?10:18,dt);
-  if(mag>.08){player.face=Math.atan2(mv.x,mv.z);const st=player.speed*dt/mag,nx=player.pos.x+mv.x*st,nz=player.pos.z+mv.z*st;const ok=(x,z)=>{const g=groundH(x,z);return g>.1&&g<player.pos.y+.95;};
+  if(mag>.08){player.face=Math.atan2(mv.x,mv.z);player.dx=mv.x/mag;player.dz=mv.z/mag;}
+  if(player.speed>.05&&player.dx!=null){const st=player.speed*dt,nx=player.pos.x+player.dx*st,nz=player.pos.z+player.dz*st;const ok=(x,z)=>{const g=groundH(x,z);return g>.1&&g<player.pos.y+.95;};
    if(ok(nx,nz)){player.pos.x=nx;player.pos.z=nz;}else if(ok(nx,player.pos.z))player.pos.x=nx;else if(ok(player.pos.x,nz))player.pos.z=nz;
    for(const c of world.colliders){const dx=player.pos.x-c.x,dz=player.pos.z-c.z,rr=c.r+.55,d2=dx*dx+dz*dz;if(d2<rr*rr&&d2>1e-6){const d=Math.sqrt(d2);const px=c.x+dx/d*rr,pz=c.z+dz/d*rr;if(ok(px,pz)){player.pos.x=px;player.pos.z=pz;}}}}
   const g=groundH(player.pos.x,player.pos.z);player.vy-=32*dt;player.pos.y+=player.vy*dt;const was=player.onGround;
@@ -496,7 +507,7 @@ function updateNPCs(dt){for(const n of world.npcs){const d=Math.hypot(player.pos
  if(d<6&&!n.waved){n.waved=true;n.waveT=0;}if(d>12)n.waved=false;if(n.waveT!=null){n.waveT+=dt;if(n.waveT>2.4)n.waveT=null;}
  n.anim.update(dt,{spd:0,ground:true,emote:n.waveT!=null?'wave':null,emT:n.waveT||0});n.label.visible=state.settings.tags&&d<45;}}
 function camShake(v){cam.shake=Math.max(cam.shake||0,v);}
-function updateCamera(dt){const tgt=player.mode==='boat'?boat.pos.clone().setY(boat.g.position.y+2.2+(boat.alt>.3?1.5:0)):player.pos.clone().add(new V3(0,1.85,0));let want=cam.tdist*(player.mode==='boat'&&boat.alt>3?1.6:1);
+function updateCamera(dt){const tgt=_camT.copy(player.mode==='boat'?boat.pos:player.pos);if(player.mode==='boat')tgt.y=boat.g.position.y+2.2+(boat.alt>.3?1.5:0);else tgt.y+=1.85;let want=cam.tdist*(player.mode==='boat'&&boat.alt>3?1.6:1);
  if((F.st==='reeling'||F.st==='bite')&&!PHOTO.on){want*=.78;tgt.lerp(_v.copy(bobber.position).setY(tgt.y-.5),.3);}if(F.st==='charging')want*=1.06;if(F.st==='casting'&&!PHOTO.on)tgt.lerp(_v.copy(bobber.position).setY(tgt.y),.22);if(F.st==='caught'||player.emote==='show')want*=.8;
  const k=state.settings.chill?8:13;cam.target.x=damp(cam.target.x,tgt.x,k,dt);cam.target.y=damp(cam.target.y,tgt.y,k,dt);cam.target.z=damp(cam.target.z,tgt.z,k,dt);cam.dist=damp(cam.dist,want,5,dt);
  if(player.mode==='boat'&&Math.abs(boat.speed)>3&&ptrs.size===0&&cam.manualT>2.5&&!PHOTO.on)cam.yaw+=angDiff(cam.yaw,boat.yaw+Math.PI)*(1-Math.exp(-1.1*dt));

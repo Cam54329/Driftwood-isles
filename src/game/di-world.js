@@ -524,7 +524,7 @@ function buildWorld(){LEAFK=TT().leaf;
   sb.gr={b:-1.5,h:2.6,k:.55};for(let u=0;u<=len;u+=4.2)for(const s of[-1,1]){const px=dx0+cx*u-sz*s*w/2,pz=dz0+sz*u+cx*s*w/2;sb.add(G.cyl,'#5e4630',px,dh-2,pz,.17,4.6,.17);if(u>2)sb.add(G.cyl,'#5e4630',px,dh+.45,pz,.12,.9,.12);}sb.gr=null;
   sb.M(TL.cloth);for(const s of[-1,1]){const a=new THREE.Vector3(),b=new THREE.Vector3();for(let u=4.2;u<len-1;u+=4.2){a.set(dx0+cx*u-sz*s*w/2,dh+.85,dz0+sz*u+cx*s*w/2);b.set(dx0+cx*(u+4.2)-sz*s*w/2,dh+.85,dz0+sz*(u+4.2)+cx*s*w/2);if(u+4.2>len)break;
    const m=a.clone().lerp(b,.5);m.y-=.12;sb.seg(G.cyl,'#cdb88e',a,m,.035);sb.seg(G.cyl,'#cdb88e',m,b,.035);}}
-  const ex=dx0+cx*(len-.8),ez=dz0+sz*(len-.8);lamp(sb,gl,ex-sz*1.3,dh,ez+cx*1.3);lamp(sb,gl,ex+sz*1.3,dh,ez-cx*1.3);if(len>10){const mx=dx0+cx*len*.45,mz=dz0+sz*len*.45;lamp(sb,gl,mx-sz*1.3,dh,mz+cx*1.3);}
+  const ex=dx0+cx*(len-.8),ez=dz0+sz*(len-.8);lamp(sb,gl,ex-sz*1.3,dh,ez+cx*1.3);lamp(sb,gl,ex+sz*1.3,dh,ez-cx*1.3);
   sb.M(TL.metal);sb.add(G.cyl12,'#2c3036',dx0+cx*(len-2.5)-sz*1.1,dh+.3,dz0+sz*(len-2.5)+cx*1.1,.2,.6,.2);sb.M(0);
   crate(sb,dx0+cx*3+sz*1,dh,dz0+sz*3-cx*1,.9);crate(sb,dx0+cx*3.2+sz*1.1,dh+.9,dz0+sz*3.2-cx*1.1,.6);barrel(sb,dx0+cx*4.5-sz*1.1,dh,dz0+sz*4.5+cx*1.1);
   {const P=(u,sd)=>({x:dx0+cx*u-sz*sd,z:dz0+sz*u+cx*sd});let q=P(len-4.6,-1.05);ropeCoil(sb,q.x,dh,q.z);q=P(len*.55,1.1);bucket(sb,q.x,dh,q.z,r);q=P(len*.55+.75,1.12);tackleBox(sb,q.x,dh,q.z,yaw+.2);q=P(6.5,-1.1);if(len>12)ropeCoil(sb,q.x,dh,q.z,.8);
@@ -571,14 +571,14 @@ function buildWorld(){LEAFK=TT().leaf;
    if(key==='ember')for(let i=0;i<5;i++)world.smoke.push(makeSmoke({x:p.x,y:p.y+.3,z:p.z},2.2,i,6));
    for(let i=0;i<10;i++){const a=i/10*TAU,d=p.r*1.45;const x=p.x+Math.cos(a)*d,z=p.z+Math.sin(a)*d;sb.M(TL.rock);sb.add(pick(G.rocks),I.rock,x,groundH(x,z)-.15,z,.55+r()*.4,.38,.55+r()*.3,0,r()*3);sb.M(0);}}
   const ok=(x,z,rr)=>reserved.every(p=>Math.hypot(p.x-x,p.z-z)>p.r+rr)&&I.paths.every(sg=>segDist(x,z,sg[0],sg[1])>1.6+rr*.6);
-  if(!I.cave){for(const sg of I.paths){const a=sg[0],b=sg[1],L=Math.hypot(b.x-a.x,b.z-a.z);const dx=(b.x-a.x)/L,dz=(b.z-a.z)/L;for(let u=6;u<L-4;u+=13){const side=(Math.floor(u/13)%2?1:-1)*1.9,x=a.x+dx*u-dz*side,z=a.z+dz*u+dx*side,y=groundH(x,z);if(y>.4&&!world.colliders.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+.6)){lanternPost(sb,gl,x,y,z);world.colliders.push({x,z,r:.3});}}}
+  if(!I.cave){
    const sp=world.spawn[key],shops=NPCS.filter(n=>n.zone===key&&n.role!=='harbor'&&n.role!=='shipwright').map(n=>{const np=world.npcs.find(o=>o.def===n);return np?{x:np.x,z:np.z,label:n.title.length>14?n.title.split(' ')[0]:n.title}:null;}).filter(Boolean);
    if(sp&&shops.length){const px=sp.x+Math.cos(sp.yaw)*3.2,pz=sp.z-Math.sin(sp.yaw)*3.2,py=groundH(px,pz);if(py>.4){signpost(sb,px,py,pz,shops);world.colliders.push({x:px,z:pz,r:.4});}}}
   if(I.lh){lighthouse(sb,gl,I.lh.x,groundH(I.lh.x,I.lh.z),I.lh.z);reserved.push({x:I.lh.x,z:I.lh.z,r:6});}
   const place=(n,fmin,fmax,fn,rr=1.5)=>{n=Math.round(n*Math.pow(I.R/42,2)*.85);let tries=0,c=0;while(c<n&&tries<n*14){tries++;const th=r()*TAU,f=fmin+r()*(fmax-fmin),R=islandR(I,th),x=I.x+Math.cos(th)*R*f,z=I.z+Math.sin(th)*R*f;if(I.volcano&&f<.34)continue;if(!ok(x,z,rr))continue;const y=groundH(x,z);if(y<.4)continue;fn(x,y,z);reserved.push({x,z,r:rr});c++;}};
   if(key==='cove'){place(16,.1,.6,(x,y,z)=>{const s=.85+r()*.5;roundTree(sb,fb,x,y,z,s,r()<.5?'#4f7438':'#5a7f40','#45673a',r);world.colliders.push({x,z,r:.5*s});});
    place(12,.64,.8,(x,y,z)=>{palm(sb,fb,x,y,z,.95+r()*.3,r);world.colliders.push({x,z,r:.5});});
-   place(6,.2,.5,(x,y,z)=>{lamp(sb,gl,x,y,z);world.colliders.push({x,z,r:.3});},3);}
+   }
   if(key==='moss'){place(12,.12,.6,(x,y,z)=>{const s=.9+r()*.4;willow(sb,fb,x,y,z,s,r);world.colliders.push({x,z,r:.6*s});});
    place(14,.1,.62,(x,y,z)=>{const s=.7+r()*1;mushroom(sb,gl,x,y,z,s,pick(['#c8504a','#a868c8','#d89a3c']));world.colliders.push({x,z,r:.4*s});});
    fb.sw={a:.6,b:0,h:2};place(34,.78,.95,(x,y,z)=>{for(let i=0;i<4;i++)fb.add(G.cyl,'#86a85a',x+(i-1.5)*.22,y+.7+i*.1,z+(i%2)*.2,.035,1.4+i*.3,.035);},.4);fb.sw=null;
@@ -604,7 +604,7 @@ function buildWorld(){LEAFK=TT().leaf;
    place(8,.2,.6,(x,y,z)=>{const s=.8+r()*.3;roundTree(sb,fb,x,y,z,s,'#3e8a3a','#4e9a40',r);world.colliders.push({x,z,r:.5*s});});
    for(let i=0;i<90;i++){const th=r()*TAU,f=1.02+r()*.22,R=islandR(I,th),x=I.x+Math.cos(th)*R*f,z=I.z+Math.sin(th)*R*f,g=groundH(x,z);if(g>-.6||g<-3.8)continue;coral(sb,x,g,z,.6+r()*.9,r);}
    for(const p of I.ponds)for(let i=0;i<16;i++){const a=r()*TAU,d=r()*p.r*.85;coral(sb,p.x+Math.cos(a)*d,p.y-1.05,p.z+Math.sin(a)*d,.5+r()*.5,r);}
-   place(5,.3,.6,(x,y,z)=>{tikiTorch(sb,gl,x,y,z);world.colliders.push({x,z,r:.3});},3);}
+   place(2,.3,.6,(x,y,z)=>{tikiTorch(sb,gl,x,y,z);world.colliders.push({x,z,r:.3});},3);}
   if(key==='amber'){const autumn=['#c8702a','#d8902a','#b8502a','#c8a030','#a8442a'];place(26,.1,.62,(x,y,z)=>{const s=.9+r()*.5;roundTree(sb,fb,x,y,z,s,pick(autumn),pick(autumn),r);world.colliders.push({x,z,r:.5*s});});
    place(8,.1,.5,(x,y,z)=>{const s=.9+r()*.3;pine(sb,fb,x,y,z,s,false,r);world.colliders.push({x,z,r:.6*s});});
    place(1,.38,.5,(x,y,z)=>{windmill(sb,gl,x,y,z,Math.atan2(I.x-x,I.z-z));world.colliders.push({x,z,r:2.8});},6);
@@ -629,38 +629,59 @@ function buildWorld(){LEAFK=TT().leaf;
    {const a=I.dockTh+Math.PI*.6,sx=I.x+Math.cos(a)*I.R*.42,sz=I.z+Math.sin(a)*I.R*.42;if(groundH(sx,sz)>.5){standingStones(sb,gl,sx,0,sz,6.5,r);reserved.push({x:sx,z:sz,r:9});}}
    for(let i=0;i<6;i++){const a=r()*TAU,d=I.R*(.25+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;floatRock(sb,gl,x,groundH(x,z)+9+r()*7,z,.8+r()*.8,r);}
    {const cy=groundH(I.x,I.z);gemCluster(sb,gl,I.x,cy-.4,I.z,3.2,'#b08aff',r);halo(I.x,cy+4,I.z,9,0xb8a0ff).userData.always=true;world.colliders.push({x:I.x,z:I.z,r:3});reserved.push({x:I.x,z:I.z,r:8});}}
-  if(I.cave){/* the caves under the sea: the Drowned Hollow (teal) and, below it, the Sunless Deep (violet and ember).
-     A smooth domed ceiling speckled with glowworms, shafts of light through cracks, glowing moss and crystals that light the room */
-   const deep=key==='abyss',gems=deep?['#b06aff','#ff4ad8','#7a5aff','#ff6a3a']:['#3ae8d0','#5aa8ff','#8a6aff','#3affa0'],caps=deep?['#8a2a6a','#4a2a8a','#a83a3a']:['#2ab8a8','#3a6ad8','#7a4ad8'],hc=deep?0xc070ff:0x5affe0,moss=deep?['#3a0e30','#2a1040','#401010']:['#0c3a32','#0e3240','#123a28'];
-   place(22,.1,.85,(x,y,z)=>{gemCluster(sb,gl,x,y,z,.8+r()*1.3,pick(gems),r);world.colliders.push({x,z,r:.9});if(r()<.5){halo(x,y+1.6,z,4.5,new THREE.Color(pick(gems)).getHex()).userData.always=true;const v=V(x,y+1.6,z);v.col=new THREE.Color(pick(gems)).getHex();world.lamps.push(v);}},1.6);
-   place(16,.12,.7,(x,y,z)=>{const s=.8+r()*1.1;mushroom(sb,gl,x,y,z,s,pick(caps));world.colliders.push({x,z,r:.4*s});},1.3);
-   place(16,.15,.85,(x,y,z)=>{const s=.8+r()*1.4;rock(sb,x,y-.2,z,s,deep?'#4a3644':'#4e626a',deep?'#6a2a7a':'#2f8a7a');world.colliders.push({x,z,r:s*.8});},1.4);
+  if(I.cave){/* the caves under the sea, all linked by tunnels: the Drowned Hollow (teal), the Kelp Cathedral (green and gold),
+     the Sunken Ruins (moonlit blue) and the Sunless Deep (violet and ember). A smooth domed ceiling speckled with glowworms,
+     shafts of light through cracks, glowing moss and crystals that light the room */
+   const CV={hollow:{gems:['#3ae8d0','#5aa8ff','#8a6aff','#3affa0'],caps:['#2ab8a8','#3a6ad8','#7a4ad8'],hc:0x5affe0,moss:['#0c3a32','#0e3240','#123a28'],dome:'#3a4e56',emis:'#061a1e',stal:'#46585e',worm:'#9afff0',shaft:'#c8fff4',rk:'#4e626a',rm:'#2f8a7a'},
+    abyss:{gems:['#b06aff','#ff4ad8','#7a5aff','#ff6a3a'],caps:['#8a2a6a','#4a2a8a','#a83a3a'],hc:0xc070ff,moss:['#3a0e30','#2a1040','#401010'],dome:'#3a2a36',emis:'#120610',stal:'#3a2a34',worm:'#d8a0ff',shaft:'#ffb0ff',rk:'#4a3644',rm:'#6a2a7a'},
+    kelp:{gems:['#c8f05a','#f0d040','#7af0a0'],caps:['#6a9a3a','#c8a03a','#9ac83a'],hc:0xd8ff8a,moss:['#1a3a12','#24401a','#2a3a10'],dome:'#34442e',emis:'#0a1a06',stal:'#3e4e36',worm:'#e8ffa0',shaft:'#f8ffc8',rk:'#4a5a3a',rm:'#6a8a3a'},
+    ruins:{gems:['#8ab0ff','#c8a8ff','#5ad8ff'],caps:['#3a5ad8','#6a4ad8','#3a8ad8'],hc:0x9ab8ff,moss:['#121a3a','#1a1a40','#10203a'],dome:'#2e3448',emis:'#060a1a',stal:'#3a4056',worm:'#b8c8ff',shaft:'#d8e4ff',rk:'#5a6078',rm:'#3a4a8a'}}[key]||{};
+   const deep=key==='abyss',gems=CV.gems,caps=CV.caps,hc=CV.hc,moss=CV.moss;
+   place(key==='ruins'?12:22,.1,.85,(x,y,z)=>{gemCluster(sb,gl,x,y,z,.8+r()*1.3,pick(gems),r);world.colliders.push({x,z,r:.9});if(r()<.5){halo(x,y+1.6,z,4.5,new THREE.Color(pick(gems)).getHex()).userData.always=true;const v=V(x,y+1.6,z);v.col=new THREE.Color(pick(gems)).getHex();world.lamps.push(v);}},1.6);
+   place(key==='ruins'?6:16,.12,.7,(x,y,z)=>{const s=.8+r()*1.1;mushroom(sb,gl,x,y,z,s,pick(caps));world.colliders.push({x,z,r:.4*s});},1.3);
+   place(16,.15,.85,(x,y,z)=>{const s=.8+r()*1.4;rock(sb,x,y-.2,z,s,CV.rk,CV.rm);world.colliders.push({x,z,r:s*.8});},1.4);
    place(60,.08,.9,(x,y,z)=>{gl.add(G.cyl12,pick(moss),x,y+.03,z,.6+r()*1.2,.03,.6+r()*1.2,0,r()*3,0);},.5);
-   if(!deep)place(10,.84,.95,(x,y,z)=>coral(sb,x,y-.2,z,.6+r()*.6,r),.6);
-   else place(5,.3,.7,(x,y,z)=>{const s=1.4+r()*1.2;lv.add(G.cyl12,'#ff5a1a',x,y+.06,z,s,.12,s);for(let i=0;i<8;i++){const a=i/8*TAU;sb.M(TL.rock);sb.add(pick(G.rocks),'#2a1e24',x+Math.cos(a)*(s+.3),y+.1,z+Math.sin(a)*(s+.3),.55,.38,.55,0,r()*3);sb.M(0);}world.colliders.push({x,z,r:s});for(let i=0;i<2;i++)world.smoke.push(makeSmoke({x,y:y+.2,z},1.4,i,5));const v=V(x,y+1.2,z);v.col=0xff7a3a;world.lamps.push(v);},3.5);
-   const DR=I.R*1.85,DY=.55,dome=new THREE.Mesh(new THREE.SphereGeometry(DR,64,32),new THREE.MeshStandardMaterial({color:deep?'#3a2a36':'#3a4e56',roughness:.92,emissive:deep?'#120610':'#061a1e',side:THREE.BackSide}));
+   if(key==='hollow'||key==='kelp')place(10,.84,.95,(x,y,z)=>coral(sb,x,y-.2,z,.6+r()*.6,r),.6);
+   if(deep)place(5,.3,.7,(x,y,z)=>{const s=1.4+r()*1.2;lv.add(G.cyl12,'#ff5a1a',x,y+.06,z,s,.12,s);for(let i=0;i<8;i++){const a=i/8*TAU;sb.M(TL.rock);sb.add(pick(G.rocks),'#2a1e24',x+Math.cos(a)*(s+.3),y+.1,z+Math.sin(a)*(s+.3),.55,.38,.55,0,r()*3);sb.M(0);}world.colliders.push({x,z,r:s});for(let i=0;i<2;i++)world.smoke.push(makeSmoke({x,y:y+.2,z},1.4,i,5));const v=V(x,y+1.2,z);v.col=0xff7a3a;world.lamps.push(v);},3.5);
+   /* the Kelp Cathedral: giant kelp stalks reaching for the light, with golden fronds */
+   if(key==='kelp')place(46,.12,.92,(x,y,z)=>{const h=10+r()*16,segs=7,sway=r()*TAU;let px=x,pz=z,py=y;sb.M(TL.plain);for(let i=0;i<segs;i++){const ny=py+h/segs,nx=x+Math.sin(sway+i*.7)*.9*i/segs,nz=z+Math.cos(sway+i*.6)*.9*i/segs;
+     sb.seg(G.cyl,i%2?'#4a6a2a':'#567a30',V(px,py,pz),V(nx,ny,nz),.16-.012*i);if(i>0){const fa=r()*TAU;sb.add(G.box,r()<.4?'#c8a83a':'#6a9a3a',nx+Math.cos(fa)*.5,ny-.2,nz+Math.sin(fa)*.5,1.1,.05,.38,.35,fa,0);}px=nx;py=ny;pz=nz;}
+     if(r()<.5)gl.add(G.sph,'#e8ff8a',px,py,pz,.22,.22,.22);sb.M(0);world.colliders.push({x,z,r:.45});},2.2);
+   /* the Sunken Ruins: columns, broken arches, fallen blocks and a great stone head */
+   if(key==='ruins'){place(18,.15,.85,(x,y,z)=>{pillar(sb,x,y,z,3+r()*5,r()<.45,r);world.colliders.push({x,z,r:.8});},2.4);
+    place(4,.25,.7,(x,y,z)=>{stoneArch(sb,x,y-.2,z,r()*TAU,1+r()*.4);world.colliders.push({x,z,r:1});},6);
+    place(14,.15,.9,(x,y,z)=>{sb.M(TL.cobble);const s=.7+r()*.9;sb.add(G.box,'#7a7e8a',x,y+s*.35,z,s*1.6,s*.7,s,r()*.3,r()*3,r()*.2);sb.M(0);world.colliders.push({x,z,r:s});},1.5);
+    {const a=r()*TAU,hx=I.x+Math.cos(a)*I.R*.35,hz=I.z+Math.sin(a)*I.R*.35,hy=groundH(hx,hz),ry=Math.atan2(I.x-hx,I.z-hz);sb.M(TL.cobble);sb.add(G.sph,'#8a8e98',hx,hy+2.2,hz,2.2,2.8,2.3,0,ry,.12);sb.add(G.box,'#7a7e88',hx+Math.sin(ry)*2,hy+2.1,hz+Math.cos(ry)*2,.6,1.4,.8,0,ry,.12);
+     for(const s of[-1,1])gl.add(G.sph,'#9ab8ff',hx+Math.sin(ry)*2.05+Math.cos(ry)*s*.85,hy+3,hz+Math.cos(ry)*2.05-Math.sin(ry)*s*.85,.25,.18,.12);sb.add(G.cone,'#c8a040',hx,hy+5.4,hz,1.6,1.2,1.6,0,ry,.12);sb.M(0);world.colliders.push({x:hx,z:hz,r:3});reserved.push({x:hx,z:hz,r:5});}}
+   const DR=I.R*1.85,DY=.55,dome=new THREE.Mesh(new THREE.SphereGeometry(DR,64,32),new THREE.MeshStandardMaterial({color:CV.dome,roughness:.92,emissive:CV.emis,side:THREE.BackSide}));
    {const pa=dome.geometry.attributes.position;for(let i=0;i<pa.count;i++){const x=pa.getX(i),y=pa.getY(i),z=pa.getZ(i),n=fbm2(x*.03+key.length,z*.03,64,64,3,11)*.12;pa.setXYZ(i,x*(1+n),y*DY*(1+n),z*(1+n));}dome.geometry.computeVertexNormals();}
    dome.position.set(I.x,-6,I.z);dome.userData.noAO=true;scene.add(dome);
    const ceil=(x,z)=>{const d=Math.hypot(x-I.x,z-I.z);return -6+Math.sqrt(Math.max(0,1-(d/DR)**2))*DR*DY;};
-   const st=new Builder();st.M(TL.rock);for(let i=0;i<38;i++){const a=r()*TAU,d=Math.sqrt(r())*I.R*1.5,x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=ceil(x,z),h=3+r()*8;st.add(G.cone,deep?'#3a2a34':'#46585e',x,top-h/2+.5,z,.7+r()*1.2,h,.7+r()*1.2,Math.PI,r()*3,0);if(r()<.6)gl.add(G.oct,pick(gems),x,top-h+.2,z,.25,.5,.25);}
+   const st=new Builder();st.M(TL.rock);for(let i=0;i<38;i++){const a=r()*TAU,d=Math.sqrt(r())*I.R*1.5,x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=ceil(x,z),h=3+r()*8;st.add(G.cone,CV.stal,x,top-h/2+.5,z,.7+r()*1.2,h,.7+r()*1.2,Math.PI,r()*3,0);if(r()<.6)gl.add(G.oct,pick(gems),x,top-h+.2,z,.25,.5,.25);}
    scene.add(st.mesh(worldMat));
    /* glowworms on the ceiling */
    {const P=[];for(let i=0;i<900;i++){const a=r()*TAU,d=Math.sqrt(r())*DR*.95,x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;P.push(x,ceil(x,z)-.4,z);}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));
-    const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:new THREE.Color(deep?'#d8a0ff':'#9afff0').multiplyScalar(2.2),size:.55,sizeAttenuation:true,transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));pts.userData.noAO=true;scene.add(pts);}
-   /* shafts of light through cracks in the ceiling */
-   for(let i=0;i<6;i++){const a=r()*TAU,d=I.R*(.15+r()*.6),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=ceil(x,z),gy=Math.max(groundH(x,z),0),h=top-gy;if(h<6)continue;
-    const geo=new THREE.CylinderGeometry(1.2+r()*.8,3.2+r()*1.5,h,24,1,true);geo.translate(0,h/2,0);const col=new THREE.Color(deep?'#ffb0ff':'#c8fff4');
+    const pts=new THREE.Points(geo,new THREE.PointsMaterial({color:new THREE.Color(CV.worm).multiplyScalar(2.2),size:.55,sizeAttenuation:true,transparent:true,opacity:.9,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));pts.userData.noAO=true;scene.add(pts);}
+   /* shafts of light through cracks in the ceiling (the Kelp Cathedral gets more, and gold) */
+   for(let i=0;i<(key==='kelp'?10:6);i++){const a=r()*TAU,d=I.R*(.15+r()*.6),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=ceil(x,z),gy=Math.max(groundH(x,z),0),h=top-gy;if(h<6)continue;
+    const geo=new THREE.CylinderGeometry(1.2+r()*.8,3.2+r()*1.5,h,24,1,true);geo.translate(0,h/2,0);const col=new THREE.Color(CV.shaft);
     const m=new THREE.Mesh(geo,new THREE.ShaderMaterial({uniforms:{uT:WIND.uTime,uC:{value:col},uPh:{value:r()*6}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,fog:false,
      vertexShader:'varying float vY;varying vec3 vN;varying vec3 vV;void main(){vY=uv.y;vec4 w=modelMatrix*vec4(position,1.);vN=normalize(mat3(modelMatrix)*normal);vV=normalize(cameraPosition-w.xyz);gl_Position=projectionMatrix*viewMatrix*w;}',
      fragmentShader:'uniform float uT;uniform vec3 uC;uniform float uPh;varying float vY;varying vec3 vN;varying vec3 vV;void main(){float edge=pow(abs(dot(vN,vV)),1.5);float a=smoothstep(0.,.25,vY)*smoothstep(1.,.6,vY)*edge*(.75+.25*sin(uT*.7+uPh));gl_FragColor=vec4(uC*a*.16,1.);}'}));
     m.position.set(x,gy,z);m.userData.noAO=true;m.frustumCulled=false;scene.add(m);}
    for(let i=0;i<8;i++){const a=i/8*TAU+r(),d=I.R*(.2+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;halo(x,groundH(x,z)+2,z,6,hc).userData.always=true;const v=V(x,groundH(x,z)+2.4,z);v.col=hc;world.lamps.push(v);}
-   /* rings of light: back up (to the surface from the Hollow, to the Hollow from the Deep), and the sealed gate down to the Deep */
-   const ringAt=(fx,label,kind,act,col)=>{const sp=world.spawn[key],ex=lerp(sp.x,I.x,fx),ez=lerp(sp.z,I.z,fx),ey=groundH(ex,ez);const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.14,10,40),new THREE.MeshBasicMaterial({color:new THREE.Color(col)}));ring.position.set(ex,ey+1.9,ez);ring.rotation.y=Math.atan2(I.x-sp.x,I.z-sp.z);scene.add(ring);
-    halo(ex,ey+1.9,ez,3.2,0x9ffcff).userData.always=true;world.inter.push({x:ex,z:ez,r:4,label,kind,act});world.caveRings.push(ring);return{x:ex,z:ez};};
-   if(!deep){world.caveExit=ringAt(.12,'Swim back to the surface','Surface',()=>{if(typeof surfaceFromHollow==='function')surfaceFromHollow();},'#7ae8ff');
-    const gp=ringAt(.88,'Descend to the Sunless Deep','Descend',()=>{if(typeof tryDescend==='function')tryDescend();},'#c070ff');world.deepGate=gp;}
-   else world.deepExit=ringAt(.12,'Swim back up to the Drowned Hollow','Up',()=>{if(typeof toHollow==='function')toHollow();},'#c070ff');}
+   /* rings of light that link the caves: [distance along the way in, angle around the centre, label, kind, action, colour] */
+   const sp=world.spawn[key],bdx=sp.x-I.x,bdz=sp.z-I.z,bl=Math.hypot(bdx,bdz)||1;
+   const ringA=(f,ang,label,kind,act,col)=>{const ca=Math.cos(ang),sa=Math.sin(ang),dx=(bdx*ca-bdz*sa)/bl,dz=(bdx*sa+bdz*ca)/bl,d=bl*(1-f),ex=I.x+dx*d,ez=I.z+dz*d,ey=groundH(ex,ez);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.14,10,40),new THREE.MeshBasicMaterial({color:new THREE.Color(col)}));ring.position.set(ex,ey+1.9,ez);ring.rotation.y=Math.atan2(I.x-ex,I.z-ez);scene.add(ring);
+    halo(ex,ey+1.9,ez,3.2,new THREE.Color(col).getHex()).userData.always=true;world.inter.push({x:ex,z:ez,r:4,label,kind,act});world.caveRings.push(ring);
+    const tg=tagSprite(null,label.replace(/^(Swim back to|Swim back up to|Back to|Tunnel to|Passage to|Descend to) /,''),kind,col);tg.position.set(ex,ey+3.9,ez);tg.scale.multiplyScalar(.8);scene.add(tg);(world.caveTags=world.caveTags||[]).push({tg,x:ex,z:ez});
+    for(const s of[-1,1]){const px=ex+Math.cos(ring.rotation.y)*s*2.1,pz=ez-Math.sin(ring.rotation.y)*s*2.1;world.colliders.push({x:px,z:pz,r:.3});}return{x:ex,z:ez};};
+   const go=k=>()=>{if(typeof goCave==='function')goCave(k);};
+   if(key==='hollow'){ringA(.12,0,'Swim back to the surface','Surface',()=>{if(typeof surfaceFromHollow==='function')surfaceFromHollow();},'#7ae8ff');ringA(.88,0,'Descend to the Sunless Deep','Descend',()=>{if(typeof tryDescend==='function')tryDescend();},'#c070ff');ringA(.55,1.9,'Tunnel to the Kelp Cathedral','Tunnel',go('kelp'),'#c8f05a');}
+   else if(key==='kelp'){ringA(.12,0,'Back to the Drowned Hollow','Tunnel',go('hollow'),'#7ae8ff');ringA(.7,-1.7,'Tunnel to the Sunken Ruins','Tunnel',()=>{if(typeof tryRuins==='function')tryRuins();},'#9ab8ff');}
+   else if(key==='ruins'){ringA(.12,0,'Back to the Kelp Cathedral','Tunnel',go('kelp'),'#c8f05a');ringA(.7,1.7,'Passage to the Sunless Deep','Passage',()=>{if(typeof tryRuinsDeep==='function')tryRuinsDeep();},'#c070ff');}
+   else{ringA(.12,0,'Swim back up to the Drowned Hollow','Up',()=>{if(typeof toHollow==='function')toHollow();},'#7ae8ff');ringA(.7,-1.7,'Passage to the Sunken Ruins','Passage',go('ruins'),'#9ab8ff');}}
   if(key==='petal'){place(28,.1,.66,(x,y,z)=>{const s=.85+r()*.5;blossomTree(sb,fb,x,y,z,s,r);world.colliders.push({x,z,r:.5*s});});
    place(8,.2,.6,(x,y,z)=>{const s=.9+r()*.3;pine(sb,fb,x,y,z,s,false,r);world.colliders.push({x,z,r:.6*s});});
    place(10,.4,.8,(x,y,z)=>{bamboo(sb,x,y,z,.9+r()*.3,r);world.colliders.push({x,z,r:.8});},1.6);
@@ -680,20 +701,6 @@ function buildWorld(){LEAFK=TT().leaf;
    {const a=I.dockTh+Math.PI*.6,sx=I.x+Math.cos(a)*I.R*.42,sz=I.z+Math.sin(a)*I.R*.42;if(groundH(sx,sz)>.5){standingStones(sb,gl,sx,0,sz,6.5,r);reserved.push({x:sx,z:sz,r:9});}}
    for(let i=0;i<6;i++){const a=r()*TAU,d=I.R*(.25+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;floatRock(sb,gl,x,groundH(x,z)+9+r()*7,z,.8+r()*.8,r);}
    {const cy=groundH(I.x,I.z);gemCluster(sb,gl,I.x,cy-.4,I.z,3.2,'#b08aff',r);halo(I.x,cy+4,I.z,9,0xb8a0ff).userData.always=true;world.colliders.push({x:I.x,z:I.z,r:3});reserved.push({x:I.x,z:I.z,r:8});}}
-  if(key==='hollow'){/* the Drowned Hollow: an air pocket under the sea, lit by crystals, glowing fungus and drifting motes */
-   place(26,.1,.85,(x,y,z)=>{gemCluster(sb,gl,x,y,z,.7+r()*1.1,pick(['#3ae8d0','#5aa8ff','#8a6aff','#3affa0']),r);world.colliders.push({x,z,r:.8});},1.4);
-   place(16,.12,.7,(x,y,z)=>{const s=.7+r()*1;mushroom(sb,gl,x,y,z,s,pick(['#2ab8a8','#3a6ad8','#6a3ad8']));world.colliders.push({x,z,r:.4*s});});
-   place(14,.15,.8,(x,y,z)=>{sb.M(TL.rock);const h=2+r()*4;sb.add(G.cone,'#2e343c',x,y+h/2-.2,z,.5+r()*.4,h,.5+r()*.4,0,r()*3,0);sb.M(0);world.colliders.push({x,z,r:.7});},1.2);
-   place(10,.84,.95,(x,y,z)=>coral(sb,x,y-.2,z,.6+r()*.6,r),.6);
-   const dome=new THREE.Mesh(new THREE.IcosahedronGeometry(I.R*1.85,3),new THREE.MeshStandardMaterial({color:'#1c2228',roughness:.95,flatShading:true,side:THREE.BackSide}));
-   {const pa=dome.geometry.attributes.position;for(let i=0;i<pa.count;i++){const k=1+(hashI(Math.round(pa.getX(i)*4)+Math.round(pa.getZ(i)*4)*131,Math.round(pa.getY(i)*4),9)-.5)*.12;pa.setXYZ(i,pa.getX(i)*k,pa.getY(i)*k*.55,pa.getZ(i)*k);}dome.geometry.computeVertexNormals();}
-   dome.position.set(I.x,-6,I.z);dome.userData.noAO=true;scene.add(dome);world.caveDome=dome;
-   const st=new Builder();st.M(TL.rock);for(let i=0;i<70;i++){const a=r()*TAU,d=Math.sqrt(r())*I.R*1.6,x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=-6+Math.sqrt(Math.max(0,1-(d/(I.R*1.85))**2))*I.R*1.85*.55,h=4+r()*12;st.add(G.cone,'#262c34',x,top-h/2,z,.6+r()*1.2,h,.6+r()*1.2,Math.PI,r()*3,0);if(r()<.35)gl.add(G.oct,pick(['#3ae8d0','#5aa8ff']),x,top-h-.3,z,.25,.5,.25);}
-   const sm=st.mesh(worldMat);scene.add(sm);
-   for(let i=0;i<8;i++){const a=i/8*TAU+r(),d=I.R*(.2+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;halo(x,groundH(x,z)+2,z,6,0x5affe0).userData.always=true;world.lamps.push(V(x,groundH(x,z)+2,z));}
-   /* the way back up: a ring of light by the landing */
-   {const sp=world.spawn[key],ex=lerp(sp.x,I.x,.12),ez=lerp(sp.z,I.z,.12),ey=groundH(ex,ez);const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.14,10,40),new THREE.MeshBasicMaterial({color:new THREE.Color(.7,1.8,2)}));ring.position.set(ex,ey+1.9,ez);ring.rotation.y=Math.atan2(I.x-sp.x,I.z-sp.z);scene.add(ring);world.caveExit={x:ex,z:ez,ring};
-    halo(ex,ey+1.9,ez,3.2,0x9ffcff).userData.always=true;world.inter.push({x:ex,z:ez,r:4,label:'Swim back to the surface',kind:'Surface',act:()=>{if(typeof surfaceFromHollow==='function')surfaceFromHollow();}});}}
   if(key==='cove'){place(4,.3,.55,(x,y,z)=>bench(sb,x,y,z,r()*TAU),1.5);place(1,.32,.5,(x,y,z)=>{campfire(sb,gl,x,y,z);world.colliders.push({x,z,r:1});for(let i=0;i<3;i++){const a=i/3*TAU+.5;driftLog(sb,x+Math.cos(a)*2,y,z+Math.sin(a)*2,.9,()=>.5);}},4);
    for(const sg of I.paths.slice(1).filter((_,i)=>i%2))if(r()<.7){const a=sg[1],d=V(sg[1].x-sg[0].x,0,sg[1].z-sg[0].z).normalize(),pp=V(-d.z,0,d.x);const p0=a.clone().addScaledVector(pp,3.2).addScaledVector(d,-6),p1=p0.clone().addScaledVector(d,5);p0.y=groundH(p0.x,p0.z);p1.y=groundH(p1.x,p1.z);if(p0.y>.6&&p1.y>.6)fence(sb,p0,p1);}}
   if(key==='moss'){const ay=groundH(I.x,I.z);for(let i=0;i<7;i++){const a=i/7*TAU+.2,px=I.x+Math.cos(a)*10,pz=I.z+Math.sin(a)*10;pillar(sb,px,groundH(px,pz),pz,2.4+r()*1.6,i%3===1,r);world.colliders.push({x:px,z:pz,r:.8});}place(1,.3,.55,(x,y,z)=>{campfire(sb,gl,x,y,z);world.colliders.push({x,z,r:1});},4);}
@@ -811,7 +818,7 @@ function splash(p,n=14,spd=4){let c=0;for(const s of splashPool){if(s.life>0)con
 function ringAt(x,y,z,d=1,size=1){for(const r of rings){if(r.t<r.d)continue;r.t=0;r.d=d;r.s=size;r.m.position.set(x,y,z);r.m.visible=true;return;}}
 
 /* ---------- lamp lights: the nearest lamps get real point lights at night ---------- */
-function syncLampLights(){const want=TT().lamps;while(GFX.lamps.length<want){const l=new THREE.PointLight(0xffc98a,0,16,1.4);l.userData.noAO=true;scene.add(l);GFX.lamps.push(l);}
+function syncLampLights(){if(!GFX.iglow){const l=new THREE.PointLight(0xffa458,0,120,1.1);l.userData.noAO=true;scene.add(l);GFX.iglow=l;}const want=TT().lamps;while(GFX.lamps.length<want){const l=new THREE.PointLight(0xffc98a,0,16,1.4);l.userData.noAO=true;scene.add(l);GFX.lamps.push(l);}
  while(GFX.lamps.length>want){const l=GFX.lamps.pop();scene.remove(l);l.dispose&&l.dispose();}}
 function updateLampLights(nightK){if(!GFX.lamps.length)return;const c=cam.target,L=world.lamps;const near=L.map(p=>[p,(p.x-c.x)**2+(p.z-c.z)**2]).sort((a,b)=>a[1]-b[1]);
  GFX.lamps.forEach((l,i)=>{const e=near[i];if(!e||e[1]>80*80||nightK<.05){l.intensity=0;return;}l.position.copy(e[0]);l.color.set(e[0].col||0xffc98a);l.distance=e[0].col?24:20;l.intensity=nightK*(e[0].col?9:7)*(1-smooth(45,80,Math.sqrt(e[1])));});}

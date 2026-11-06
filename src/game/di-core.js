@@ -56,14 +56,19 @@ const ZONES={
  well:{n:'Tide Well',tag:'A whirling well that opens at sea'},
  abyss:{n:'The Sunless Deep',tag:'The final chamber beneath the Hollow',x:-1650,z:-1600,R:66,H:2,hill:1.5,p1:2.4,p2:.8,price:0,grass:'#3e2a3a',grass2:'#352433',sand:'#4e3a46',rock:'#33262f',cave:true},
  hollow:{n:'The Drowned Hollow',tag:'A secret cave beneath the sea',x:-1350,z:-1050,R:72,H:2.2,hill:1.3,p1:1.1,p2:2.7,price:0,grass:'#3e5c5c',grass2:'#36524f',sand:'#5e7070',rock:'#425058',cave:true},
+ kelp:{n:'The Kelp Cathedral',tag:'A drowned forest of giant kelp, lit gold from above',x:-950,z:-1450,R:70,H:2.3,hill:1.2,p1:.7,p2:1.9,price:0,grass:'#2e4a2a',grass2:'#283f25',sand:'#55603e',rock:'#3a4636',cave:true},
+ ruins:{n:'The Sunken Ruins',tag:'A city the sea took long ago',x:-1250,z:-1950,R:70,H:2,hill:1.1,p1:3.1,p2:.4,price:0,grass:'#2e3a52',grass2:'#283248',sand:'#4c5268',rock:'#363c52',cave:true},
  pond_cove:{n:'Willow Pond',tag:'Pebble Cove pond',pond:'cove',col:'#3e5c52'},pond_moss:{n:'Murk Pool',tag:'Mossreach pond',pond:'moss',col:'#34422c'},
  pond_frost:{n:'Frozen Tarn',tag:'Frostmere pond',pond:'frost',col:'#56788a'},pond_ember:{n:'Ash Spring',tag:'Emberkey hot spring',pond:'ember',col:'#4e605c'},
  pond_atoll:{n:'Blue Lagoon',tag:'Sunken Atoll lagoon',pond:'atoll',col:'#2f8e9a'},pond_amber:{n:'Maple Mere',tag:'Amberglen pond',pond:'amber',col:'#4a5a3a'},
- pond_petal:{n:'Mirror Pool',tag:'Petalshore koi pond',pond:'petal',col:'#3a6a66'},pond_dune:{n:'Oasis Spring',tag:'Duneveil oasis',pond:'dune',col:'#1f8a8e'},pond_glim:{n:'Starwell',tag:'Glimmerholt spring',pond:'glim',col:'#2a3668'},pond_hollow:{n:'Lantern Pool',tag:'Drowned Hollow pool',pond:'hollow',col:'#164a58'},pond_abyss:{n:'Ember Pool',tag:'Sunless Deep pool',pond:'abyss',col:'#4a1a20'}
+ pond_petal:{n:'Mirror Pool',tag:'Petalshore koi pond',pond:'petal',col:'#3a6a66'},pond_dune:{n:'Oasis Spring',tag:'Duneveil oasis',pond:'dune',col:'#1f8a8e'},pond_glim:{n:'Starwell',tag:'Glimmerholt spring',pond:'glim',col:'#2a3668'},pond_hollow:{n:'Lantern Pool',tag:'Drowned Hollow pool',pond:'hollow',col:'#164a58'},pond_kelp:{n:'Sunlit Spring',tag:'Kelp Cathedral pool',pond:'kelp',col:'#2a5a2a'},pond_ruins:{n:'Fountain of Coins',tag:'Sunken Ruins pool',pond:'ruins',col:'#2a3a6a'},pond_abyss:{n:'Ember Pool',tag:'Sunless Deep pool',pond:'abyss',col:'#4a1a20'}
 };
 const ISL=['cove','moss','frost','ember','atoll','amber','petal','dune','glim'];
 /* every piece of land, including the secret cave (which has no chart and no harbor) */
-const LANDS=[...ISL,'hollow','abyss'];
+const LANDS=[...ISL,'hollow','abyss','kelp','ruins'];
+/* the caves under the sea, all linked: how each one is lit */
+const CAVE_LOOK={hollow:{fog:'#14444c',hemi:'#7aeee4',gnd:'#1e4a50',deep:'#063038',shal:'#16807a',amb:'#3a9a9a',bio:.45,far:230,hemiI:1.35,mote:'mote'},abyss:{fog:'#2a1430',hemi:'#c08aff',gnd:'#4a1a30',deep:'#1a0820',shal:'#5a1a40',amb:'#6a3a8a',bio:.3,far:190,hemiI:1.1,mote:'moteV'},
+ kelp:{fog:'#1e3a1a',hemi:'#c8f0a0',gnd:'#2a4a1a',deep:'#0a2a10',shal:'#3a7a3a',amb:'#6a9a4a',bio:.3,far:210,hemiI:1.45,mote:'mote'},ruins:{fog:'#18203a',hemi:'#a8b8ff',gnd:'#20284a',deep:'#0a1030',shal:'#2a4a8a',amb:'#4a5a9a',bio:.42,far:220,hemiI:1.3,mote:'moteV'}};
 const SPECIES=[
  ['pebble_perch','Pebble Perch','cove',0,.2,1.2,12,'fish','#8fbf5a','#f0e6a8'],
  ['skipper_minnow','Skipper Minnow','cove',0,.05,.3,9,'fish','#6aa8d8','#e8f2f8'],
@@ -143,6 +148,12 @@ const SPECIES=[
  ['old_leviathan','The Old Leviathan','abyss',5,600,1800,100,'shark','#14080e','#ff6a3a'],['sunless_one','The Sunless One','abyss',6,900,2400,100,'tall','#020204','#ff2ad8',null,'lure'],
  ['cinder_fry','Cinder Fry','pond_abyss',0,.05,.4,40,'fish','#ff6a2a','#ffd8a8'],['molten_koi','Molten Koi','pond_abyss',2,3,12,100,'tall','#ff3a1a','#ffd84a'],['abyss_pearl','Abyss Pearlfish','pond_abyss',4,10,40,100,'tall','#f0e8ff','#b06aff'],
   /* 4.0 */ ['tidepool_goby','Tidepool Goby','cove',1,0.1,0.6,14,'fish','#c8a070','#f4e0b8'],['sunspot_trout','Sunspot Trout','cove',3,2,7,50,'fish','#e8784a','#ffd8a0'],['mossback_carp','Mossback Carp','moss',1,1,6,20,'tall','#5a7a4a','#c8d8a0'],['fen_glowfin','Fen Glowfin','moss',4,1,4,60,'fish','#2a3a2a','#c8ff7a','night','lure'],['parrot_puffer','Parrot Pufferfish','atoll',2,0.5,3,40,'tall','#3ab8b0','#ffd84a'],['reef_marlin','Reef Marlin','atoll',5,60,240,100,'long','#2a5aa8','#a8e0ff'],['glacier_cod','Glacier Cod','frost',1,2,9,30,'fish','#a8c0d0','#f0f8ff'],['snowcap_angler','Snowcap Angler','frost',4,4,16,80,'tall','#e8f0f8','#8ad8ff','night','lure'],['blossom_betta','Blossom Betta','petal',2,0.2,1,40,'fish','#ff8ac8','#ffe0f0'],['petalfall_ray','Petalfall Ray','petal',4,20,90,90,'ray','#f0a0c0','#fff0f8'],['harvest_bass','Harvest Bass','amber',1,1,5,30,'fish','#a87a3a','#f0d8a0'],['scarecrow_gar','Scarecrow Gar','amber',3,6,22,70,'long','#7a5a2a','#e8c870','night'],['ash_snapper','Ash Snapper','ember',1,1,6,30,'fish','#4a4040','#ff8a5a'],['magma_leviathan','Magma Leviathan','ember',5,150,600,100,'shark','#2a0a0a','#ff6a1a'],['mirage_minnow','Mirage Minnow','dune',0,0.05,0.4,20,'fish','#e8c890','#fff4d8'],['dune_serpent','Dune Serpent','dune',4,10,40,90,'eel','#c89a5a','#2ab8b8','day'],['crystal_tetra','Crystal Tetra','glim',1,0.1,0.5,30,'fish','#c8a8ff','#ffffff'],['geode_grouper','Geode Grouper','glim',4,40,160,100,'tall','#4a3a6a','#e8c8ff'],['silverwing_flyer','Silverwing Flyer','sea',1,0.3,1.5,20,'fish','#8ab0d8','#f0f8ff'],['ocean_sunfish','Ocean Sunfish','sea',3,80,300,60,'tall','#a8b0b8','#e8ecf0'],
+ /* the Kelp Cathedral and the Sunken Ruins */ ['kelp_darter','Kelp Darter','kelp',0,.1,.6,40,'fish','#6a8a3a','#d8e8a0'],['amber_seahorse','Amber Seahorse','kelp',1,.05,.3,100,'tall','#d89a3a','#ffe0a0'],['cathedral_carp','Cathedral Carp','kelp',1,2,8,100,'tall','#5a6a3a','#e8d890'],['frond_eel','Frond Eel','kelp',2,2,9,100,'eel','#4a7a2a','#c8f08a'],
+ ['sunbeam_tang','Sunbeam Tang','kelp',2,.4,2,100,'tall','#f0d040','#fff4b0'],['otterfin','Otterfin','kelp',3,4,14,100,'fish','#6a4a2a','#d8b88a'],['gilded_grouper','Gilded Grouper','kelp',4,40,150,100,'tall','#c8a040','#fff0b0'],['kelp_king','The Kelp King','kelp',5,120,420,100,'long','#2a4a1a','#d8ff8a',null,'whisk'],
+ ['mosaic_minnow','Mosaic Minnow','ruins',0,.05,.4,40,'fish','#4a6ab0','#e0e8ff'],['statue_bass','Statue Bass','ruins',1,2,7,100,'fish','#8a8a90','#e0e0e8'],['columnback_eel','Columnback Eel','ruins',1,1,6,100,'eel','#5a5a7a','#c8c8f0'],['coinface_dory','Coinface Dory','ruins',2,1,5,100,'flat','#c8a040','#fff0a0'],
+ ['archive_ray','Archive Ray','ruins',3,20,90,100,'ray','#2a3a6a','#a8b8ff'],['scribe_angler','Scribe Angler','ruins',3,3,12,100,'tall','#1a2040','#ffd88a',null,'lure'],['crowned_sturgeon','Crowned Sturgeon','ruins',4,60,240,100,'long','#4a4a5a','#e8d070'],['drowned_emperor','The Drowned Emperor','ruins',6,500,1500,100,'shark','#141830','#8ab0ff'],
+ ['spring_fry','Spring Fry','pond_kelp',0,.05,.3,40,'fish','#a8d870','#f0ffd0'],['golden_frond','Golden Frondfish','pond_kelp',2,.5,3,100,'tall','#f0c840','#fff4c0'],['kelp_dragon','Kelp Dragon','pond_kelp',4,3,14,100,'eel','#5a8a2a','#f0e070',null,'whisk'],
+ ['wishing_carp','Wishing Carp','pond_ruins',0,.3,2,40,'tall','#c8a040','#fff0b0'],['penny_goby','Penny Goby','pond_ruins',2,.1,.6,100,'fish','#b87a3a','#f0c890'],['fountain_queen','Fountain Queen','pond_ruins',4,4,18,100,'tall','#2a3a8a','#ffe08a',null,'lure'],
  ['lighthouse_phantom','Lighthouse Phantom','cove',6,20,80,100,'eel','#cfe8ff','#7ab8ff','secret:lighthouse','whisk'],['bell_ray','Sunken Bell Ray','atoll',6,40,160,100,'ray','#c8a040','#fff0b0','secret:dawn'],
  ['star_koi','Starlit Koi','petal',6,4,16,100,'tall','#1a1a3a','#ffe8a0','secret:starfall','lure'],['frost_wyrm','Frost Wyrm','frost',6,100,400,100,'eel','#e8f4ff','#8ad8ff','secret:storm'],
  ['glowmote','Glowmote','pond_hollow',0,.05,.3,40,'fish','#7affd8','#ffffff'],['pearl_tetra','Pearl Tetra','pond_hollow',1,.1,.6,100,'fish','#f0f0f8','#d8e8ff'],['sapphire_eel','Sapphire Eel','pond_hollow',3,2,9,100,'eel','#2a4ad8','#a8c8ff'],['lantern_queen','Lantern Queen','pond_hollow',5,8,30,100,'tall','#1a1a3a','#ffe08a',null,'lure'],
@@ -150,7 +161,7 @@ const SPECIES=[
 /* fish value: every island has a base price for its commons, and each rarity is a fixed multiple of it, so each
    island pays more than the one before it and rarer always means richer. The authored prices above only set
    how species of the same rarity on the same island compare with each other. Ponds pay 15% more than their island. */
-const ZONE_BASE={cove:9,moss:14,atoll:20,frost:28,petal:38,amber:66,ember:80,dune:110,glim:150,sea:14,well:80,hollow:45,abyss:240},RAR_LADDER=[1,3,18,60,160,400,1200];/* rare and above pay double */
+const ZONE_BASE={cove:9,moss:14,atoll:20,frost:28,petal:38,amber:66,ember:80,dune:110,glim:150,sea:14,well:80,hollow:45,abyss:240,kelp:120,ruins:180},RAR_LADDER=[1,3,18,60,160,400,1200];/* rare and above pay double */
 {const nice=v=>{if(v<20)return Math.max(1,Math.round(v));const q=Math.pow(10,Math.floor(Math.log10(v))-1);return Math.round(v/q)*q;},grp={};
  SPECIES.forEach(s=>{const k=s.zone+'|'+s.r;(grp[k]=grp[k]||[]).push(s.price);});
  SPECIES.forEach(s=>{const pond=s.zone.startsWith('pond_'),base=(ZONE_BASE[pond?s.zone.slice(5):s.zone]||20)*(pond?1.15:1),g=grp[s.zone+'|'+s.r],mean=g.reduce((a,b)=>a+b,0)/g.length;
@@ -256,6 +267,7 @@ const LUREM={};LURES.forEach(l=>LUREM[l.id]=l);
 const CRATE_PRICE=25000;
 /* what's new: shown once after each update, and any time from the menus */
 const UPDATES=[
+ {v:'4.5',d:'Into the depths',items:['Two new caves under the sea: the Kelp Cathedral, a drowned forest lit gold from above, and the Sunken Ruins, a city the sea took long ago. Each has 8 fish of its own and a pool with 3 more','The caves are now linked by tunnels: Drowned Hollow to Kelp Cathedral to Sunken Ruins to Sunless Deep, and back. Catch 5 Kelp Cathedral fish to clear the way to the Ruins','New music: a composed theme for every island, a sailing song for the open sea and darker themes for each cave. Night brings a softer version of each, and rain quietens the drums','Islands glow warm at night instead of being lit by lamp posts dotted along every path','Fish fight in their own ways: eels zigzag, sharks make long runs, rays dive (stop reeling until they stop), long fish leap more often and flatfish dig in. Fish that are heavy for your rod strain the line faster','Smoother: the first catch no longer stutters, walking eases to a stop, and the Drowned Hollow lost a leftover second ceiling']},
  {v:'4.0',d:'Secrets of the isles',items:['20 new fish across every island and the open sea, plus 4 secret fish that only bite in one place, at one time, in one kind of weather. The Bestiary hints at them','12 Lost Pages are hidden around the isles. Look for a faint glow; find them all for a secret rod and the Pagekeeper title','A Bounty Board by every spawn: three new jobs each day, the same for everyone, paying coins and Mystery Crates, plus a Tide Relic for finishing all three','7 new rods: Weeping Willow (Mossreach), Pearl Diver (Sunken Atoll), Aurora Rod (Frostmere), Thornwood (Amberglen), Scarab Rod (Duneveil), the Relic-Forged Rod (forged at the Tide Altar for 25 relics) and a secret one','4 new brews: Deepwater Draught, Golden Tonic, Tidecaller Brew and Keen Eye Elixir','Boat paint: 12 paint jobs for any boat. Six are sold at shipwrights (press Paint), the rarest come from Mystery Crates','Better characters: brighter eyes, collars, thumbs, outfit variety (neckerchiefs, knee patches, rolled sleeves) and three new hats: Captain\'s cap, Beret and Bandana','Casting: the rod loads up and whips through, the camera follows the lure, and spray marks its flight','Reeling: when the fish gets close it surfaces, thrashes and is dragged in, so you see what you hooked; the line quivers under heavy tension','Fish leap out of the sea around you now and then']},
  {v:'3.9',d:'Strike!',items:['A real strike: the float is dragged under, the fish\'s shadow shows below it, and a clean strike hits with a beat of slow motion, a punch-in and a flash','Strikes are graded Perfect, Good or Late. A dashed ring marks the Perfect window; a late strike leaves the hook loose for a few seconds','Fishing is harder: shorter strike windows (tighter still for rare fish), stronger fish that rest less and shake harder, and less spare line','Twitching on a nibble is a chance, not a sure thing, and too much twitching scares fish away','Relics have new uses: a permanent Relic Charm (+3% luck per level, up to 10), a 10-minute Tide Blessing, a swap for a Mystery Crate, and choosing an exact enchant at the Tide Altar. Find them under Tackle, Relics, or click the gem in the corner','Seaplanes fly at about half the speed, with smooth take-offs and landings and no more clipping through hills','Much faster: far-off townsfolk and the rods on display are drawn as single pieces, and unseen glows are skipped, cutting draw calls by about 75%','Brighter nights: stronger moonlight, more sky light, more lamp lights near you and lamps halfway along each dock','The camera sits a little higher while you walk, sail and fly']},
  {v:'3.8',d:'Clean corner, brighter isles',items:['A simple stats corner: a row of status icons, your level and your coins, nothing else in the way','Status icons show the time of day, the weather, a running event, an open Tide Well and an active brew (hover for details)','On PC, Esc opens the menu; the corner buttons moved into it (Leaderboards, Players online, Photo mode), and L, O and P still work','Richer, more vibrant colours across the isles','Boats change as you upgrade them: Engine adds racing stripes, chrome exhausts and finally gold stripes and a stern wing; Hull adds fenders, chrome rails and a bow plate, then gold trim and a cargo chest; Sonar adds an antenna, a radar dome and then a spinning scanner. Other players see your upgrades too']},
@@ -396,7 +408,7 @@ const DEV={on:false,open:false,fast:false,rar:null,ev:null};
 /* ================= STATE / SAVE ================= */
 /* The save key never changes between updates: new versions read the same save and fill in anything new.
    Before an update touches a save (and once a day) a backup copy is kept, see backupSave. */
-const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='4.0';
+const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='4.5';
 /* profiles: your normal profile (cloud save, leaderboards, no tools) and the owner's dev profile (its own save on this
    device, the dev tools, never on leaderboards and never synced to the cloud). The dev profile needs the dev key. */
 const KEY_DEV='driftwood-isles-save-dev',DEV_HASH='94d329459b6a2bde18d3336b2dbc6098cda74ec216abcc65d537c420d502e29b';
@@ -510,7 +522,7 @@ const AU={ctx:null,
   cl.connect(cd);cd.connect(ca.gain);co.connect(cf);cf.connect(ca);const cg=c.createGain();cg.gain.value=0;ca.connect(cg);cg.connect(this.bus.amb);co.start();cl.start();this.amb.crickets=cg;this.amb.cricketAmp=ca;
   this.swellT=0;this.birdT=4;this.owlT=20;this.gullT=8;this.dripT=0;this.windT=0;this.chirpOn=0;},
  updAmb(dt,p){if(!this.ctx||!this.amb)return;const c=this.ctx,t=c.currentTime,A=this.amb;
-  if(p.zone==='hollow'||p.zone==='abyss'){this.dripT=(this.dripT||0)-dt;if(this.dripT<=0){this.dripT=rand(.3,1.4);const f=rand(900,2400);this.o(f,.12,{vol:.025,bus:'amb',pan:rand(-.9,.9),slide:-f*.4});this.o(f*.5,.5,{vol:.008,bus:'amb',delay:.18,slide:-f*.2});}}
+  if(CAVE_LOOK[p.zone]){this.dripT=(this.dripT||0)-dt;if(this.dripT<=0){this.dripT=rand(.3,1.4);const f=rand(900,2400);this.o(f,.12,{vol:.025,bus:'amb',pan:rand(-.9,.9),slide:-f*.4});this.o(f*.5,.5,{vol:.008,bus:'amb',delay:.18,slide:-f*.2});}}
   if(p.zone==='glim'){this.chimeT=(this.chimeT||3)-dt;if(this.chimeT<=0){this.chimeT=rand(3,8)*(p.day>.5?1.8:1);this.chime();}}
   this.swellT-=dt;if(this.swellT<=0){const s=rand(3.5,7.5);this.swellT=s;const peak=(p.boat?.42:.3)*(p.shore+.35);A.waves.g.gain.cancelScheduledValues(t);A.waves.g.gain.setTargetAtTime(peak,t,s*.22);A.waves.g.gain.setTargetAtTime(peak*.35,t+s*.45,s*.3);
    A.wash.g.gain.cancelScheduledValues(t);A.wash.g.gain.setTargetAtTime(.05*p.shore,t+s*.3,.6);A.wash.g.gain.setTargetAtTime(.008,t+s*.55,.8);}
@@ -563,23 +575,22 @@ const Music={on:false,step:0,next:0,ci:0,deg:4,timer:null,key:'day',want:'day',p
  pick(){const has=v=>typeof v!=='undefined';if(!has(player)||!player||!has(env))return 'day';
   if(has(F)&&F.st==='reeling'&&F.catch&&(F.catch.r>=2||F.catch.relic))return F.catch.r>=4||F.catch.relic?'fightBig':'fight';
   if((has(panelCtx)&&panelCtx&&panelCtx.kind==='casino')||(has(CASINO)&&CASINO.inside))return 'casino';
-  if(player.zone==='hollow'||player.zone==='abyss')return player.zone;
+  if(this.T[player.zone]&&this.T[player.zone].deep)return player.zone;
   const ev=env.event;if(ev&&ev.big&&this.T[ev.id])return ev.id;
   if(has(TWV)&&TWV.near&&Math.hypot(TWV.near.x-player.pos.x,TWV.near.z-player.pos.z)<170)return 'well';
   if(ev&&this.T[ev.id])return ev.id;
   if(env.weather==='storm'&&env.rain>.6)return 'storm';
-  const day=env.day>=.42,z=player.zone;if((z==='petal'||z==='dune')&&day)return z;if(z==='glim')return 'glim';
-  if(env.weather==='fog'&&env.fog>.5)return 'fog';if(env.weather==='rain'&&env.rain>.5)return 'rain';
-  return day?'day':'night';},
- cur(){return this.T[this.key]||this.T.day;},
- tick(){const c=AU.ctx;if(!c||c.state!=='running')return;const P=this.cur();const spb=60/(P.bpm*(state.settings.chill?.92:1))/2;
+  const z=player.zone,k=this.T[z]&&this.T[z].score?z:z&&z.startsWith&&z.startsWith('pond_')&&this.T[z.slice(5)]&&this.T[z.slice(5)].score?z.slice(5):'sea';
+  return k+(env.day<.42?'|n':'')+(env.rain>.5||(env.weather==='fog'&&env.fog>.5)?'|r':'');},
+ cur(){return this.T[this.key.split('|')[0]]||this.T.day;},
+ tick(){const c=AU.ctx;if(!c||c.state!=='running')return;const P=this.cur();const spb=60/(P.bpm*(state.settings.chill?.92:1)*(P.score&&this.mod.night?.86:1))/2;
   while(this.next<c.currentTime+.3){this.play(this.next,spb);this.next+=spb;this.step++;}},
  /* switch tracks on a half bar: fade the old pads out, start the new chord at once, mark big changes with a sting */
  switchTo(k,t,spb){const now=AU.ctx.currentTime;for(const p of this.pads){try{p.g.gain.cancelScheduledValues(now);p.g.gain.setTargetAtTime(0.0001,now,.6);}catch(e){}}this.pads=[];
-  this.key=k;const P=this.cur();this.ci=0;this.step=0;this.deg=Math.floor(P.sc.length/2);if(P.sting)this.sting(P.sting,t);this.pad(P.ch[0],t,spb*32,P);},
+  const was=this.key.split('|')[0];this.key=k;this.mod={night:k.includes('|n'),rain:k.includes('|r')};const P=this.cur();this.ci=0;if(P.score){if(was!==k.split('|')[0]||this.step<0)this.step=-1;else this.step=Math.ceil(this.step/8)*8-1;if(P.sting)this.sting(P.sting,t);return;}this.step=0;this.deg=Math.floor(P.sc.length/2);if(P.sting)this.sting(P.sting,t);this.pad(P.ch[0],t,spb*32,P);},
  play(t,spb){const s=this.step%32,beat=s%8;
   if(beat%4===0){this.want=this.pick();if(this.want!==this.key){this.switchTo(this.want,t,spb);return;}}
-  const P=this.cur();
+  const P=this.cur();if(P.score){this.playScore(P,t,spb);return;}
   if(s===0){this.ci=(this.ci+1)%4;this.pad(P.ch[this.ci],t,spb*32,P);this.layers(P,t,spb);}
   const root=P.bass[this.ci];
   if(P.bassMode==='pulse')this.bass(root+(beat===6?12:0),t,spb*.9,.07);
@@ -613,9 +624,10 @@ const Music={on:false,step:0,next:0,ci:0,deg:4,timer:null,key:'day',want:'day',p
  /* pads: warm (detuned triangles), air (soft sines with a breathy filter), glass (high sines), dark (low-passed saws) */
  pad(notes,t,dur,P){const c=AU.ctx,kind=P.pad||'warm',vol=.05*(P.padVol||1);const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=kind==='dark'?Math.min(P.cut,700):kind==='glass'?P.cut*1.6:P.cut;f.Q.value=.4;
   const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+(kind==='air'?3:2.2));g.gain.setValueAtTime(vol,t+dur-.4);g.gain.exponentialRampToValueAtTime(0.0001,t+dur+2.4);f.connect(g);g.connect(AU.bus.music);
-  const type=kind==='dark'?'sawtooth':kind==='air'||kind==='glass'?'sine':'triangle',shift=kind==='glass'?12:0;
-  for(const m of notes)for(const dt of[-7,7]){const o=c.createOscillator();o.type=type;o.frequency.value=mtof(m+shift);o.detune.value=dt;o.connect(f);o.start(t);o.stop(t+dur+2.6);}
-  if(kind==='air'){const n=c.createBufferSource();n.buffer=AU.nb;n.loop=true;const bf=c.createBiquadFilter();bf.type='bandpass';bf.frequency.value=mtof(notes[3]+12);bf.Q.value=6;const ng=c.createGain();ng.gain.value=.25;n.connect(bf);bf.connect(ng);ng.connect(g);n.start(t,Math.random()*2);n.stop(t+dur+2.6);}
+  if(kind==='choir'){f.type='bandpass';f.frequency.value=900;f.Q.value=.7;}else if(kind==='strings')f.frequency.value=Math.min(P.cut||1800,1800);
+  const type=kind==='dark'||kind==='strings'||kind==='choir'?'sawtooth':kind==='air'||kind==='glass'||kind==='organ'?'sine':'triangle',shift=kind==='glass'?12:0;
+  for(const m of notes)for(const dt of[-7,7]){const o=c.createOscillator();o.type=type;o.frequency.value=mtof(m+shift);o.detune.value=dt;o.connect(f);o.start(t);o.stop(t+dur+2.6);if(kind==='organ'&&dt>0)for(const[k,a]of[[2,.5],[3,.25]]){const o2=c.createOscillator();o2.type='sine';o2.frequency.value=mtof(m)*k;const g2=c.createGain();g2.gain.value=a;o2.connect(g2);g2.connect(f);o2.start(t);o2.stop(t+dur+2.6);}}
+  if(kind==='air'){const n=c.createBufferSource();n.buffer=AU.nb;n.loop=true;const bf=c.createBiquadFilter();bf.type='bandpass';bf.frequency.value=mtof(notes[Math.min(3,notes.length-1)]+12);bf.Q.value=6;const ng=c.createGain();ng.gain.value=.25;n.connect(bf);bf.connect(ng);ng.connect(g);n.start(t,Math.random()*2);n.stop(t+dur+2.6);}
   this.pads.push({g});if(this.pads.length>6)this.pads.splice(0,this.pads.length-6);},
  bass(m,t,dur,v=.09){const c=AU.ctx;const o=c.createOscillator();o.type='sine';o.frequency.value=mtof(m);const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.03);g.gain.exponentialRampToValueAtTime(0.0001,t+Math.max(.1,dur));o.connect(g);g.connect(AU.bus.music);o.start(t);o.stop(t+dur+.1);},
  kick(t,v){const c=AU.ctx,o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(42,t+.12);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+.22);o.connect(g);g.connect(AU.bus.music);o.start(t);o.stop(t+.25);},
@@ -636,4 +648,104 @@ const Music={on:false,step:0,next:0,ci:0,deg:4,timer:null,key:'day',want:'day',p
  mbox(m,t){const c=AU.ctx,f=mtof(m+12);const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.045,t+.004);g.gain.exponentialRampToValueAtTime(0.0001,t+2.6);g.connect(AU.bus.music);g.connect(AU.dlySend);
   for(const[k,v]of[[1,1],[2.76,.28],[5.4,.1]]){const o=c.createOscillator();o.type='sine';o.frequency.value=f*k;const gg=c.createGain();gg.gain.value=v;o.connect(gg);gg.connect(g);o.start(t);o.stop(t+2.7);}}
 };
+/* ---------- composed themes: every island, the open sea and the depths has its own tune ----------
+   Melodies are written in scale degrees, 8 eighth-notes a bar: a number starts a note, '-' holds it, '.' is a rest.
+   Chords follow the 8-bar progression (scale degrees); sections are 4 bars and follow the form. */
+Object.assign(Music,{mod:{night:false,rain:false},
+ MODES:{major:[0,2,4,5,7,9,11],minor:[0,2,3,5,7,8,10],dorian:[0,2,3,5,7,9,10],lydian:[0,2,4,6,7,9,11],mixo:[0,2,4,5,7,9,10],phryg:[0,1,3,5,7,8,10],hijaz:[0,1,4,5,7,8,10]},
+ sdeg(P,d){const M=this.MODES[P.mode],i=d-1,o=Math.floor(i/7),k=((i%7)+7)%7;return P.key+12*o+M[k];},
+ parse(P){if(P._p)return P._p;const o={};for(const s in P.mel)o[s]=P.mel[s].map(b=>b.trim().split(/\s+/));P._p=o;return o;},
+ chordOf(P,d){return[this.sdeg(P,d),this.sdeg(P,d+2),this.sdeg(P,d+4)];},
+ playScore(P,t,spb){if(this.step<0)return;const s=this.step,bar=Math.floor(s/8),b8=s%8,N=this.mod.night,R=this.mod.rain,c=AU.ctx;
+  const tt=t+(b8%2===1&&P.swing?spb*P.swing:0)+(Math.random()-.5)*.01,dl=Math.max(0,tt-c.currentTime);
+  const cd=P.prog[bar%P.prog.length],ch=this.chordOf(P,cd),bo=12*(P.bassOct||0);
+  if(b8===0){this.pad(ch.map(m=>m-12+12*(P.padOct||0)),t,spb*8,P);if(P.drone&&bar%2===0)this.droneNote(this.sdeg(P,1)-24,t,spb*16);}
+  const root=this.sdeg(P,cd)-24+bo;
+  if(P.bass==='pulse'){if(b8%2===0)this.bass(root+(b8===6?12:0),t,spb*1.6,.065);}
+  else if(P.bass==='calypso'){if(b8===0||b8===3||b8===6)this.bass(b8===3?root+7:root,tt,spb*1.3,.08);}
+  else if(P.bass==='walk'){if(b8%2===0)this.bass([root,ch[1]-24+bo,ch[2]-24+bo,root+12][b8/2],tt,spb*1.8,.075);}
+  else if(P.bass==='long'){if(b8===0)this.bass(root,t,spb*7.5,.065);}
+  else{if(b8===0)this.bass(root,t,spb*3.6,.085);if(b8===4)this.bass(root+7,t,spb*3,.055);}
+  const form=P.form||'ABAB',pp=this.parse(P),sec=form[Math.floor(bar/4)%form.length],line=(pp[sec]||pp.A)[bar%4],tok=line[b8];
+  if(tok&&tok!=='-'&&tok!=='.'&&(!N||Math.random()<.82)){let len=1;for(let j=b8+1;j<8&&line[j]==='-';j++)len++;
+   const lap=Math.floor(bar/(form.length*4)),up=P.lift&&lap%2===1&&!N?12:0,lo=12*(P.leadOct||0),m=this.sdeg(P,+tok)+lo+up,inst=N?(P.nightLead||'mbox'):P.lead;
+   if(!N&&len>1&&Math.random()<.1)this.leadNote(inst,this.sdeg(P,+tok+1)+lo+up,tt-.06,spb*.25,.5);
+   this.leadNote(inst,m,tt,spb*len,1);
+   if(P.double&&!N&&Math.random()<.5)this.leadNote(P.double,m-12,tt,spb*len,.55);}
+  if(P.arp&&!N&&b8%2===1){const n=ch[[0,1,2,1][(b8>>1)%4]]+12*(P.arpOct||0);this.leadNote(P.arp,n,tt,spb,.42);}
+  if(P.drum&&!N&&!R)this.drums(P,b8,t);
+  if(P.shaker&&!N&&!R&&b8%2===1&&Math.random()<.75)AU.n(.05,.007,7000,6000,{type:'highpass',bus:'music',delay:dl});
+  if(R&&Math.random()<.07)this.bellNote(this.sdeg(P,pick([1,3,5,8]))+12,t,.012);
+  if(P.shimmer&&Math.random()<(N?.12:.07))this.bellNote(this.sdeg(P,pick([8,10,12]))+12,t,.014);
+  if(P.drip&&Math.random()<.05)this.bellNote(this.sdeg(P,pick([5,8,10]))+12,t+Math.random()*spb,.013);},
+ leadNote(inst,m,t,dur,v){v=v||1;if(inst==='flute')this.flute(m,t,dur,v);else if(inst==='steel')this.steel(m,t,v);else if(inst==='marimba')this.marimba(m,t,v);else if(inst==='fiddle')this.fiddle(m,t,dur,v);
+  else if(inst==='accordion')this.accordion(m,t,dur,v);else if(inst==='oud')this.oud(m,t,v);else if(inst==='koto')this.koto(m,t);else if(inst==='mbox')this.mbox(m-12,t);else if(inst==='bell')this.bellNote(m,t,.04*v);
+  else if(inst==='celesta')this.bellNote(m+12,t,.032*v);else if(inst==='lead')this.lead(m,t,Math.max(.2,dur));else if(inst==='brass')this.brass(m,t,dur,v);else if(inst==='choir')this.choirNote(m,t,dur,v);else this.pluck(m,t);},
+ droneNote(m,t,dur){const c=AU.ctx,o=c.createOscillator(),f=c.createBiquadFilter(),g=c.createGain();o.type='sawtooth';o.frequency.value=mtof(m);f.type='lowpass';f.frequency.value=200;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.03,t+2);g.gain.exponentialRampToValueAtTime(0.0001,t+dur+1.5);o.connect(f);f.connect(g);g.connect(AU.bus.music);o.start(t);o.stop(t+dur+1.6);this.pads.push({g});},
+ flute(m,t,dur,v){const c=AU.ctx,f=mtof(m),d=Math.max(.25,dur),o=c.createOscillator(),o2=c.createOscillator(),g=c.createGain(),g2=c.createGain(),vib=c.createOscillator(),vg=c.createGain();
+  o.type='sine';o2.type='triangle';o.frequency.value=f;o2.frequency.value=f*2;g2.gain.value=.1;vib.frequency.value=5;vg.gain.setValueAtTime(0,t);vg.gain.linearRampToValueAtTime(f*.007,t+.3);vib.connect(vg);vg.connect(o.frequency);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.05*v,t+.08);g.gain.setValueAtTime(.045*v,t+d*.8);g.gain.exponentialRampToValueAtTime(0.0001,t+d+.25);
+  const n=c.createBufferSource();n.buffer=AU.nb;const bf=c.createBiquadFilter();bf.type='bandpass';bf.frequency.value=f*2;bf.Q.value=3;const ng=c.createGain();ng.gain.setValueAtTime(.07,t);ng.gain.exponentialRampToValueAtTime(.005,t+.18);n.connect(bf);bf.connect(ng);ng.connect(g);
+  o.connect(g);o2.connect(g2);g2.connect(g);g.connect(AU.bus.music);g.connect(AU.dlySend);const e=t+d+.3;o.start(t);o2.start(t);vib.start(t);n.start(t,Math.random()*2);o.stop(e);o2.stop(e);vib.stop(e);n.stop(t+.22);},
+ steel(m,t,v){const c=AU.ctx,f=mtof(m),g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.055*v,t+.004);g.gain.exponentialRampToValueAtTime(0.0001,t+.95);g.connect(AU.bus.music);g.connect(AU.dlySend);
+  for(const[k,a]of[[1,1],[2,.45],[3.01,.16],[4.18,.07]]){const o=c.createOscillator();o.type='sine';o.frequency.setValueAtTime(f*k*1.012,t);o.frequency.exponentialRampToValueAtTime(f*k,t+.05);const gg=c.createGain();gg.gain.value=a;o.connect(gg);gg.connect(g);o.start(t);o.stop(t+1);}},
+ marimba(m,t,v){const c=AU.ctx,f=mtof(m),g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.06*v,t+.003);g.gain.exponentialRampToValueAtTime(0.0001,t+.7);g.connect(AU.bus.music);
+  const o=c.createOscillator();o.type='sine';o.frequency.value=f;o.connect(g);const o2=c.createOscillator();o2.type='sine';o2.frequency.value=f*3.93;const g2=c.createGain();g2.gain.setValueAtTime(.32,t);g2.gain.exponentialRampToValueAtTime(.001,t+.09);o2.connect(g2);g2.connect(g);o.start(t);o2.start(t);o.stop(t+.75);o2.stop(t+.12);},
+ fiddle(m,t,dur,v){const c=AU.ctx,f=mtof(m),d=Math.max(.2,dur),o=c.createOscillator(),o2=c.createOscillator(),lp=c.createBiquadFilter(),g=c.createGain(),vib=c.createOscillator(),vg=c.createGain();
+  o.type='sawtooth';o2.type='sawtooth';o.frequency.value=f;o2.frequency.value=f;o2.detune.value=8;vib.frequency.value=5.8;vg.gain.setValueAtTime(0,t);vg.gain.linearRampToValueAtTime(f*.009,t+.22);vib.connect(vg);vg.connect(o.frequency);vg.connect(o2.frequency);
+  lp.type='lowpass';lp.frequency.value=Math.min(4000,f*4);lp.Q.value=1.1;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.026*v,t+.06);g.gain.setValueAtTime(.022*v,t+d*.85);g.gain.exponentialRampToValueAtTime(0.0001,t+d+.15);
+  o.connect(lp);o2.connect(lp);lp.connect(g);g.connect(AU.bus.music);g.connect(AU.dlySend);const e=t+d+.2;for(const x of[o,o2,vib]){x.start(t);x.stop(e);}},
+ accordion(m,t,dur,v){const c=AU.ctx,f=mtof(m),d=Math.max(.2,dur),g=c.createGain(),lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2000;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.026*v,t+.05);g.gain.setValueAtTime(.024*v,t+d*.85);g.gain.exponentialRampToValueAtTime(0.0001,t+d+.12);
+  const tr=c.createOscillator(),tg=c.createGain();tr.frequency.value=6;tg.gain.value=.005*v;tr.connect(tg);tg.connect(g.gain);for(const[ty,dt]of[['square',-6],['sawtooth',6]]){const o=c.createOscillator();o.type=ty;o.frequency.value=f;o.detune.value=dt;o.connect(lp);o.start(t);o.stop(t+d+.15);}
+  lp.connect(g);g.connect(AU.bus.music);g.connect(AU.dlySend);tr.start(t);tr.stop(t+d+.15);},
+ oud(m,t,v){const c=AU.ctx,f=mtof(m),g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.065*v,t+.004);g.gain.exponentialRampToValueAtTime(0.0001,t+1.3);g.connect(AU.bus.music);g.connect(AU.dlySend);
+  const o=c.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(f*.982,t);o.frequency.exponentialRampToValueAtTime(f,t+.05);const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(f*5,t);lp.frequency.exponentialRampToValueAtTime(f*1.2,t+.55);lp.Q.value=2;o.connect(lp);lp.connect(g);o.start(t);o.stop(t+1.35);},
+ brass(m,t,dur,v){const c=AU.ctx,f=mtof(m),d=Math.max(.25,dur),o=c.createOscillator(),lp=c.createBiquadFilter(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;lp.type='lowpass';lp.frequency.setValueAtTime(f*1.2,t);lp.frequency.exponentialRampToValueAtTime(f*3.5,t+.12);lp.frequency.exponentialRampToValueAtTime(f*2,t+d);lp.Q.value=1.5;
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.03*v,t+.07);g.gain.setValueAtTime(.026*v,t+d*.85);g.gain.exponentialRampToValueAtTime(0.0001,t+d+.15);o.connect(lp);lp.connect(g);g.connect(AU.bus.music);g.connect(AU.dlySend);o.start(t);o.stop(t+d+.2);},
+ choirNote(m,t,dur,v){const c=AU.ctx,f=mtof(m),d=Math.max(.4,dur),g=c.createGain(),bp=c.createBiquadFilter(),bp2=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=800;bp.Q.value=2;bp2.type='bandpass';bp2.frequency.value=1150;bp2.Q.value=3;
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.05*v,t+.35);g.gain.setValueAtTime(.045*v,t+d*.8);g.gain.exponentialRampToValueAtTime(0.0001,t+d+.6);
+  for(const dt of[-9,0,9]){const o=c.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=dt;o.connect(bp);o.connect(bp2);o.start(t);o.stop(t+d+.7);}bp.connect(g);bp2.connect(g);g.connect(AU.bus.music);g.connect(AU.dlySend);}
+});
+Object.assign(Music.T,{
+ /* Pebble Cove: bright and breezy, ukulele pluck over marimba */
+ cove:{score:1,bpm:96,key:60,mode:'major',prog:[1,6,4,5,1,6,2,5],lead:'pluck',arp:'marimba',arpOct:1,bass:'root',drum:'soft',shaker:1,pad:'warm',padVol:.7,cut:1400,lift:1,nightLead:'mbox',
+  mel:{A:['5 - 3 5 6 5 3 -','6 - 8 - 6 5 3 -','4 - 6 4 3 - 2 -','2 3 5 - 7 - 5 .'],B:['8 - 7 8 9 - 8 -','6 - 5 6 8 - 6 -','4 - 6 - 8 - 6 4','5 - - - 2 - 3 .']}},
+ /* Mossreach: misty woodland, a breathy flute in D dorian */
+ moss:{score:1,bpm:70,key:62,mode:'dorian',prog:[1,4,1,7,3,4,1,7],lead:'flute',bass:'long',pad:'air',padVol:1.1,cut:1000,drip:1,nightLead:'flute',
+  mel:{A:['1 - 3 - 4 5 - .','6 - 5 4 3 - - .','5 - 4 3 1 - 3 -','2 - - 0 1 - - .'],B:['5 - 7 - 8 - 7 5','6 - 5 - 4 - 6 -','5 - 3 - 1 - 2 3','2 - 0 - 1 - - .']}},
+ /* Sunken Atoll: steel drum calypso */
+ atoll:{score:1,bpm:104,key:65,mode:'major',prog:[1,4,5,1,1,4,5,1],lead:'steel',arp:'marimba',bass:'calypso',drum:'hand',shaker:1,pad:'warm',padVol:.55,cut:1500,lift:1,swing:.12,nightLead:'marimba',
+  mel:{A:['1 3 5 - 3 5 6 5','4 - 6 - 8 6 4 -','5 - 7 5 2 - 7 -','8 - - 5 1 - - .'],B:['3 5 8 - 10 - 8 -','6 8 11 - 8 - 6 -','7 - 5 - 9 - 7 5','8 - - - . 5 6 7']}},
+ /* Frostmere: glassy celesta in E minor, slow and sparkling */
+ frost:{score:1,bpm:64,key:64,mode:'minor',prog:[1,6,3,7,4,6,4,5],lead:'celesta',bass:'long',pad:'glass',padVol:1.2,cut:1600,shimmer:1,nightLead:'celesta',
+  mel:{A:['5 - - 3 1 - 2 3','8 - 6 - 3 - - .','5 - 3 - 7 - 5 -','4 - 2 - 0 - - .'],B:['8 - 7 - 5 - 7 8','10 - 8 - 6 - - .','6 - 8 - 4 - 6 -','5 - 7 - 2 - - .']}},
+ /* Petalshore: koto under blossom, A minor */
+ petal:{score:1,bpm:76,key:69,mode:'minor',prog:[1,6,7,1,4,6,5,1],lead:'koto',leadOct:-1,arp:'flute',arpOct:-1,bass:'long',pad:'air',padVol:.9,cut:1200,shimmer:1,nightLead:'koto',
+  mel:{A:['1 - 3 4 5 - - .','6 - 5 - 3 - 1 -','5 - 7 - 9 - 7 -','8 - - 7 5 - - .'],B:['4 - 5 - 7 - 8 -','10 - 8 - 6 - 5 -','5 - 7 - 9 - - .','8 - 7 5 1 - - .']}},
+ /* Amberglen: a swinging harvest fiddle tune in G */
+ amber:{score:1,bpm:88,key:67,mode:'major',prog:[1,4,1,5,1,4,5,1],lead:'fiddle',leadOct:-1,arp:'pluck',arpOct:-1,bass:'walk',drum:'brush',pad:'warm',padVol:.6,cut:1300,swing:.18,nightLead:'pluck',
+  mel:{A:['5 - 3 - 5 6 5 3','4 - 6 - 8 - 6 4','3 - 5 - 3 2 1 -','2 - 7 - 5 - - .'],B:['8 - 7 - 8 - 9 -','8 - 6 - 4 - 6 -','9 - 7 - 5 - 7 9','8 - - - 5 - - .']}},
+ /* Emberkey: low brass and toms in D phrygian, smouldering */
+ ember:{score:1,bpm:90,key:62,mode:'phryg',prog:[1,2,1,7,6,7,1,1],lead:'brass',leadOct:-1,bass:'pulse',drum:'tom',pad:'dark',padVol:1.1,cut:800,nightLead:'bell',
+  mel:{A:['1 - 1 2 3 - 2 1','2 - 3 - 4 - 3 2','1 - 5 - 3 - 1 .','0 - 2 - 4 - - .'],B:['6 - 5 - 6 - 8 -','7 - 6 - 5 - 4 -','5 - 3 - 2 - 1 -','1 - - - . . . .']}},
+ /* Duneveil: an oud over hand drums, E hijaz */
+ dune:{score:1,bpm:88,key:64,mode:'hijaz',prog:[1,2,1,1,4,2,1,1],lead:'oud',leadOct:-1,bass:'root',drum:'hand',pad:'warm',padVol:.6,cut:1000,nightLead:'koto',
+  mel:{A:['5 - 4 3 2 - 1 -','2 - 3 - 4 - 3 2','1 2 3 - 5 - 3 2','1 - - - . . 5 .'],B:['4 - 5 - 6 - 5 4','3 - 2 - 4 - 2 -','5 - 6 5 4 3 2 -','1 - - - . . . .']}},
+ /* Glimmerholt: crystal marimba in B lydian */
+ glim:{score:1,bpm:64,key:59,mode:'lydian',prog:[1,2,1,2,6,2,1,1],lead:'marimba',leadOct:1,arp:'celesta',bass:'long',pad:'glass',padVol:1.1,cut:1500,shimmer:1,nightLead:'celesta',
+  mel:{A:['5 - 3 - 4 - 5 -','6 - 4 - 2 - 4 -','3 - 5 - 8 - 7 -','6 - - 4 2 - - .'],B:['8 - 10 - 6 - 8 -','9 - 6 - 4 - 6 -','8 - 7 - 5 - 3 -','1 - - - . . . .']}},
+ /* the open sea: a rolling sailing song in D, accordion over strings */
+ sea:{score:1,bpm:84,key:62,mode:'major',prog:[1,5,6,4,1,5,4,5],lead:'accordion',double:'flute',bass:'root',drum:'brush',pad:'strings',padVol:.9,cut:1600,swing:.2,lift:1,nightLead:'flute',
+  mel:{A:['1 - 3 - 5 - 5 6','5 - 4 3 2 - - .','6 - 8 - 6 - 3 -','4 - 3 - 2 - - .'],B:['8 - 9 - 10 - 8 -','9 - 7 - 5 - - .','4 - 6 - 8 - 6 -','5 - 7 - 9 - - .']}},
+ /* the depths */
+ hollow:{score:1,deep:1,bpm:52,key:57,mode:'minor',prog:[1,6,4,5,1,6,7,5],lead:'bell',leadOct:1,bass:'long',pad:'dark',padVol:1.1,cut:700,drone:1,drip:1,nightLead:'bell',
+  mel:{A:['5 - - - 3 - - .','6 - - - 8 - - .','4 - - - 6 - 5 -','5 - - - . . . .'],B:['8 - - 7 5 - - .','6 - - 5 3 - - .','7 - - - 5 - - .','5 - - - . . . .']}},
+ kelp:{score:1,deep:1,bpm:58,key:64,mode:'minor',prog:[1,6,3,7,1,6,4,5],lead:'choir',bass:'long',pad:'organ',padVol:.8,cut:1200,drip:1,shimmer:1,nightLead:'choir',
+  mel:{A:['1 - - - 3 - 5 -','6 - - - 5 - 3 -','5 - - - 7 - 5 -','4 - - - 2 - - .'],B:['8 - - - 7 - 5 -','6 - - - 8 - 6 -','4 - - - 6 - 5 -','5 - - - . . . .']}},
+ ruins:{score:1,deep:1,bpm:62,key:62,mode:'dorian',prog:[1,4,1,7,3,4,1,5],lead:'bell',leadOct:1,arp:'celesta',bass:'long',pad:'strings',padVol:1,cut:1000,drone:1,drip:1,nightLead:'bell',
+  mel:{A:['5 - 3 - 1 - 3 -','4 - 6 - 8 - 6 -','5 - 7 - 5 - 3 -','2 - - 0 1 - - .'],B:['8 - 7 - 5 - 7 -','6 - 4 - 6 - 8 -','5 - 3 - 4 - 5 -','5 - - - . . . .']}},
+ abyss:{score:1,deep:1,bpm:44,key:52,mode:'phryg',prog:[1,2,1,7,6,7,1,1],lead:'bell',leadOct:1,bass:'long',pad:'dark',padVol:1.3,cut:560,drone:1,drip:1,nightLead:'bell',
+  mel:{A:['1 - - - 2 - - .','3 - - - 2 - - .','1 - - - 0 - - .','1 - - - . . . .'],B:['5 - - - 6 - - .','5 - - - 3 - - .','2 - - - 1 - - .','1 - - - . . . .']}}
+});
+
 

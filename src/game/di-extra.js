@@ -47,6 +47,13 @@ function tryDescend(){const P=hollowProgress();if(P.have<P.total){const king=!(s
   toast(`The seal holds. Catch every Drowned Hollow fish to open it (${P.have}/${P.total}).${king?state.level<30?' The Drowned King only bites for anglers of level 30 or higher.':' The Drowned King rises once every other Hollow fish is caught.':''}`);return;}
  fadeTo(()=>{const sp=world.spawn.abyss;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;cam.yaw=sp.yaw+Math.PI;cam.tdist=12;
   if(!state.tips.abyss){state.tips.abyss=1;if(typeof grantTitle==='function')grantTitle('Abyss Diver');setTimeout(()=>toast('You reached the Sunless Deep, the last chamber under the sea. Its fish are the most valuable anywhere.','gold'),900);}save();AU.level();});}
+/* the linked caves: walk through a ring of light to reach the next cave */
+const CAVE_INTRO={kelp:'The Kelp Cathedral: a drowned forest lit gold from above. Its fish live nowhere else.',ruins:'The Sunken Ruins: a city the sea took long ago. Its fish are rich and rare.'};
+function caveProgress(z){const all=SPECIES.filter(s=>s.zone===z);return{have:all.filter(s=>state.dex[s.id]&&state.dex[s.id].n).length,total:all.length};}
+function goCave(k){fadeTo(()=>{const sp=world.spawn[k];if(!sp)return;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;cam.yaw=sp.yaw+Math.PI;cam.tdist=12;
+ if(!state.tips['cave_'+k]){state.tips['cave_'+k]=1;if(CAVE_INTRO[k])setTimeout(()=>toast(CAVE_INTRO[k],'gold'),900);if(k==='ruins'&&typeof grantTitle==='function')grantTitle('Ruin Diver');if(k==='kelp'&&typeof grantTitle==='function')grantTitle('Kelp Wanderer');}save();AU.splash(.6);});}
+function tryRuins(){const P=caveProgress('kelp');if(P.have<5){AU.escape();toast(`The tunnel is choked with kelp. Catch 5 different Kelp Cathedral fish to clear it (${P.have}/5).`);return;}goCave('ruins');}
+function tryRuinsDeep(){if(!state.tips.abyss){AU.escape();toast('A great seal blocks the passage. It opens from the other side once you reach the Sunless Deep through the Drowned Hollow.');return;}goCave('abyss');}
 function toHollow(){fadeTo(()=>{const sp=world.spawn.hollow;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;cam.yaw=sp.yaw+Math.PI;});}
 function surfaceFromHollow(){fadeTo(()=>{if(HOLLOW_RET){boat.pos.set(HOLLOW_RET.x,0,HOLLOW_RET.z);boat.yaw=HOLLOW_RET.yaw;boat.speed=0;player.mode='boat';cam.tdist=17;}
   else{const k=state.last||'cove',sp=world.spawn[k];player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);placeBoatAt(k);}HOLLOW_RET=null;AU.splash(.9);});}
@@ -88,7 +95,7 @@ function updateLittleEvents(dt){const T=WIND.uTime.value;LE.t-=dt;if(LE.t<=0){LE
 function onCastLanded(){const it=leNear(F.to.x,F.to.z,3,['chest','bottle']);if(it){collectLE(it);cancelFishing();return true;}F.inSchool=!!leNear(F.to.x,F.to.z,7,['school']);if(F.inSchool)toast('Casting into the school: fast bites and +40% luck!');return false;}
 function drawExtraMap(x,toX,toY,S,opt){const A=activeWells();for(const w of A.list){x.strokeStyle='#8af0ff';x.fillStyle='rgba(120,230,255,.35)';x.lineWidth=2;x.beginPath();x.arc(toX(w.x),toY(w.z),Math.max(4,WELL_R*S),0,TAU);x.fill();x.stroke();}
  for(const it of LE.items){x.fillStyle=it.type==='chest'?'#ffd27a':it.type==='bottle'?'#c8ffe8':'#8af0ff';x.beginPath();x.arc(toX(it.x),toY(it.z),3.5,0,TAU);x.fill();}
- if((env.cave||0)>.3){const I=ZONES[player.zone==='abyss'?'abyss':'hollow'];x.fillStyle='#0c1e24';x.fillRect(0,0,9999,9999);x.fillStyle='#2a3a40';islPath(x,I,toX,toY,1);x.fill();for(const p of I.ponds||[]){x.fillStyle='#1f6a74';x.beginPath();x.arc(toX(p.x),toY(p.z),p.r*S,0,TAU);x.fill();}}}
+ if((env.cave||0)>.3){const I=ZONES[CAVE_LOOK[player.zone]?player.zone:'hollow'];x.fillStyle='#0c1e24';x.fillRect(0,0,9999,9999);x.fillStyle='#2a3a40';islPath(x,I,toX,toY,1);x.fill();for(const p of I.ponds||[]){x.fillStyle='#1f6a74';x.beginPath();x.arc(toX(p.x),toY(p.z),p.r*S,0,TAU);x.fill();}}}
 
 /* ================= RIDING IN A FRIEND'S BOAT =================
    Walk up to a friend's boat that has a free seat and press E. Your game places you in that seat every frame
@@ -337,7 +344,8 @@ function buildBoards(){BOARD.built=true;const b=new Builder();
   b.M(0);world.colliders.push({x,z,r:1.1});const label=tagSprite(null,'Bounty Board','Daily jobs','#f2c14e');label.position.set(x,y+3,z);scene.add(label);BOARD.list.push({x,z,label});
   world.inter.push({x,z,r:2.6,label:'Read the Bounty Board',kind:'Read',act:openBounties});}
  if(b.p.length){const m=b.mesh(worldMat);m.castShadow=true;m.receiveShadow=true;scene.add(m);}}
-function updateBoards(){if(!BOARD.built){if(world.spawn.cove)buildBoards();return;}const p=player.pos;for(const it of BOARD.list){const d=Math.abs(it.x-p.x)+Math.abs(it.z-p.z);it.label.visible=state.settings.tags&&d<30;}}
+function updateBoards(){if(!BOARD.built){if(world.spawn.cove)buildBoards();return;}const p=player.pos;for(const it of BOARD.list){const d=Math.abs(it.x-p.x)+Math.abs(it.z-p.z);it.label.visible=state.settings.tags&&d<30;}
+ for(const c of world.caveTags||[]){const d=Math.abs(c.x-p.x)+Math.abs(c.z-p.z);c.tg.visible=state.settings.tags&&d<40;}}
 
 /* ================= LIFE ON THE WATER: fish leap now and then near you ================= */
 const LEAP={t:4,list:[]};
