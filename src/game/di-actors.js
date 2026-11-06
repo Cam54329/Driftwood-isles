@@ -356,7 +356,7 @@ class RemotePlayer{constructor(peer){this.peer=peer;this.rig=null;this.anim=null
   if(vis){const tgtY=surfY(this.fx,this.fz,T);if(this.s==='t'){const k=clamp(this.sT/.7,0,1);this.bob.position.set(lerp(this.from.x,this.fx,k),lerp(this.from.y,tgtY,k)+Math.sin(k*Math.PI)*4,lerp(this.from.z,this.fz,k));}
    else if(this.s==='w')this.bob.position.set(this.fx,tgtY+Math.sin(T*3)*.05,this.fz);else if(this.s==='b')this.bob.position.set(this.fx,tgtY-.4+Math.sin(this.sT*30)*.1,this.fz);
    else this.bob.position.set(this.fx+Math.sin(this.sT*9)*.3,tgtY-.35,this.fz+Math.cos(this.sT*7)*.3);
-   if(this.rod){this.rod.tip.getWorldPosition(_v);drawLine(this.line,_v,this.bob.position,this.s==='r'?.05:this.s==='t'?.2:1.1,this.bob.userData.top);}}
+   if(this.rod){this.rod.tip.getWorldPosition(_v);drawLine(this.line,_v,this.bob.position,this.s==='r'?.05:this.s==='t'?.2:1.1,this.bob.userData.top);if(typeof lineLook==='function')lineLook(this.line,LINEM[this.p.ln]?this.p.ln:'basic',WIND.uTime.value);}}
   if(this.bubbleT>0){this.bubbleT-=dt;if(this.bubbleT<=0&&this.bubble){R.remove(this.bubble);this.bubble=null;}}
   const d=camera.position.distanceTo(R.position);const show=d<260;R.visible=show;if(this.label){this.label.visible=state.settings.tags&&d<150;const sc=clamp(d/18,1,2.6);this.label.scale.set(3.4*sc,3.4*sc*(this.label.material.map.image.height/512),1);}
   this.fade=Math.min(1,this.fade+dt*2);R.scale.setScalar(.6+.4*this.fade);}

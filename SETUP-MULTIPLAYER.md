@@ -88,6 +88,8 @@ One-time setup:
    - Click **Add**.
 3. In the game, open **Settings → Developer**, type the same code and press **Unlock**.
 
+The game also recognises the owner's dev key directly (only a SHA-256 fingerprint of it is in the code), which unlocks the dev bar. For clearing chat for everyone, set `config/devCode` in Firebase to that same dev key.
+
 The game remembers the unlock on that browser. Press **`** (the key left of 1) or tap **DEV** at the top right to open the dev bar.
 To change the code, edit `config/devCode` in Firebase. Old unlocks stop working for chat clearing straight away.
 

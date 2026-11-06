@@ -110,7 +110,7 @@ const QUESTS=[
 ];
 const QM={};QUESTS.forEach(q=>QM[q.id]=q);
 const LEVEL_TITLES=[[1,'Novice Angler'],[10,'Seasoned Angler'],[25,'Master Angler'],[50,'Legend of the Isles']];
-const TITLE_COL={'Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Cartographer':'#8af0ff','Tidesinger':'#e8e8ff','Desert Hunter':'#f0c060','Starsmith':'#c8a8ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
+const TITLE_COL={'Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Abyss Diver':'#c890ff','Cartographer':'#8af0ff','Tidesinger':'#e8e8ff','Desert Hunter':'#f0c060','Starsmith':'#c8a8ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
 const ALL_TITLES=Object.keys(TITLE_COL);
 
 /* ---------- dialogue lines (extra flavour beyond the quests) ---------- */
@@ -145,7 +145,7 @@ function goalText(q){const g=q.goal,n=g.n;const where=g.zone?' in '+ZONES[g.zone
  if(g.t==='catch'&&g.sp)return `Catch ${n===1?'a':n} ${SPM[g.sp].name}`;
  if(g.t==='catch'){let s=`Catch ${n} ${g.r!=null?RAR[g.r].n+'+ ':''}${g.mut===true?'mutated ':g.mut?MUTS[g.mut].n+' ':''}fish`;if(n===1)s=s.replace('fish','fish');if(g.w)s+=` over ${g.w} kg`;if(g.night)s+=' at night';if(g.sea)s+=' from your boat at sea';if(g.ev)s+=' during a big event';return s+where;}
  if(g.t==='sell')return `Sell ${fmt(n)} coins' worth of fish`;if(g.t==='visit')return `Visit ${ZONES[g.zone].n}`;if(g.t==='relic')return 'Find a Tide Relic';if(g.t==='rod')return 'Buy a new rod';return '';}
-function rewardText(rw){const p=[];if(rw.rod)p.push(RODM[rw.rod].n);if(rw.c)p.push(fmt(rw.c)+' coins');if(rw.xp)p.push(rw.xp+' XP');if(rw.bait)p.push(rw.bait[1]+'× '+BAITM[rw.bait[0]].n);if(rw.title)p.push('Title: '+rw.title);return p.join(' · ');}
+function rewardText(rw){const p=['Mystery Crate'];if(rw.rod)p.push(RODM[rw.rod].n);if(rw.c)p.push(fmt(rw.c)+' coins');if(rw.xp)p.push(rw.xp+' XP');if(rw.bait)p.push(rw.bait[1]+'× '+BAITM[rw.bait[0]].n);if(rw.title)p.push('Title: '+rw.title);return p.join(' · ');}
 
 /* ---------- progress ---------- */
 function questEvent(type,d={}){const Q=qState();let changed=false;
@@ -181,7 +181,7 @@ const QH={qaccept:id=>{const q=QM[id];if(!q||qStatus(q)!=='offer')return;const Q
   AU.ui();toast(`Quest accepted: ${q.n}`);save();renderHotbar();rerender();},
  qturn:(id,auto)=>{const q=QM[id];if(!q||qStatus(q)!=='ready')return;const Q=qState();delete Q.a[id];Q.d.push(id);const rw=q.rw;if(rw.rod&&!state.rods.includes(rw.rod)){state.rods.push(rw.rod);setTimeout(()=>toast(`New rod: ${RODM[rw.rod].n}! Equip it from any rodmaker or your hotbar.`,'gold'),1200);}if(auto===true&&q.done)showStory(Object.assign({},q,{offer:q.done}));
   if(rw.c){state.coins+=rw.c;state.earned+=rw.c;}if(rw.bait){state.bait[rw.bait[0]]=(state.bait[rw.bait[0]]||0)+rw.bait[1];if(!state.baitOn)state.baitOn=rw.bait[0];}if(rw.title)grantTitle(rw.title);
-  if(rw.xp)gainXP(rw.xp);AU.coin();AU.level();toast(`${q.n} complete! ${rewardText(rw)}`,'gold');save();updateHUD();if(typeof panelCtx!=='undefined'&&panelCtx)rerender();}};
+  if(rw.xp)gainXP(rw.xp);AU.coin();AU.level();toast(`${q.n} complete! ${rewardText(rw)}`,'gold');setTimeout(()=>grantCrate('finishing '+q.n),1800);save();updateHUD();if(typeof panelCtx!=='undefined'&&panelCtx)rerender();}};
 
 /* ---------- quest log ---------- */
 function openQuests(){if(JOIN.on)return;openPanel('Quests','Help the islanders and earn rewards',()=>{panelCtx.kind='quests';const act=activeQuests(),Q=qState();

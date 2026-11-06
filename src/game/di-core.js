@@ -54,15 +54,16 @@ const ZONES={
  glim:{n:'Glimmerholt',tag:'Crystal highlands',x:-560,z:860,R:98,H:4.4,hill:2,p1:1.9,p2:4.4,price:400000,tor:true,grass:'#4e6a60',grass2:'#445e58',sand:'#aaa6b8',rock:'#5c5672'},
  sea:{n:'Open Waters',tag:'Deep sea'},
  well:{n:'Tide Well',tag:'A whirling well that opens at sea'},
+ abyss:{n:'The Sunless Deep',tag:'The final chamber beneath the Hollow',x:-1650,z:-1600,R:66,H:2,hill:1.5,p1:2.4,p2:.8,price:0,grass:'#2a1a24',grass2:'#24161e',sand:'#3a2a30',rock:'#1e161c',cave:true},
  hollow:{n:'The Drowned Hollow',tag:'A secret cave beneath the sea',x:-1350,z:-1050,R:72,H:2.2,hill:1.3,p1:1.1,p2:2.7,price:0,grass:'#34424a',grass2:'#2c3a42',sand:'#4a5258',rock:'#2a3038',cave:true},
  pond_cove:{n:'Willow Pond',tag:'Pebble Cove pond',pond:'cove',col:'#3e5c52'},pond_moss:{n:'Murk Pool',tag:'Mossreach pond',pond:'moss',col:'#34422c'},
  pond_frost:{n:'Frozen Tarn',tag:'Frostmere pond',pond:'frost',col:'#56788a'},pond_ember:{n:'Ash Spring',tag:'Emberkey hot spring',pond:'ember',col:'#4e605c'},
  pond_atoll:{n:'Blue Lagoon',tag:'Sunken Atoll lagoon',pond:'atoll',col:'#2f8e9a'},pond_amber:{n:'Maple Mere',tag:'Amberglen pond',pond:'amber',col:'#4a5a3a'},
- pond_petal:{n:'Mirror Pool',tag:'Petalshore koi pond',pond:'petal',col:'#3a6a66'},pond_dune:{n:'Oasis Spring',tag:'Duneveil oasis',pond:'dune',col:'#1f8a8e'},pond_glim:{n:'Starwell',tag:'Glimmerholt spring',pond:'glim',col:'#2a3668'},pond_hollow:{n:'Lantern Pool',tag:'Drowned Hollow pool',pond:'hollow',col:'#164a58'}
+ pond_petal:{n:'Mirror Pool',tag:'Petalshore koi pond',pond:'petal',col:'#3a6a66'},pond_dune:{n:'Oasis Spring',tag:'Duneveil oasis',pond:'dune',col:'#1f8a8e'},pond_glim:{n:'Starwell',tag:'Glimmerholt spring',pond:'glim',col:'#2a3668'},pond_hollow:{n:'Lantern Pool',tag:'Drowned Hollow pool',pond:'hollow',col:'#164a58'},pond_abyss:{n:'Ember Pool',tag:'Sunless Deep pool',pond:'abyss',col:'#4a1a20'}
 };
 const ISL=['cove','moss','frost','ember','atoll','amber','petal','dune','glim'];
 /* every piece of land, including the secret cave (which has no chart and no harbor) */
-const LANDS=[...ISL,'hollow'];
+const LANDS=[...ISL,'hollow','abyss'];
 const SPECIES=[
  ['pebble_perch','Pebble Perch','cove',0,.2,1.2,12,'fish','#8fbf5a','#f0e6a8'],
  ['skipper_minnow','Skipper Minnow','cove',0,.05,.3,9,'fish','#6aa8d8','#e8f2f8'],
@@ -137,17 +138,21 @@ const SPECIES=[
  ['gloom_perch','Gloom Perch','hollow',0,.3,1.6,40,'fish','#3a4a5a','#a8c8d8'],['blind_cavefish','Blind Cavefish','hollow',0,.1,.8,36,'fish','#e8d8d8','#ffffff'],['lantern_jaw','Lanternjaw','hollow',1,1,5,100,'tall','#1a2a3a','#7affd0',null,'lure'],['drip_eel','Drip Eel','hollow',1,.6,3,100,'eel','#4a5a6a','#b8e8f8'],
  ['echo_loach','Echo Loach','hollow',2,1,4,100,'eel','#6a5a8a','#d8c8ff'],['stalactite_gar','Stalactite Gar','hollow',3,8,30,100,'long','#8a9aa8','#e8f0f8'],['abyss_angler','Abyss Angler','hollow',3,4,18,100,'tall','#14182a','#ffd86a','night','lure'],['pale_sturgeon','Pale Sturgeon','hollow',4,40,160,100,'long','#d8dce0','#ffffff'],
  ['hollow_leviathan','Hollow Leviathan','hollow',5,200,700,100,'shark','#1a2a3a','#5affd8'],['drowned_king','The Drowned King','hollow',6,400,1200,100,'tall','#0a1418','#7affb8',null,'whisk'],
+ ['embereye','Embereye','abyss',0,.5,2,40,'fish','#3a0a14','#ff5a3a'],['soot_skate','Soot Skate','abyss',0,1,4,44,'ray','#1a1418','#8a6a7a'],['gloomfang','Gloomfang','abyss',1,2,8,100,'tall','#2a1030','#ff3a6a'],['hollowworm','Hollowworm','abyss',1,1,6,100,'eel','#4a1a2a','#ff8a5a'],
+ ['void_lantern','Void Lantern','abyss',2,3,12,100,'tall','#0a0a1a','#b06aff',null,'lure'],['bone_gar','Bone Gar','abyss',2,6,24,100,'long','#d8d0c0','#8a3a3a'],['sunless_shark','Sunless Shark','abyss',3,80,320,100,'shark','#1a0a2a','#ff4ad8'],['starless_ray','Starless Ray','abyss',4,60,260,100,'ray','#05050a','#7a5aff'],
+ ['old_leviathan','The Old Leviathan','abyss',5,600,1800,100,'shark','#14080e','#ff6a3a'],['sunless_one','The Sunless One','abyss',6,900,2400,100,'tall','#020204','#ff2ad8',null,'lure'],
+ ['cinder_fry','Cinder Fry','pond_abyss',0,.05,.4,40,'fish','#ff6a2a','#ffd8a8'],['molten_koi','Molten Koi','pond_abyss',2,3,12,100,'tall','#ff3a1a','#ffd84a'],['abyss_pearl','Abyss Pearlfish','pond_abyss',4,10,40,100,'tall','#f0e8ff','#b06aff'],
  ['glowmote','Glowmote','pond_hollow',0,.05,.3,40,'fish','#7affd8','#ffffff'],['pearl_tetra','Pearl Tetra','pond_hollow',1,.1,.6,100,'fish','#f0f0f8','#d8e8ff'],['sapphire_eel','Sapphire Eel','pond_hollow',3,2,9,100,'eel','#2a4ad8','#a8c8ff'],['lantern_queen','Lantern Queen','pond_hollow',5,8,30,100,'tall','#1a1a3a','#ffe08a',null,'lure'],
 ].map(a=>({id:a[0],name:a[1],zone:a[2],r:a[3],minW:a[4],maxW:a[5],price:a[6],shape:a[7],c1:a[8],c2:a[9],cond:a[10]||null,feat:a[11]||null}));
 /* fish value: every island has a base price for its commons, and each rarity is a fixed multiple of it, so each
    island pays more than the one before it and rarer always means richer. The authored prices above only set
    how species of the same rarity on the same island compare with each other. Ponds pay 15% more than their island. */
-const ZONE_BASE={cove:9,moss:14,atoll:20,frost:28,petal:38,amber:66,ember:80,dune:110,glim:150,sea:14,well:80,hollow:130},RAR_LADDER=[1,3,18,60,160,400,1200];/* rare and above pay double */
+const ZONE_BASE={cove:9,moss:14,atoll:20,frost:28,petal:38,amber:66,ember:80,dune:110,glim:150,sea:14,well:80,hollow:45,abyss:240},RAR_LADDER=[1,3,18,60,160,400,1200];/* rare and above pay double */
 {const nice=v=>{if(v<20)return Math.max(1,Math.round(v));const q=Math.pow(10,Math.floor(Math.log10(v))-1);return Math.round(v/q)*q;},grp={};
  SPECIES.forEach(s=>{const k=s.zone+'|'+s.r;(grp[k]=grp[k]||[]).push(s.price);});
  SPECIES.forEach(s=>{const pond=s.zone.startsWith('pond_'),base=(ZONE_BASE[pond?s.zone.slice(5):s.zone]||20)*(pond?1.15:1),g=grp[s.zone+'|'+s.r],mean=g.reduce((a,b)=>a+b,0)/g.length;
   s.price=nice(base*RAR_LADDER[s.r]*Math.pow(s.price/mean,.6));});}
-const SPM={};SPECIES.forEach(s=>SPM[s.id]=s);
+const SPM={};SPECIES.forEach(s=>SPM[s.id]=s);SPM.drowned_king.lvl=30;
 const COND={day:'Daytime',night:'Night only',rain:'While raining',fog:'In fog'};
 const RODS=[
  {id:'drift',n:'Driftwood Rod',price:0,luck:0,reel:1,ctrl:0,res:0,shaft:'#8a6a48',handle:'#4a3626',reelC:'#7a7a7a',len:2.4,perk:{xp:.05,d:'+5% XP'}},
@@ -170,18 +175,64 @@ const RODS=[
  {id:'wayfinder',deco:'compass',n:'Wayfinder Rod',price:0,luck:105,reel:1.5,ctrl:.18,res:.45,shaft:'#3a5a6a',handle:'#6a4a2a',reelC:'#d8c088',len:3,metal:.6,wrap:'#d8b060',glow:'#8af0ff',req:{quest:'cart6'},perk:{luck:25,cond:'deep',reel:1.1,d:'+25% luck in open water, reels 10% faster'}},
  {id:'moonpetal',deco:'moon',n:'Moonpetal Rod',price:0,luck:135,reel:1.58,ctrl:.19,res:.48,shaft:'#e8e4f4',handle:'#2a2a4a',reelC:'#c8c8e8',len:3.1,metal:.4,wrap:'#ff9ac8',glow:'#e8e8ff',req:{quest:'mirren5'},perk:{luck:35,hook:.3,cond:'night',d:'+35% luck and a longer strike window at night'}},
  {id:'celestial',deco:'stars',n:'Celestial Rod',price:1200000,luck:230,reel:1.85,ctrl:.24,res:.55,shaft:'#1e2240',handle:'#c8a050',reelC:'#f0e0a0',len:3.3,metal:.7,wrap:'#f0d070',glow:'#fff0a8',req:{lvl:35},perk:{luck:30,mut:.05,tire:1.25,d:'+30% luck, +5% mutations, fish tire 25% faster'}},
+ /* rod remaster: one signature rod for every stage of the climb, sold once you hold that island's chart */
+ {id:'tidepool',deco:'petals',n:'Tidepool Rod',price:2500,luck:12,reel:1.08,ctrl:.04,res:.06,shaft:'#6aa8a0',handle:'#3a4a44',reelC:'#c8d8d0',len:2.55,wrap:'#e8d8b0',req:{isl:'cove'},perk:{shake:1.25,wait:.92,d:'Lure twitches tempt fish 25% more, bites 8% faster'}},
+ {id:'bogwood',deco:'crystal',n:'Bogwood Staff',price:10000,luck:26,reel:1.1,ctrl:.05,res:.18,shaft:'#4a5a34',handle:'#2a2418',reelC:'#8a9a5a',len:2.7,wrap:'#6a8a4a',glow:'#9fffb0',req:{isl:'moss'},perk:{luck:30,cond:'fog',d:'+30% luck in fog'}},
+ {id:'reefcomber',deco:'sun',n:'Reefcomber',price:18000,luck:34,reel:1.15,ctrl:.07,res:.15,shaft:'#e8806a',handle:'#2a4a5a',reelC:'#f0d8c0',len:2.75,wrap:'#3ab8b0',req:{isl:'atoll'},perk:{mut:.03,hook:.2,d:'+3% mutation chance, strike window 0.2 s longer'}},
+ {id:'frostbite',deco:'crystal',n:'Frostbite Spear',price:38000,luck:52,reel:1.24,ctrl:.1,res:.32,shaft:'#cfe8f4',handle:'#2a3a4a',reelC:'#e8f4ff',len:2.85,metal:.5,glow:'#bff0ff',req:{isl:'frost'},perk:{drain:.7,d:'Line 30% tougher'}},
+ {id:'petalwind',deco:'petals',n:'Petalwind Rod',price:55000,luck:60,reel:1.3,ctrl:.12,res:.28,shaft:'#f0c8d4',handle:'#5a2a3a',reelC:'#fff0f4',len:2.9,wrap:'#e87a9a',glow:'#ffc8e0',req:{isl:'petal'},perk:{tire:1.25,d:'Fish tire 25% faster'}},
+ {id:'harvestmoon',deco:'moon',n:'Harvest Moon Rod',price:85000,luck:72,reel:1.34,ctrl:.12,res:.32,shaft:'#c8782a',handle:'#3a2418',reelC:'#f0c060',len:2.95,wrap:'#8a3a1a',glow:'#ffd27a',req:{isl:'amber'},perk:{sell:1.08,xp:.15,d:'Fish sell 8% higher, +15% XP'}},
+ {id:'cinderheart',deco:'sun',n:'Cinderheart',price:120000,luck:82,reel:1.42,ctrl:.12,res:.38,shaft:'#3a1a14',handle:'#7a2a1a',reelC:'#ff8a3a',len:3,metal:.4,glow:'#ff5a1a',req:{isl:'ember'},perk:{wt:.2,reel:1.08,d:'+20% fish weight, reels 8% faster'}},
+ {id:'mirage',deco:'compass',n:'Mirage Caster',price:240000,luck:105,reel:1.5,ctrl:.15,res:.42,shaft:'#e8c890',handle:'#5a3a1a',reelC:'#2ab8b8',len:3.05,metal:.4,wrap:'#2a8a8a',glow:'#9affff',req:{isl:'dune'},perk:{luck:30,wait:.85,cond:'day',d:'+30% luck and bites 15% faster by day'}},
+ {id:'prismheart',deco:'stars',n:'Prismheart',price:500000,luck:160,reel:1.62,ctrl:.18,res:.48,shaft:'#8a6ad8',handle:'#1e1630',reelC:'#e8d8ff',len:3.15,metal:.6,wrap:'#c8a8ff',glow:'#e8c8ff',req:{isl:'glim'},perk:{mut:.06,luck:20,d:'+6% mutation chance, +20% luck'}},
+ {id:'drowncrown',deco:'crystal',n:'Drowned Crown',price:900000,luck:200,reel:1.75,ctrl:.22,res:.52,shaft:'#14303a',handle:'#c8a040',reelC:'#5affd8',len:3.25,metal:.7,wrap:'#c8a040',glow:'#5affd8',req:{sp:'abyss_angler'},perk:{luck:40,tire:1.2,d:'+40% luck, fish tire 20% faster'}},
 ];
 const RODM={};RODS.forEach(r=>RODM[r.id]=r);
 const BAITS=[
  {id:'worm',n:'Garden Worm',price:60,qty:10,luck:0,wait:.85,mut:0,wt:0,d:'Bites come 15% faster'},
  {id:'shrimp',n:'Salted Shrimp',price:200,qty:10,luck:15,wait:.75,mut:0,wt:0,d:'+15% luck, bites 25% faster'},
  {id:'glowfly',n:'Glowfly',price:450,qty:10,luck:35,wait:1,mut:0,wt:0,night:true,d:'+35% luck, doubled at night'},
+ {id:'cricket',n:'Night Cricket',price:120,qty:10,luck:8,wait:.8,mut:0,wt:0,night:true,d:'+8% luck (doubled at night), bites 20% faster'},
+ {id:'squid',n:'Squid Strips',price:600,qty:10,luck:15,wait:1,mut:0,wt:.12,d:'+15% luck, +12% fish weight'},
  {id:'spinner',n:'Silver Spinner',price:800,qty:10,luck:20,wait:.85,mut:0,wt:0,d:'+20% luck, bites 15% faster'},
  {id:'prism',n:'Prism Lure',price:1400,qty:10,luck:10,wait:1,mut:.06,wt:0,d:'+10% luck, +6% mutation chance'},
  {id:'popper',n:'Topwater Popper',price:2000,qty:8,luck:30,wait:.95,mut:0,wt:.15,d:'+30% luck, +15% fish weight'},
  {id:'feather',n:'Feather Fly',price:3200,qty:6,luck:60,wait:.8,mut:.03,wt:0,d:'+60% luck, +3% mutation chance, bites 20% faster'},
+ {id:'goldflake',n:'Gold Flake Paste',price:2600,qty:6,luck:20,wait:1,mut:.05,wt:0,d:'+20% luck, +5% mutation chance (golden ones most of all)'},
  {id:'ink',n:'Kraken Ink',price:3500,qty:5,luck:90,wait:.9,mut:.02,wt:.2,d:'+90% luck, +20% weight'},
+ {id:'abyssworm',n:'Abyss Worm',price:6000,qty:5,luck:120,wait:.85,mut:.03,wt:.1,d:'+120% luck, +3% mutations, +10% weight, bites 15% faster'},
 ];
+/* fishing lines: coloured, swappable, each with a buff. Won from Mystery Crates (Basic Line is free) */
+const LINES=[
+ {id:'basic',n:'Basic Line',r:'basic',c:'#e8ecf0',fx:{d:'No bonus'}},
+ {id:'hemp',n:'Hemp Line',r:'common',c:'#d8c8a0',fx:{drain:.92,d:'Line 8% tougher'}},
+ {id:'mint',n:'Mint Line',r:'common',c:'#7ae8a8',fx:{wait:.94,d:'Bites 6% faster'}},
+ {id:'sky',n:'Sky Line',r:'common',c:'#8ac8ff',fx:{luck:6,d:'+6% luck'}},
+ {id:'coral',n:'Coral Line',r:'rare',c:'#ff8aa8',fx:{luck:12,hook:.1,d:'+12% luck, strike window 0.1 s longer'}},
+ {id:'amber',n:'Amber Line',r:'rare',c:'#ffb040',fx:{wt:.08,reel:1.05,d:'+8% fish weight, reels 5% faster'}},
+ {id:'frost',n:'Frost Line',r:'rare',c:'#a8f0ff',fx:{drain:.8,bar:1.1,d:'Line 20% tougher, tension builds 10% slower'}},
+ {id:'golden',n:'Golden Line',r:'legendary',c:'#ffd84a',glow:1,fx:{sell:1.08,luck:15,d:'Fish sell 8% higher, +15% luck'}},
+ {id:'ember',n:'Ember Line',r:'legendary',c:'#ff5a2a',glow:1,fx:{tire:1.25,reel:1.08,d:'Fish tire 25% faster, reels 8% faster'}},
+ {id:'aurora',n:'Aurora Line',r:'legendary',c:'#5affd0',glow:1,shift:1,fx:{mut:.04,luck:20,d:'+4% mutation chance, +20% luck'}},
+ {id:'void',n:'Void Line',r:'secret',c:'#b06aff',glow:1,fx:{luck:35,mut:.05,tire:1.2,d:'+35% luck, +5% mutations, fish tire 20% faster'}}];
+const LINEM={};LINES.forEach(l=>LINEM[l.id]=l);
+const LINE_RAR={basic:{n:'Starter',c:'#c9d2da'},common:{n:'Common',c:'#cfd6df',w:60},rare:{n:'Rare',c:'#4fa8ff',w:28},legendary:{n:'Legendary',c:'#ffae2b',w:10.5},secret:{n:'Secret',c:'#c890ff',w:1.5}};
+/* lures: permanent tackle (never used up). The equipped lure sets what's on the end of your line */
+const LURES=[
+ {id:'brass',n:'Brass Spinner',style:'spinner',r:'common',fx:{wait:.92,d:'Bites 8% faster'}},
+ {id:'pearlspoon',n:'Pearl Spoon',style:'spoon',r:'rare',fx:{luck:10,mut:.02,d:'+10% luck, +2% mutation chance'}},
+ {id:'frogpop',n:'Frog Popper',style:'popper',r:'rare',fx:{wt:.1,luck:8,d:'+10% fish weight, +8% luck'}},
+ {id:'fireflyfly',n:'Firefly Fly',style:'fly',r:'legendary',fx:{luck:20,night:1,d:'+20% luck (doubled at night)'}},
+ {id:'krakenjig',n:'Kraken Jig',style:'jig',r:'legendary',fx:{luck:18,tire:1.15,d:'+18% luck, fish tire 15% faster'}},
+ {id:'starquill',n:'Star Quill Float',style:'glow',r:'secret',fx:{luck:30,hook:.25,d:'+30% luck, strike window 0.25 s longer'}}];
+const LUREM={};LURES.forEach(l=>LUREM[l.id]=l);
+const CRATE_PRICE=25000;
+/* what's new: shown once after each update, and any time from the menus */
+const UPDATES=[
+ {v:'3.3',d:'Rods remastered',items:['A new signature rod for every island, sold once you hold its chart','10 coloured fishing lines with buffs, won from Mystery Crates (Common, Rare, Legendary, Secret)','6 permanent lures you can win and equip','4 new baits','Mystery Crates for finishing quests, levelling up and landing new Legendary fish','A real Tidewater Casino hall on Pebble Cove, plus a new casino game on every island','Music that changes with events, weather, Tide Wells, fights and the casino']},
+ {v:'3.2',d:'Into the deep',items:['Tide Wells open off every island; dive in to find the Drowned Hollow','Floating chests, messages in bottles and fish schools','Boats have seats: ride along in a friend\'s boat','Sunset Pontoon (8 seats) and Wavecutter Jet Ski','Rare fish are three times harder to find and pay double','Dev bar for the game\'s owner, and clearing chat']},
+ {v:'3.1',d:'Safe saves and a fair economy',items:['Backups before every update, save files and save codes','Prices rebalanced for a longer climb','Fish values rise with every island']},
+ {v:'3.0',d:'The big remaster',items:['Classic reel-in fishing with a tension gauge','Petalshore, Duneveil and Glimmerholt','New floats and lures, 50 new fish, 6 new rods, 2 story quest lines']}];
 const BAITM={};BAITS.forEach(b=>BAITM[b.id]=b);
 const BOATS=[
  {id:'dinghy',seats:2,n:'Driftwood Dinghy',price:0,speed:18,turn:1.4,storage:0,fx:{luck:5,d:'+5% luck while fishing from the boat'},m:{L:5.6,W:1.22,H:.78,D:-.42,hull:'#d6d0c4',bottom:'#5a4036',type:'row'}},
@@ -277,7 +328,17 @@ const NPCS=[
  {id:'corvin',name:'Corvin',title:'Harbormaster',role:'harbor',zone:'glim',look:{skin:'#d8b090',shirt:'#3a3a5a',pants:'#2a2a2a',hat:'#2a2a3a',hatType:'top'},lines:['Few sail this far. Fewer sail back without a story.']},
  {id:'aster',name:'Aster',title:'Starsmith',role:'rods',zone:'glim',dth:-1.1,look:{skin:'#f0d8c8',shirt:'#8a6ab8',pants:'#2a2238',hat:'#f0e0a0',hatType:'cap'},house:{wall:'#d4cee0',roof:'#6a5a9a',trim:'#ece8f4'},lines:['I set crystals into rods. They hum when a big one is near.']},
  {id:'vesper',name:'Vesper',title:'Moon Apothecary',role:'buffs',zone:'glim',dth:2.4,look:{skin:'#e0c0d0',shirt:'#3a5a6a',pants:'#2a2a3a',hat:'#5a7a8a',hatType:'sunhat'},house:{wall:'#c8d0d8',roof:'#3a5a6a',trim:'#e4e8ec'},lines:['Starlight steeps slowly. My brews are worth the wait.']},
- {id:'lou',name:'Lucky Lou',title:'Tidewater Casino',role:'casino',zone:'cove',dth:2.1,look:{skin:'#e0b090',shirt:'#c8303a',pants:'#1e1e24',hat:'#1e1e24',hatType:'top'},house:{wall:'#2a2430',roof:'#c8a040',trim:'#f0d070'},lines:['Feeling lucky? The house always has a little edge, so bet what you can lose.','Slots, the Wheel of Tides, or High or Low. Pick your poison!']},
+ {id:'lou',name:'Lucky Lou',title:'Lucky Lures Slots',role:'casino',game:'slots',hall:true,hallSlot:0,zone:'cove',dth:2.1,look:{skin:'#e0b090',shirt:'#c8303a',pants:'#1e1e24',hat:'#1e1e24',hatType:'top'},lines:['Welcome to the Tidewater Casino! The house keeps a little edge, so bet what you can lose.','Three crowns on the reels? I\'ve seen it twice in forty years.']},
+ {id:'vera',name:'Vera',title:'Wheel of Tides',role:'casino',game:'wheel',hall:true,hallSlot:1,zone:'cove',dth:2.1,look:{skin:'#f0c8a8',shirt:'#3a2a5a',pants:'#1e1e24',hat:'#c8a040',hatType:'none'},lines:['Round and round she goes. Where she stops, nobody knows!','The five-times slice is my favourite. It never lands for me.']},
+ {id:'dex',name:'Dex',title:'High or Low',role:'casino',game:'hilo',hall:true,hallSlot:2,zone:'cove',dth:2.1,look:{skin:'#8a5a3a',shirt:'#1e3a2a',pants:'#1e1e24',hat:'#1e1e24',hatType:'cap'},lines:['Higher or lower, it\'s that simple. Knowing when to stop is the hard part.']},
+ {id:'bogsby',name:'Bogsby',title:'Bog Coin',role:'casino',game:'coin',zone:'moss',dth:-1.7,look:{skin:'#a8c890',shirt:'#5a3a6a',pants:'#3a3a2a',hat:'#4a6a3a',hatType:'bucket'},lines:['Heads or tails? The bog decides.']},
+ {id:'shelly',name:'Shelly',title:'Pearl and Shells',role:'casino',game:'shells',zone:'atoll',dth:2.4,look:{skin:'#c88a5a',shirt:'#f0c060',pants:'#3a5a6a',hat:'#e8d8a0',hatType:'sunhat'},lines:['Keep your eye on the pearl! Quick hands, quicker eyes.']},
+ {id:'ivar',name:'Ivar',title:'Ice Dice',role:'casino',game:'dice',zone:'frost',dth:2.4,look:{skin:'#f0d0c0',shirt:'#3a6a9a',pants:'#2a2a3a',hat:'#e8e8f0',hatType:'beanie'},lines:['Two dice, cold as the glacier. Under, over, or a lucky seven?']},
+ {id:'posy',name:'Posy',title:'Lucky Lanterns',role:'casino',game:'lanterns',zone:'petal',dth:-2.4,look:{skin:'#f0c8a8',shirt:'#e86a5a',pants:'#3a2a3a',hat:'#f0d070',hatType:'sunhat'},lines:['Five lanterns, five fortunes. Which one is yours?']},
+ {id:'thatch',name:'Thatch',title:'Harvest 21',role:'casino',game:'blackjack',zone:'amber',dth:-2.4,look:{skin:'#d8a080',shirt:'#6a3a2a',pants:'#2a2a28',hat:'#3a2a1a',hatType:'top'},lines:['Twenty-one, or as close as you dare. I stand on seventeen.']},
+ {id:'ash',name:'Ash',title:'Lava Rise',role:'casino',game:'crash',zone:'ember',dth:2.3,look:{skin:'#b07850',shirt:'#2a2a2a',pants:'#5a2a1a',hat:'#ff6a2a',hatType:'cap'},lines:['Watch it climb... and cash out before the volcano blows!']},
+ {id:'zuri',name:'Zuri',title:'Sun Roulette',role:'casino',game:'roulette',zone:'dune',dth:2.4,look:{skin:'#8a5a3a',shirt:'#e8c040',pants:'#3a2a2a',hat:'#c8402e',hatType:'none'},lines:['Red, black, or a single number for the brave. Place your bets!']},
+ {id:'opal',name:'Opal',title:'Crystal Mines',role:'casino',game:'mines',zone:'glim',dth:-2.4,look:{skin:'#e8d0e0',shirt:'#6a4ab8',pants:'#2a2238',hat:'#c8b8f8',hatType:'beanie'},lines:['Every crystal you uncover grows your winnings. Hit a crack and it\'s gone.']},
  {id:'isolde',name:'Isolde',title:'Cartographer',role:'sage',zone:'cove',dth:-2.1,look:{skin:'#e8c0a0',shirt:'#3a6a8a',pants:'#5a4a3a',hat:'#8a5a3a',hatType:'top'},house:{wall:'#d8d0c0',roof:'#3a5a7a',trim:'#ece6dc'},lines:['Three new isles on my charts and not a soul has mapped them properly.','A map is just a promise that the world goes on.']},
 ];
 const SHIRTS=['#a8604e','#b88452','#b89c58','#6c8558','#4f7f7a','#4f6a8c','#6a6188','#8e5e78','#d6d0c2','#3e4a5c'];
@@ -291,7 +352,7 @@ const DEV={on:false,open:false,fast:false,rar:null,ev:null};
 /* ================= STATE / SAVE ================= */
 /* The save key never changes between updates: new versions read the same save and fill in anything new.
    Before an update touches a save (and once a day) a backup copy is kept, see backupSave. */
-const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.0';
+const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.3';
 /* how far along a save is: lifetime earnings never go down, so they decide which of two saves to keep */
 function progressOf(s){return s&&typeof s==='object'?(Number(s.earned)||0)+(Number(s.level)||1)*500+Object.keys(s.dex||{}).length*200:0;}
 function backups(){try{const b=JSON.parse(localStorage.getItem(BKEY));return Array.isArray(b)?b.filter(x=>x&&typeof x.json==='string'):[];}catch(e){return [];}}
@@ -301,7 +362,7 @@ function backupSave(why,raw){try{raw=raw||localStorage.getItem(KEY);if(!raw)retu
  for(;;){try{localStorage.setItem(BKEY,JSON.stringify(list));return true;}catch(e){if(list.length<=1)return false;list.pop();}}}catch(e){return false;}}
 function dailyBackup(){const b=backups()[0];if(!b||Date.now()-b.t>20*3600e3)backupSave('Daily backup');}
 function defSettings(){return{gfx:isMobile?'medium':'high',gfxAuto:true,music:.55,sfx:.8,amb:.7,chill:false,tags:true,weather:'auto',v2:true,v3:true};}
-function freshState(){return{v:2,coins:0,earned:0,xp:0,level:1,inv:[],rods:['drift'],rod:'drift',bait:{},baitOn:null,ench:{},relics:0,unlocked:['cove'],dex:{},last:'cove',settings:defSettings(),uid:1,savedAt:0,tips:{},profile:null,boats:['dinghy'],boat:'dinghy',bup:{},buffs:{}};}
+function freshState(){return{v:2,coins:0,earned:0,xp:0,level:1,inv:[],rods:['drift'],rod:'drift',bait:{},baitOn:null,ench:{},relics:0,unlocked:['cove'],dex:{},last:'cove',settings:defSettings(),uid:1,savedAt:0,tips:{},profile:null,boats:['dinghy'],boat:'dinghy',bup:{},buffs:{},lines:['basic'],line:'basic',lures:[],lure:null,crates:1};}
 function sanitize(s){const f=freshState();if(!s||typeof s!=='object')return f;const o=Object.assign(f,s);
  const old=s.settings||{};o.settings=Object.assign(defSettings(),old);
  if(!old.v2){o.settings.v2=true;o.settings.gfxAuto=true;o.settings.gfx=isMobile?'medium':'high';if(old.sound===false){o.settings.music=0;o.settings.sfx=0;o.settings.amb=0;}}
@@ -311,7 +372,7 @@ function sanitize(s){const f=freshState();if(!s||typeof s!=='object')return f;co
  /* fish of a species this version doesn't know are parked, not deleted, and come back if the species does */
  if(!Array.isArray(o.inv))o.inv=[];if(!Array.isArray(o.invHold))o.invHold=[];{const all=o.inv.concat(o.invHold).filter(x=>x&&typeof x==='object');o.inv=all.filter(x=>SPM[x.sp]);o.invHold=all.filter(x=>!SPM[x.sp]).slice(0,500);}o.gv=GAME_VER;if(!Array.isArray(o.rods)||!o.rods.length)o.rods=['drift'];if(!RODM[o.rod])o.rod='drift';
  if(!Array.isArray(o.unlocked))o.unlocked=['cove'];if(!o.unlocked.includes('cove'))o.unlocked.push('cove');if(!ZONES[o.last]||o.last==='sea')o.last='cove';
- if(o.baitOn&&!BAITM[o.baitOn])o.baitOn=null;if(!Array.isArray(o.boats)||!o.boats.length)o.boats=['dinghy'];if(!BOATM[o.boat])o.boat='dinghy';if(!o.bup||typeof o.bup!=='object')o.bup={};if(!o.buffs||typeof o.buffs!=='object')o.buffs={};for(const k in o.buffs)if(!BUFFM[k]||!(o.buffs[k]>0))delete o.buffs[k];if(typeof o.earned!=='number')o.earned=o.coins||0;
+ if(o.baitOn&&!BAITM[o.baitOn])o.baitOn=null;if(!Array.isArray(o.lines))o.lines=['basic'];if(!o.lines.includes('basic'))o.lines.unshift('basic');if(!LINEM[o.line]||!o.lines.includes(o.line))o.line='basic';if(!Array.isArray(o.lures))o.lures=[];if(o.lure&&(!LUREM[o.lure]||!o.lures.includes(o.lure)))o.lure=null;o.crates=Math.max(0,Math.floor(Number(o.crates)||0));if(!Array.isArray(o.boats)||!o.boats.length)o.boats=['dinghy'];if(!BOATM[o.boat])o.boat='dinghy';if(!o.bup||typeof o.bup!=='object')o.bup={};if(!o.buffs||typeof o.buffs!=='object')o.buffs={};for(const k in o.buffs)if(!BUFFM[k]||!(o.buffs[k]>0))delete o.buffs[k];if(typeof o.earned!=='number')o.earned=o.coins||0;
  if(o.profile){const p=o.profile;o.profile={name:cleanText(p.name,16)||'Angler',color:isHex(p.color)?p.color:SHIRTS[5],hatC:isHex(p.hatC)?p.hatC:SHIRTS[2],skin:isHex(p.skin)?p.skin:SKINS[1],hat:HATS.some(h=>h.id===p.hat)?p.hat:'bucket'};}
  return o;}
 let state=freshState();
@@ -399,7 +460,7 @@ const AU={ctx:null,
   cl.connect(cd);cd.connect(ca.gain);co.connect(cf);cf.connect(ca);const cg=c.createGain();cg.gain.value=0;ca.connect(cg);cg.connect(this.bus.amb);co.start();cl.start();this.amb.crickets=cg;this.amb.cricketAmp=ca;
   this.swellT=0;this.birdT=4;this.owlT=20;this.gullT=8;this.dripT=0;this.windT=0;this.chirpOn=0;},
  updAmb(dt,p){if(!this.ctx||!this.amb)return;const c=this.ctx,t=c.currentTime,A=this.amb;
-  if(p.zone==='hollow'){this.dripT=(this.dripT||0)-dt;if(this.dripT<=0){this.dripT=rand(.3,1.4);const f=rand(900,2400);this.o(f,.12,{vol:.025,bus:'amb',pan:rand(-.9,.9),slide:-f*.4});this.o(f*.5,.5,{vol:.008,bus:'amb',delay:.18,slide:-f*.2});}}
+  if(p.zone==='hollow'||p.zone==='abyss'){this.dripT=(this.dripT||0)-dt;if(this.dripT<=0){this.dripT=rand(.3,1.4);const f=rand(900,2400);this.o(f,.12,{vol:.025,bus:'amb',pan:rand(-.9,.9),slide:-f*.4});this.o(f*.5,.5,{vol:.008,bus:'amb',delay:.18,slide:-f*.2});}}
   if(p.zone==='glim'){this.chimeT=(this.chimeT||3)-dt;if(this.chimeT<=0){this.chimeT=rand(3,8)*(p.day>.5?1.8:1);this.chime();}}
   this.swellT-=dt;if(this.swellT<=0){const s=rand(3.5,7.5);this.swellT=s;const peak=(p.boat?.42:.3)*(p.shore+.35);A.waves.g.gain.cancelScheduledValues(t);A.waves.g.gain.setTargetAtTime(peak,t,s*.22);A.waves.g.gain.setTargetAtTime(peak*.35,t+s*.45,s*.3);
    A.wash.g.gain.cancelScheduledValues(t);A.wash.g.gain.setTargetAtTime(.05*p.shore,t+s*.3,.6);A.wash.g.gain.setTargetAtTime(.008,t+s*.55,.8);}
@@ -416,32 +477,105 @@ const AU={ctx:null,
  gull(pan,vol){for(let i=0;i<rand(2,4)|0;i++){const d=i*rand(.25,.4);this.o(rand(1300,1600),.32,{type:'sawtooth',vol:vol*.25,slide:-700,delay:d,bus:'amb',pan,att:.03});this.o(rand(1300,1600),.3,{type:'sine',vol:vol*.7,slide:-650,delay:d,bus:'amb',pan,att:.03});}},
  chirp(pan){const n=3+(Math.random()*4|0),base=rand(2600,4200);for(let i=0;i<n;i++)this.o(base+rand(-300,300),.06,{vol:.02,slide:rand(600,1400),delay:i*rand(.07,.11),bus:'amb',pan});}
 };
-/* generative music: soft pads, plucked melody by day, music-box bells at night */
-const Music={on:false,step:0,next:0,mode:'day',ci:0,deg:4,timer:null,
- DAY:{bpm:74,ch:[[50,57,62,66,69],[47,54,59,62,66],[43,50,55,59,64],[45,52,57,61,64]],sc:[62,64,66,69,71,74,76,78,81,83],bass:[38,35,31,33],cut:1100},
- NIGHT:{bpm:56,ch:[[45,52,55,59,64],[41,48,52,57,60],[48,55,59,64,67],[40,47,52,55,59]],sc:[57,60,62,64,67,69,72,74,76,79],bass:[33,29,36,28],cut:760},
- /* island themes for the three far isles: pentatonic plucks on Petalshore, a hand drum on Duneveil, glassy bells on Glimmerholt */
- ZONE:{petal:{bpm:70,ch:[[50,57,62,64,69],[45,52,57,62,64],[47,54,59,62,66],[43,50,55,62,64]],sc:[62,64,66,69,71,74,76,78,81,83],bass:[38,33,35,31],cut:1200,inst:'koto'},
-  dune:{bpm:80,ch:[[52,59,64,65,71],[50,57,62,65,69],[48,55,60,64,67],[47,54,59,63,66]],sc:[64,65,68,69,71,72,74,76,77,80],bass:[40,38,36,35],cut:1000,inst:'koto',drum:true},
-  hollow:{bpm:50,ch:[[45,52,57,60,64],[43,50,55,58,62],[41,48,53,57,60],[40,47,52,55,59]],sc:[57,60,62,64,67,69,72,74,76],bass:[33,31,29,28],cut:700,inst:'mbox'},
-  glim:{bpm:58,ch:[[48,55,59,62,66],[50,57,62,66,69],[52,59,64,67,71],[47,54,59,62,66]],sc:[60,62,64,66,67,69,71,72,74,76,78],bass:[36,38,40,35],cut:900,inst:'mbox'}},
- zone:'cove',
+/* generative music: a set of tracks, each with its own tempo, harmony, instruments and drums. The game picks the
+   track that fits the moment (a fight with a rare fish, a big event, a Tide Well nearby, the casino, the weather,
+   the island, day or night) and crossfades to it on the next half bar. */
+const Music={on:false,step:0,next:0,ci:0,deg:4,timer:null,key:'day',want:'day',pads:[],
+ T:{
+  day:{bpm:74,ch:[[50,57,62,66,69],[47,54,59,62,66],[43,50,55,59,64],[45,52,57,61,64]],sc:[62,64,66,69,71,74,76,78,81,83],bass:[38,35,31,33],cut:1100,inst:'pluck',dens:[.42,.2],shaker:1,fifth:1},
+  night:{bpm:56,ch:[[45,52,55,59,64],[41,48,52,57,60],[48,55,59,64,67],[40,47,52,55,59]],sc:[57,60,62,64,67,69,72,74,76,79],bass:[33,29,36,28],cut:760,inst:'mbox',dens:[.26,.06]},
+  petal:{bpm:70,ch:[[50,57,62,64,69],[45,52,57,62,64],[47,54,59,62,66],[43,50,55,62,64]],sc:[62,64,66,69,71,74,76,78,81,83],bass:[38,33,35,31],cut:1200,inst:'koto',dens:[.4,.16]},
+  dune:{bpm:80,ch:[[52,59,64,65,71],[50,57,62,65,69],[48,55,60,64,67],[47,54,59,63,66]],sc:[64,65,68,69,71,72,74,76,77,80],bass:[40,38,36,35],cut:1000,inst:'koto',drum:'hand',dens:[.4,.18]},
+  glim:{bpm:58,ch:[[48,55,59,62,66],[50,57,62,66,69],[52,59,64,67,71],[47,54,59,62,66]],sc:[60,62,64,66,67,69,71,72,74,76,78],bass:[36,38,40,35],cut:900,inst:'mbox',dens:[.3,.1],layers:['shimmer']},
+  abyss:{bpm:44,ch:[[40,47,50,55,58],[38,45,48,53,57],[36,43,46,51,55],[35,42,45,50,53]],sc:[52,55,57,58,62,64,67,69,70],bass:[28,26,24,23],cut:560,inst:'bell',dens:[.16,.04],pad:'dark',padVol:1.2,layers:['drone','trem','drip']},
+  hollow:{bpm:50,ch:[[45,52,57,60,64],[43,50,55,58,62],[41,48,53,57,60],[40,47,52,55,59]],sc:[57,60,62,64,67,69,72,74,76],bass:[33,31,29,28],cut:650,inst:'mbox',dens:[.2,.05],pad:'dark',layers:['drone','drip']},
+  /* weather */
+  rain:{bpm:62,ch:[[45,52,55,59,64],[41,48,52,55,60],[48,52,55,59,64],[43,50,55,59,62]],sc:[60,62,64,67,69,72,74,76],bass:[33,29,36,31],cut:800,inst:'pluck',dens:[.3,.1],drum:'brush',layers:['drops']},
+  storm:{bpm:84,ch:[[38,45,50,53,57],[34,41,46,50,53],[36,43,48,52,55],[33,40,45,49,52]],sc:[62,64,65,67,69,70,72,74,76,77],bass:[38,34,36,33],cut:900,inst:'lead',dens:[.3,.12],drum:'tom',bassMode:'pulse',pad:'dark',layers:['trem','drone']},
+  fog:{bpm:48,ch:[[45,50,52,57,59],[43,48,50,55,57],[41,46,48,53,55],[40,45,47,52,54]],sc:[57,59,62,64,66,69,71],bass:[33,31,29,28],cut:650,inst:'mbox',dens:[.14,.03],pad:'air',layers:['drone']},
+  /* big events */
+  leviathan:{bpm:54,ch:[[38,45,50,54,57],[43,50,55,59,62],[40,47,52,55,59],[45,52,57,61,64]],sc:[62,64,66,69,71,74,76,78],bass:[26,31,28,33],cut:1000,inst:'bell',dens:[.24,.04],drum:'tom',pad:'warm',padVol:1.4,layers:['whale','drone'],sting:'swell'},
+  starfall:{bpm:76,ch:[[41,48,53,57,64],[43,50,55,59,66],[45,52,57,60,64],[40,47,52,55,59]],sc:[65,67,69,71,72,74,76,77,79,81,83,84],bass:[29,31,33,28],cut:1600,inst:'mbox',dens:[.36,.18],arp:1,pad:'glass',layers:['shimmer'],sting:'sparkle'},
+  aurora:{bpm:60,ch:[[48,55,59,62,67],[45,52,55,59,64],[41,48,52,57,62],[43,50,55,59,66]],sc:[60,62,64,67,69,71,72,74,76,79],bass:[36,33,29,31],cut:1300,inst:'mbox',dens:[.3,.08],pad:'air',padVol:1.3,layers:['shimmer'],sting:'sparkle'},
+  swell:{bpm:96,ch:[[40,47,52,56,59],[45,52,57,61,64],[42,49,54,57,61],[47,54,59,63,66]],sc:[64,66,68,69,71,73,76,78,80],bass:[40,45,42,47],cut:1500,inst:'koto',dens:[.5,.28],drum:'drive',bassMode:'pulse',arp:1,sting:'swell'},
+  /* small events */
+  surge:{bpm:70,ch:[[48,52,56,60,64],[46,50,54,58,62],[44,48,52,56,60],[50,54,58,62,66]],sc:[60,62,64,66,68,70,72,74,76],bass:[36,34,32,38],cut:1100,inst:'mbox',dens:[.32,.12],pad:'glass',layers:['shimmer'],sting:'sparkle'},
+  golden:{bpm:88,ch:[[48,55,60,64,67],[53,57,60,65,69],[55,59,62,67,71],[45,52,57,60,64]],sc:[60,62,64,67,69,72,74,76,79,81],bass:[36,41,43,33],cut:1600,inst:'pluck',dens:[.5,.25],drum:'soft',arp:1,shaker:1,fifth:1,sting:'sparkle'},
+  frenzy:{bpm:112,ch:[[45,52,57,60,64],[41,48,53,57,60],[43,50,55,59,62],[40,47,52,56,59]],sc:[57,60,62,64,67,69,72,74,76],bass:[33,29,31,28],cut:1500,inst:'koto',dens:[.55,.3],drum:'drive',bassMode:'pulse',sting:'swell'},
+  current:{bpm:80,ch:[[50,57,62,66,69],[52,59,64,67,71],[47,54,59,62,66],[45,52,57,61,64]],sc:[62,64,66,69,71,74,76,78,81],bass:[38,40,35,33],cut:1300,inst:'pluck',dens:[.45,.2],drum:'hand',fifth:1},
+  /* places and moments */
+  well:{bpm:66,ch:[[44,51,56,60,63],[46,53,58,61,65],[41,48,53,56,60],[39,46,51,55,58]],sc:[63,65,67,68,70,72,75,77,79,80],bass:[32,34,29,27],cut:1300,inst:'bell',dens:[.34,.12],pad:'glass',layers:['shimmer']},
+  casino:{bpm:96,ch:[[50,53,57,60,64],[43,47,50,53,57],[48,52,55,59,62],[45,49,52,55,59]],sc:[62,64,65,67,69,71,72,74,76],bass:[38,31,36,33],cut:1400,inst:'pluck',dens:[.4,.3],drum:'brush',bassMode:'walk',pad:'warm',padVol:.8},
+  fight:{bpm:116,ch:[[40,47,52,55,59],[36,43,48,52,55],[38,45,50,54,57],[35,42,47,51,54]],sc:[64,66,67,69,71,72,74,76,79],bass:[40,36,38,35],cut:1700,inst:'lead',dens:[.4,.22],drum:'drive',bassMode:'pulse',arp:1,pad:'dark',sting:'hit'},
+  fightBig:{bpm:128,ch:[[40,47,52,55,59],[36,43,48,52,55],[41,48,53,57,60],[35,42,47,51,54]],sc:[64,66,67,69,71,72,74,76,79,83],bass:[28,24,29,23],cut:2000,inst:'lead',dens:[.48,.3],drum:'drive',bassMode:'pulse',arp:1,pad:'dark',padVol:1.2,layers:['trem'],sting:'hit'}},
  start(){if(this.on||!AU.ctx)return;this.on=true;this.next=AU.ctx.currentTime+.3;this.timer=setInterval(()=>this.tick(),60);},
- cur(){const Z=this.ZONE[this.zone];if(Z&&(this.mode==='day'||this.zone==='glim'||this.zone==='hollow'))return Z;return this.mode==='day'?this.DAY:this.NIGHT;},
+ /* which track fits right now, most important first */
+ pick(){const has=v=>typeof v!=='undefined';if(!has(player)||!player||!has(env))return 'day';
+  if(has(F)&&F.st==='reeling'&&F.catch&&(F.catch.r>=2||F.catch.relic))return F.catch.r>=4||F.catch.relic?'fightBig':'fight';
+  if((has(panelCtx)&&panelCtx&&panelCtx.kind==='casino')||(has(CASINO)&&CASINO.inside))return 'casino';
+  if(player.zone==='hollow'||player.zone==='abyss')return player.zone;
+  const ev=env.event;if(ev&&ev.big&&this.T[ev.id])return ev.id;
+  if(has(TWV)&&TWV.near&&Math.hypot(TWV.near.x-player.pos.x,TWV.near.z-player.pos.z)<170)return 'well';
+  if(ev&&this.T[ev.id])return ev.id;
+  if(env.weather==='storm'&&env.rain>.6)return 'storm';
+  const day=env.day>=.42,z=player.zone;if((z==='petal'||z==='dune')&&day)return z;if(z==='glim')return 'glim';
+  if(env.weather==='fog'&&env.fog>.5)return 'fog';if(env.weather==='rain'&&env.rain>.5)return 'rain';
+  return day?'day':'night';},
+ cur(){return this.T[this.key]||this.T.day;},
  tick(){const c=AU.ctx;if(!c||c.state!=='running')return;const P=this.cur();const spb=60/(P.bpm*(state.settings.chill?.92:1))/2;
   while(this.next<c.currentTime+.3){this.play(this.next,spb);this.next+=spb;this.step++;}},
- play(t,spb){const s=this.step%32,beat=s%8;let P=this.cur();
-  if(s===0){this.ci=(this.ci+1)%4;if(this.ci===0||this.ci===2){const want=(typeof env!=='undefined'&&env.day<.42)?'night':'day';const z=(typeof player!=='undefined'&&player&&player.zone)||'cove';if(want!==this.mode||z!==this.zone){this.mode=want;this.zone=z;P=this.cur();}}
-   this.pad(P.ch[this.ci],t,spb*32,P.cut);}
-  if(beat===0)this.bass(P.bass[this.ci],t,spb*6);
-  if(beat===4&&this.mode==='day')this.bass(P.bass[this.ci]+7,t,spb*3,.05);
-  const dens=this.mode==='day'?(beat%2===0?.42:.2):(beat%2===0?.26:.06);
-  if(Math.random()<dens){this.deg=clamp(this.deg+pick([-2,-1,-1,0,1,1,2]),0,P.sc.length-1);const m=P.sc[this.deg];if(P.inst==='koto')this.koto(m,t);else if(P.inst==='mbox'||this.mode!=='day')this.mbox(m,t);else this.pluck(m,t);}
-  if(P.drum&&(beat===0||beat===3||beat===6||(beat===7&&Math.random()<.4)))this.drum(t,beat===0);
-  if(this.mode==='day'&&beat%2===1&&Math.random()<.7)AU.n(.05,.008,7000,6000,{type:'highpass',bus:'music',delay:t-AU.ctx.currentTime});},
- pad(notes,t,dur,cut){const c=AU.ctx;const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=cut;f.Q.value=.4;const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.05,t+2.2);g.gain.setValueAtTime(.05,t+dur-.4);g.gain.exponentialRampToValueAtTime(0.0001,t+dur+2.4);f.connect(g);g.connect(AU.bus.music);
-  for(const m of notes)for(const dt of[-7,7]){const o=c.createOscillator();o.type='triangle';o.frequency.value=mtof(m);o.detune.value=dt;o.connect(f);o.start(t);o.stop(t+dur+2.6);}},
- bass(m,t,dur,v=.09){const c=AU.ctx;const o=c.createOscillator();o.type='sine';o.frequency.value=mtof(m);const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.05);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(AU.bus.music);o.start(t);o.stop(t+dur+.1);},
+ /* switch tracks on a half bar: fade the old pads out, start the new chord at once, mark big changes with a sting */
+ switchTo(k,t,spb){const now=AU.ctx.currentTime;for(const p of this.pads){try{p.g.gain.cancelScheduledValues(now);p.g.gain.setTargetAtTime(0.0001,now,.6);}catch(e){}}this.pads=[];
+  this.key=k;const P=this.cur();this.ci=0;this.step=0;this.deg=Math.floor(P.sc.length/2);if(P.sting)this.sting(P.sting,t);this.pad(P.ch[0],t,spb*32,P);},
+ play(t,spb){const s=this.step%32,beat=s%8;
+  if(beat%4===0){this.want=this.pick();if(this.want!==this.key){this.switchTo(this.want,t,spb);return;}}
+  const P=this.cur();
+  if(s===0){this.ci=(this.ci+1)%4;this.pad(P.ch[this.ci],t,spb*32,P);this.layers(P,t,spb);}
+  const root=P.bass[this.ci];
+  if(P.bassMode==='pulse')this.bass(root+(beat===6?12:0),t,spb*.9,.07);
+  else if(P.bassMode==='walk'){if(beat%2===0)this.bass(root+[0,4,7,9][beat/2],t,spb*1.8,.08);}
+  else{if(beat===0)this.bass(root,t,spb*6);if(beat===4&&P.fifth)this.bass(root+7,t,spb*3,.05);}
+  if(P.arp&&beat%1===0){const ch=P.ch[this.ci],n=ch[[1,2,3,4,3,2,1,2][beat]]+12;this.harp(n,t,P.inst==='lead'?.022:.03);}
+  const dens=P.dens[beat%2];if(Math.random()<dens){this.deg=clamp(this.deg+pick([-2,-1,-1,0,1,1,2]),0,P.sc.length-1);this.voice(P.inst,P.sc[this.deg],t,spb);}
+  this.drums(P,beat,t);
+  if(P.shaker&&beat%2===1&&Math.random()<.7)AU.n(.05,.008,7000,6000,{type:'highpass',bus:'music',delay:t-AU.ctx.currentTime});
+  if(P.layers&&P.layers.includes('shimmer')&&Math.random()<.12)this.bellNote(P.sc[P.sc.length-1-Math.floor(Math.random()*4)]+12,t,.018);
+  if(P.layers&&P.layers.includes('drops')&&Math.random()<.08)this.bellNote(pick(P.sc)+12,t,.014);},
+ voice(inst,m,t,spb){if(inst==='koto')this.koto(m,t);else if(inst==='mbox')this.mbox(m,t);else if(inst==='bell')this.bellNote(m,t,.04);else if(inst==='lead')this.lead(m,t,spb*1.6);else this.pluck(m,t);},
+ drums(P,beat,t){const d=P.drum;if(!d)return;const dl=t-AU.ctx.currentTime;
+  if(d==='hand'){if(beat===0||beat===3||beat===6||(beat===7&&Math.random()<.4))this.drum(t,beat===0);}
+  else if(d==='soft'){if(beat===0||beat===4)this.kick(t,.06);if(beat%2===1)AU.n(.04,.012,8000,6500,{type:'highpass',bus:'music',delay:dl});}
+  else if(d==='brush'){if(beat===0||beat===5)this.kick(t,.045);AU.n(.09,beat%2?.006:.011,4000,2500,{q:.6,bus:'music',delay:dl});}
+  else if(d==='drive'){if(beat===0||beat===4||(beat===7&&Math.random()<.3))this.kick(t,.11);if(beat===2||beat===6)this.snare(t);AU.n(.03,beat%2?.012:.02,9000,7000,{type:'highpass',bus:'music',delay:dl});}
+  else if(d==='tom'){if(beat===0)this.tom(t,70,.12);if(beat===6&&Math.random()<.6)this.tom(t,92,.07);}},
+ layers(P,t,spb){const L=P.layers||[],dur=spb*32,c=AU.ctx;
+  if(L.includes('drone')){const o=c.createOscillator();o.type='sawtooth';o.frequency.value=mtof(P.bass[this.ci]-12);const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=180;const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.035,t+2);g.gain.exponentialRampToValueAtTime(0.0001,t+dur+1.5);o.connect(f);f.connect(g);g.connect(AU.bus.music);o.start(t);o.stop(t+dur+1.6);this.pads.push({g});}
+  if(L.includes('trem')){const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=1400;const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.02,t+1);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+   const lfo=c.createOscillator();lfo.frequency.value=7.5;const lg=c.createGain();lg.gain.value=.012;lfo.connect(lg);lg.connect(g.gain);f.connect(g);g.connect(AU.bus.music);lfo.start(t);lfo.stop(t+dur+.2);
+   for(const m of P.ch[this.ci].slice(2)){const o=c.createOscillator();o.type='sawtooth';o.frequency.value=mtof(m+12);o.connect(f);o.start(t);o.stop(t+dur+.2);}this.pads.push({g});}
+  if(L.includes('whale')&&Math.random()<.6){const o=c.createOscillator();o.type='sine';const t0=t+spb*rand(2,10),f0=rand(260,340);o.frequency.setValueAtTime(f0,t0);o.frequency.exponentialRampToValueAtTime(f0*.55,t0+2.6);o.frequency.exponentialRampToValueAtTime(f0*.8,t0+4.2);
+   const g=c.createGain();g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(.05,t0+.8);g.gain.exponentialRampToValueAtTime(0.0001,t0+4.4);o.connect(g);g.connect(AU.bus.music);g.connect(AU.dlySend);o.start(t0);o.stop(t0+4.5);}
+  if(L.includes('drip')){for(let i=0;i<3;i++)this.bellNote(pick(P.sc)+12,t+spb*rand(0,30),.012);}},
+ sting(kind,t){const d=Math.max(0,t-AU.ctx.currentTime);
+  if(kind==='swell'){AU.n(2.4,.05,600,5000,{q:.5,bus:'music',delay:Math.max(0,d-.4),att:1.6});this.tom(t,60,.14);}
+  else if(kind==='sparkle'){for(let i=0;i<8;i++)this.bellNote(84+[0,4,7,11,12,16,19,24][i],t+i*.06,.025);}
+  else if(kind==='hit'){this.kick(t,.16);AU.n(.6,.06,3000,9000,{type:'highpass',bus:'music',delay:d});this.tom(t+.12,80,.1);}},
+ /* pads: warm (detuned triangles), air (soft sines with a breathy filter), glass (high sines), dark (low-passed saws) */
+ pad(notes,t,dur,P){const c=AU.ctx,kind=P.pad||'warm',vol=.05*(P.padVol||1);const f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=kind==='dark'?Math.min(P.cut,700):kind==='glass'?P.cut*1.6:P.cut;f.Q.value=.4;
+  const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+(kind==='air'?3:2.2));g.gain.setValueAtTime(vol,t+dur-.4);g.gain.exponentialRampToValueAtTime(0.0001,t+dur+2.4);f.connect(g);g.connect(AU.bus.music);
+  const type=kind==='dark'?'sawtooth':kind==='air'||kind==='glass'?'sine':'triangle',shift=kind==='glass'?12:0;
+  for(const m of notes)for(const dt of[-7,7]){const o=c.createOscillator();o.type=type;o.frequency.value=mtof(m+shift);o.detune.value=dt;o.connect(f);o.start(t);o.stop(t+dur+2.6);}
+  if(kind==='air'){const n=c.createBufferSource();n.buffer=AU.nb;n.loop=true;const bf=c.createBiquadFilter();bf.type='bandpass';bf.frequency.value=mtof(notes[3]+12);bf.Q.value=6;const ng=c.createGain();ng.gain.value=.25;n.connect(bf);bf.connect(ng);ng.connect(g);n.start(t,Math.random()*2);n.stop(t+dur+2.6);}
+  this.pads.push({g});if(this.pads.length>6)this.pads.splice(0,this.pads.length-6);},
+ bass(m,t,dur,v=.09){const c=AU.ctx;const o=c.createOscillator();o.type='sine';o.frequency.value=mtof(m);const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.03);g.gain.exponentialRampToValueAtTime(0.0001,t+Math.max(.1,dur));o.connect(g);g.connect(AU.bus.music);o.start(t);o.stop(t+dur+.1);},
+ kick(t,v){const c=AU.ctx,o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(42,t+.12);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+.22);o.connect(g);g.connect(AU.bus.music);o.start(t);o.stop(t+.25);},
+ snare(t){const d=t-AU.ctx.currentTime;AU.n(.14,.05,2600,1800,{q:.7,bus:'music',delay:d});AU.o(190,.08,{vol:.03,slide:-60,bus:'music',delay:d});},
+ tom(t,f,v){const c=AU.ctx,o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(f*1.4,t);o.frequency.exponentialRampToValueAtTime(f,t+.25);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+.6);o.connect(g);g.connect(AU.bus.music);g.connect(AU.dlySend);o.start(t);o.stop(t+.65);},
+ harp(m,t,v){const c=AU.ctx,f=mtof(m),o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.005);g.gain.exponentialRampToValueAtTime(0.0001,t+.5);o.connect(g);g.connect(AU.bus.music);g.connect(AU.dlySend);o.start(t);o.stop(t+.55);},
+ lead(m,t,dur){const c=AU.ctx,f=mtof(m),o=c.createOscillator(),lp=c.createBiquadFilter(),g=c.createGain();o.type='square';o.frequency.value=f;const vib=c.createOscillator(),vg=c.createGain();vib.frequency.value=5.5;vg.gain.value=f*.006;vib.connect(vg);vg.connect(o.frequency);
+  lp.type='lowpass';lp.frequency.setValueAtTime(f*3,t);lp.frequency.exponentialRampToValueAtTime(f*1.5,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.028,t+.02);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(lp);lp.connect(g);g.connect(AU.bus.music);g.connect(AU.dlySend);o.start(t);vib.start(t);o.stop(t+dur+.05);vib.stop(t+dur+.05);},
+ bellNote(m,t,v){const c=AU.ctx,f=mtof(m);const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.004);g.gain.exponentialRampToValueAtTime(0.0001,t+2.2);g.connect(AU.bus.music);g.connect(AU.dlySend);
+  for(const[k,a]of[[1,1],[2.01,.35],[3.98,.12]]){const o=c.createOscillator();o.type='sine';o.frequency.value=f*k;const gg=c.createGain();gg.gain.value=a;o.connect(gg);gg.connect(g);o.start(t);o.stop(t+2.3);}},
  pluck(m,t){const c=AU.ctx,f=mtof(m);const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.07,t+.006);g.gain.exponentialRampToValueAtTime(0.0001,t+1.1);g.connect(AU.bus.music);g.connect(AU.dlySend);
   const o=c.createOscillator();o.type='sine';o.frequency.value=f;o.connect(g);const o2=c.createOscillator();o2.type='sine';o2.frequency.value=f*3.98;const g2=c.createGain();g2.gain.setValueAtTime(.25,t);g2.gain.exponentialRampToValueAtTime(0.001,t+.15);o2.connect(g2);g2.connect(g);
   o.start(t);o2.start(t);o.stop(t+1.2);o2.stop(t+.2);},
@@ -452,3 +586,4 @@ const Music={on:false,step:0,next:0,mode:'day',ci:0,deg:4,timer:null,
  mbox(m,t){const c=AU.ctx,f=mtof(m+12);const g=c.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(.045,t+.004);g.gain.exponentialRampToValueAtTime(0.0001,t+2.6);g.connect(AU.bus.music);g.connect(AU.dlySend);
   for(const[k,v]of[[1,1],[2.76,.28],[5.4,.1]]){const o=c.createOscillator();o.type='sine';o.frequency.value=f*k;const gg=c.createGain();gg.gain.value=v;o.connect(gg);gg.connect(g);o.start(t);o.stop(t+2.7);}}
 };
+

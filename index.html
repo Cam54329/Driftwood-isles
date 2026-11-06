@@ -160,7 +160,18 @@ body.menu #devBar,body.photo #devBar{display:none}
 .reel.spin{animation:reelBlur .1s linear infinite}@keyframes reelBlur{50%{transform:translateY(3px);filter:blur(1.5px)}}
 .wheelBox{position:relative;width:230px;height:230px;margin:6px auto}.wheelBox svg{width:100%;height:100%;filter:drop-shadow(0 6px 12px rgba(0,0,0,.5))}
 .wheelPin{position:absolute;left:50%;top:-4px;width:0;height:0;margin-left:-11px;border:11px solid transparent;border-top:20px solid #f2c14e;filter:drop-shadow(0 2px 2px #000)}
-.cards{display:flex;justify-content:center;margin:6px 0}.pcard{width:84px;height:116px;display:grid;place-items:center;font:900 44px var(--hud);color:#1a1c22;background:#f4f1ea;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.5),inset 0 0 0 3px #c8a040}
+.cards{display:flex;justify-content:center;gap:6px;margin:6px 0;flex-wrap:wrap}
+.pcard.sm{width:52px;height:72px;font-size:24px;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center}.pcard small{font-size:18px}.pcard.red{color:#c8303a}.pcard.back{background:repeating-linear-gradient(45deg,#7a1e2a 0 6px,#5a1420 6px 12px);color:#f2c14e}
+.coinBig{font-size:64px;line-height:1.2}.coinBig.flip{animation:coinFlip .25s linear infinite}@keyframes coinFlip{50%{transform:scaleX(.1)}}
+.shells,.lanterns{display:flex;gap:10px;justify-content:center;margin:6px 0}.shellB,.lanB{width:74px;height:74px;font-size:40px;border-radius:8px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 2px rgba(200,160,64,.5)}
+.shellB:not(:disabled):hover,.lanB:not(:disabled):hover{background:rgba(255,255,255,.16);transform:translateY(-2px)}.shellB.win,.lanB.win{box-shadow:inset 0 0 0 3px #f2c14e,0 0 18px rgba(242,193,78,.6)}.lanB b{font:900 20px var(--hud);color:#ffd86a}
+.diceRow{font-size:72px;line-height:1;display:flex;gap:14px;justify-content:center}.diceRow.roll span{display:inline-block;animation:diceRoll .2s linear infinite}@keyframes diceRoll{50%{transform:rotate(20deg) translateY(-4px)}}
+.crashBox{width:100%;padding:10px;border-radius:6px;background:linear-gradient(#2a1410,#14080a)}.crashBox b{display:block;font:900 46px var(--hud);color:#ffb04a;text-shadow:0 0 18px rgba(255,120,40,.6)}.crashBox.dead b{color:#ff4a3a}
+.crashBar{height:10px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}.crashBar i{display:block;height:100%;background:linear-gradient(90deg,#f2c14e,#ff5a2a)}
+.rouNum{width:96px;height:96px;margin:4px auto;border-radius:50%;display:grid;place-items:center;font:900 40px var(--hud);background:#2a3440;box-shadow:inset 0 0 0 4px #c8a040}.rouNum.red{background:#b8303a}.rouNum.black{background:#1a1c22}.rouNum.green{background:#1e7a3a}.rouNum.spin{animation:hotShake .1s linear infinite}
+.cas select{background:var(--slot);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:5px;font:700 13px var(--hud)}
+.mines{display:grid;grid-template-columns:repeat(5,46px);gap:5px;justify-content:center;margin:6px 0}.mineB{height:46px;border-radius:6px;font-size:22px;background:linear-gradient(#3a3060,#241c40);box-shadow:inset 0 0 0 1px rgba(200,170,255,.3)}
+.mineB:not(:disabled):hover{background:linear-gradient(#4a4078,#2e2450)}.mineB.ok{background:#1e3a4a}.mineB.boom{background:#5a1a1a}.pcard{width:84px;height:116px;display:grid;place-items:center;font:900 44px var(--hud);color:#1a1c22;background:#f4f1ea;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,.5),inset 0 0 0 3px #c8a040}
 body:not(.desk) #chat{display:none}
 body:not(.desk) #chat.open{display:flex;left:10px;right:10px;width:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:45;padding:10px;border-radius:6px;background:var(--panel2)}
 body:not(.desk) #chat.open #chatLog{max-height:38vh;opacity:1}
@@ -220,6 +231,12 @@ body.menu #fishTip,body.photo #fishTip,body.menu #hook,body.menu #reel{display:n
 body.menu .story{display:none}
 .coinFly{position:fixed;z-index:60;width:16px;height:16px;margin:-8px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,#f2c14e 55%,#b88a1e);box-shadow:0 0 6px rgba(242,193,78,.8);pointer-events:none;animation:coinFly .9s cubic-bezier(.5,-.3,.7,1) both}
 @keyframes coinFly{to{transform:translate(var(--dx),var(--dy)) scale(.6);opacity:.4}}
+.lsw{width:28px;height:28px;flex:none;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff8,transparent 45%),var(--c);box-shadow:inset 0 0 0 3px rgba(0,0,0,.35)}.lsw.glow{box-shadow:inset 0 0 0 3px rgba(0,0,0,.25),0 0 12px var(--c)}.lsw.shift{animation:hue 3s linear infinite}
+.card.locked{opacity:.55}.upd{margin:4px 0 0;padding-left:18px;line-height:1.55;color:var(--ink2);font-weight:700}
+.crateStrip{position:relative;width:100%;height:116px;overflow:hidden;border-radius:6px;background:linear-gradient(90deg,#0c1016,#1a222c 20%,#1a222c 80%,#0c1016)}
+.crateRow{display:flex;gap:8px;padding:10px 0 0 calc(50% - 50px);will-change:transform}.crateTile{flex:none;width:100px;height:96px;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,.06);box-shadow:inset 0 -4px 0 var(--rc,#888)}
+.crateTile b{font:800 11px var(--hud);text-align:center;line-height:1.15;padding:0 4px}.crateTile .lu{font-size:28px}.crateTile.big{font-size:52px;box-shadow:none;background:none;margin-left:0}
+.cratePin{position:absolute;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:#f2c14e;box-shadow:0 0 10px #f2c14e}
 /* catch card */
 #catchCard{position:fixed;z-index:30;left:50%;bottom:calc(100px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);min-width:280px;max-width:calc(100vw - 32px);padding:12px 22px 14px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);border-top:4px solid var(--rc,#fff);text-align:center;animation:cardIn .5s cubic-bezier(.2,1.4,.4,1);cursor:pointer}
 @keyframes cardIn{from{transform:translate(-50%,24px) scale(.9);opacity:0}}
@@ -487,7 +504,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radiu
   <input type="range" id="photoTime" min="0" max="1" step="0.001" aria-label="Time of day">
   <button class="btn sm sky" id="photoExit">Exit</button>
 </div>
-<div id="pause" hidden><div class="pz"><h2>Paused</h2><button data-p="resume">Resume</button><button data-p="settings">Settings</button><button data-p="controls">Controls</button><button data-p="look">Change look</button><button data-p="menu">Main menu</button></div></div>
+<div id="pause" hidden><div class="pz"><h2>Paused</h2><button data-p="resume">Resume</button><button data-p="settings">Settings</button><button data-p="controls">Controls</button><button data-p="tackle">Tackle &amp; crates</button><button data-p="news">What's new</button><button data-p="look">Change look</button><button data-p="menu">Main menu</button></div></div>
 <div id="menu" hidden>
   <div class="mm-box">
     <div class="mm-title">

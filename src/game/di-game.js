@@ -164,17 +164,17 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  if(world.altarCrystal){const c=world.altarCrystal;c.rotation.y+=dt*.8;c.position.y=world.altarY+Math.sin(WIND.uTime.value*1.6)*.25;}
  // refresh the captured sky (reflections + lighting) every so often, sooner after a lightning flash
  updateBigFx(dt);
- /* inside the Drowned Hollow the cave takes over the lighting */
- {const H=ZONES.hollow,hk=1-smooth(H.R*1.6,H.R*1.85,Math.hypot(cp.x-H.x,cp.z-H.z));env.cave=hk;waterU.uCave.value=hk;if(hk>0){
-  _c1.set('#0a262c');scene.fog.color.lerp(_c1,hk);scene.fog.near=lerp(scene.fog.near,4,hk);scene.fog.far=lerp(scene.fog.far,150,hk);
-  sun.intensity*=1-hk*.94;hemi.intensity=lerp(hemi.intensity,.9,hk);hemi.color.lerp(_c2.set('#4ad8d0'),hk);hemi.groundColor.lerp(_c3.set('#101a22'),hk);
+ /* inside a sea cave the cave takes over the lighting: teal in the Drowned Hollow, violet and ember in the Sunless Deep */
+ {let hk=0,deep=false;for(const k of['hollow','abyss']){const H=ZONES[k],v=1-smooth(H.R*1.6,H.R*1.85,Math.hypot(cp.x-H.x,cp.z-H.z));if(v>hk){hk=v;deep=k==='abyss';}}env.cave=hk;waterU.uCave.value=hk;if(hk>0){
+  _c1.set(deep?'#1a0a1c':'#0a262c');scene.fog.color.lerp(_c1,hk);scene.fog.near=lerp(scene.fog.near,4,hk);scene.fog.far=lerp(scene.fog.far,deep?120:150,hk);
+  sun.intensity*=1-hk*.94;hemi.intensity=lerp(hemi.intensity,deep?.7:.9,hk);hemi.color.lerp(_c2.set(deep?'#a05aff':'#4ad8d0'),hk);hemi.groundColor.lerp(_c3.set(deep?'#2a0a10':'#101a22'),hk);
   scene.environmentIntensity*=1-hk*.8;renderer.toneMappingExposure=lerp(renderer.toneMappingExposure,1.5,hk);
   waterU.uFogC.value.lerp(_c1,hk);waterU.uFogN.value=scene.fog.near;waterU.uFogF.value=scene.fog.far;waterU.uSunCol.value.multiplyScalar(1-hk);waterU.uSpark.value*=1-hk;
-  waterU.uDeep.value.lerp(_c2.set('#03141a'),hk);waterU.uShal.value.lerp(_c3.set('#0a4a50'),hk);waterU.uBio.value=Math.max(waterU.uBio.value,hk*.4);waterU.uAmb.value.multiplyScalar(1-hk*.7);
+  waterU.uDeep.value.lerp(_c2.set(deep?'#0e0410':'#03141a'),hk);waterU.uShal.value.lerp(_c3.set(deep?'#3a1028':'#0a4a50'),hk);waterU.uBio.value=Math.max(waterU.uBio.value,hk*(deep?.25:.4));waterU.uAmb.value.multiplyScalar(1-hk*.7);
   glowMat.color.setScalar(lerp(glowMat.color.r,3.4,hk));starU.uA.value*=1-hk;moon.material.opacity*=1-hk;moonHalo.material.opacity*=1-hk;
   if(GFX.rays)GFX.rays.material.uniforms.uK.value*=1-hk;if(GFX.bloom)GFX.bloom.strength=lerp(GFX.bloom.strength,.42,hk);
   for(const h of world.halos)if(h.userData.always)h.material.opacity=Math.max(h.material.opacity,hk*.4);
-  if(world.caveExit){world.caveExit.ring.rotation.z+=dt*.6;}}}
+  for(const r of world.caveRings)r.rotation.z+=dt*.6;}}
  ENV.t-=dt;if(ENV.t<=0||(env.flash>.9&&ENV.t<ENV.every-.1)){ENV.t=ENV.every;updateEnvMap();}}
 
 /* ---------- stats & rolls ---------- */
@@ -190,6 +190,7 @@ function stats(detail){const r=RODM[state.rod],e=state.ench[state.rod],b=state.b
  applyFx(S,r.perk,'Rod perk');if(e)applyFx(S,Object.assign({d:ENCH[e].d},ENCHFX[e]),'Enchant: '+ENCH[e].n);
  if(b)applyFx(S,{luck:b.luck*(b.night&&isNight()?2:1),wait:b.wait,mut:b.mut,wt:b.wt,d:b.d},'Bait: '+b.n);
  if(player&&player.mode==='boat'){const bs=boatStats();applyFx(S,bs.B.fx,'Boat: '+bs.B.n);if(bs.sonar)applyFx(S,{luck:bs.sonar*6,d:'+'+bs.sonar*6+'% luck'},'Sonar level '+bs.sonar);}
+ {const ln=LINEM[state.line];if(ln&&ln.r!=='basic')applyFx(S,ln.fx,'Line: '+ln.n);const lu=state.lure&&LUREM[state.lure];if(lu)applyFx(S,Object.assign({},lu.fx,{luck:(lu.fx.luck||0)*(lu.fx.night&&isNight()?2:1)}),'Lure: '+lu.n);}
  for(const k in state.buffs){const B=BUFFM[k];if(B&&state.buffs[k]>0)applyFx(S,B.fx,B.n);}
  const ev=env.event&&env.event.id;if(ev){if(ev==='surge'||ev==='starfall'){S.mut*=ev==='surge'?3:2;if(detail)S.src.push(['Event: Mutation Surge','Mutation chance ×3']);}else applyFx(S,Object.assign({d:env.event.d},EVFX[ev]),'Event: '+env.event.n);}
  if(F.inSchool&&F.st!=='idle'){S.luck+=40;S.wait*=.5;if(detail)S.src.push(['Fish school','+40% luck, bites twice as fast']);}
@@ -201,7 +202,9 @@ function condOK(s){if(!s.cond)return true;if(s.cond==='night')return isNight()||
 function rollCatch(zone){const st=stats();if(DEV.rar==null&&zone!=='well'&&Math.random()<.012*(1+st.luck*.4))return{relic:true,r:3};
  const pool=SPECIES.filter(s=>s.zone===zone&&condOK(s));const ws=rarityOdds(st.luck);let x=Math.random(),r=0;for(let i=0;i<ws.length;i++){x-=ws[i];if(x<=0){r=i;break;}}if(DEV.rar!=null){r=DEV.rar;DEV.rar=null;if(DEV.open)renderDev();}if(zone==='well')r=[2,2,3,4,5,6,6][r];
  let cands=[];for(let rr=r;rr>=0;rr--){cands=pool.filter(s=>s.r===rr);if(cands.length)break;}if(!cands.length)cands=pool.length?pool:SPECIES.filter(s=>s.zone==='cove'&&s.r===0);
- const sp=pick(cands);return{sp,w:rollWeight(sp,st.wt),mut:Math.random()<st.mut?rollMutation():null,r:sp.r};}
+ let sp=pick(cands);if(zone==='hollow'||zone==='pond_hollow'){const king=SPM.drowned_king,haveAll=SPECIES.filter(s=>(s.zone==='hollow'||s.zone==='pond_hollow')&&s!==king).every(s=>state.dex[s.id]&&state.dex[s.id].n);
+  if(sp===king&&state.level<30){sp=pick(pool.filter(s=>s!==king&&s.r>=3))||pool[0];}else if(zone==='hollow'&&state.level>=30&&haveAll&&!(state.dex.drowned_king&&state.dex.drowned_king.n)&&Math.random()<.03)sp=king;}
+ return{sp,w:rollWeight(sp,st.wt),mut:Math.random()<st.mut?rollMutation():null,r:sp.r};}
 function isNotable(r,mut){return r>=3||(mut&&['golden','prismatic','shadow'].includes(mut))||(r>=2&&!!mut);}
 
 /* ---------- fishing ----------
@@ -221,7 +224,7 @@ function camFwd(){return new V3(-Math.sin(cam.yaw),0,-Math.cos(cam.yaw));}
 function releaseCast(){$('#power').hidden=true;F.inSchool=false;const dir=camFwd();const base=player.mode==='boat'?boat.pos:player.pos;let dist=4+F.power*16,ok=false;
  for(let d=dist;d>=3;d-=.8){const x=base.x+dir.x*d,z=base.z+dir.z*d;if(groundH(x,z)<-.45&&!world.seaRocks.some(r=>Math.hypot(r.x-x,r.z-z)<r.r)){dist=d;ok=true;break;}}
  player.face=Math.atan2(dir.x,dir.z);if(!ok){F.st='idle';toast('Face the water and get closer to the edge to cast.');return;}
- setTackle(bobber,TACKLE[state.baitOn||'none']||'classic');F.dir.copy(dir);rodObj.tip.getWorldPosition(F.from);F.to.set(base.x+dir.x*dist,0,base.z+dir.z*dist);F.flight=.55+F.power*.45;F.arc=2.5+F.power*4.5;F.st='casting';F.t=0;AU.cast(F.power);bobber.visible=true;fline.visible=true;}
+ setTackle(bobber,state.lure&&LUREM[state.lure]?LUREM[state.lure].style:TACKLE[state.baitOn||'none']||'classic');F.dir.copy(dir);rodObj.tip.getWorldPosition(F.from);F.to.set(base.x+dir.x*dist,0,base.z+dir.z*dist);F.flight=.55+F.power*.45;F.arc=2.5+F.power*4.5;F.st='casting';F.t=0;AU.cast(F.power);bobber.visible=true;fline.visible=true;}
 function cancelFishing(){const was=F.st;if(['casting','waiting','bite','reeling'].includes(was)){F.st='retract';F.t=0;F.retFrom.copy(bobber.position);AU.reelIn();}else if(was==='charging'){F.st='idle';$('#power').hidden=true;}exclaim.visible=false;endFightUI();}
 function useBait(){if(!state.baitOn)return;state.bait[state.baitOn]=(state.bait[state.baitOn]||0)-1;if(state.bait[state.baitOn]<=0){delete state.bait[state.baitOn];toast('You ran out of '+BAITM[state.baitOn].n+'.');state.baitOn=null;}updateGear();}
 function buzz(p){try{if(isTouch&&navigator.vibrate)navigator.vibrate(p);}catch(e){}}
@@ -295,7 +298,7 @@ function loseFish(msg,snapped){endFightUI();F.st='retract';F.t=0;F.retFrom.copy(
 function landCatch(){endFightUI();const c=F.catch;AU.catch(c.relic?3:c.r);buzz(c.r>=3?[30,50,30,50,60]:40);camShake(c.r>=3?.3:.16);splash(bobber.position,22,6);F.flyFrom.copy(bobber.position);if(c.r>=3||c.relic)catchBeam(bobber.position,c.relic?'#9eeaff':c.r===6?'#e8e0ff':RAR[c.r].c);addRipple(bobber.position.x,bobber.position.z,1.5);bobber.visible=false;fline.visible=false;
  let held,card;const id=rid();
  if(c.relic){state.relics++;questEvent('relic');held=buildRelic();held.scale.setScalar(.8);card=`<div class="cc-new">TIDE RELIC</div><div class="cc-name">Tide Relic</div><div class="cc-tags"><span class="pill" style="--c:#c6f4ff">Enchant item</span></div><div class="muted">Offer it at the Tide Altar on Mossreach to enchant your rod.</div>`;gainXP(80);F.lastCatch={i:id,sp:'relic',m:null,w:0};$('#catchCard').style.setProperty('--rc','#9eeaff');}
- else{const f={id:state.uid++,sp:c.sp.id,w:c.w,mut:c.mut,lock:false};if(c.sp.zone==='well'&&F.wellIsl)f.vk=Math.round(ZONE_BASE[F.wellIsl]/WELL_REF*100)/100;state.inv.push(f);const dx=state.dex[c.sp.id]||(state.dex[c.sp.id]={n:0,best:0,muts:[]});const isNew=dx.n===0;dx.n++;dx.best=Math.max(dx.best,c.w);if(c.mut&&!dx.muts.includes(c.mut))dx.muts.push(c.mut);if(Math.random()<stats().dbl&&state.inv.length<maxInv()){state.inv.push({id:state.uid++,sp:c.sp.id,w:rollWeight(c.sp,stats().wt),mut:c.mut,lock:false});dx.n++;setTimeout(()=>toast('Double catch! A second '+c.sp.name+' came up too.','gold'),600);}
+ else{const f={id:state.uid++,sp:c.sp.id,w:c.w,mut:c.mut,lock:false};if(c.sp.zone==='well'&&F.wellIsl)f.vk=Math.round(ZONE_BASE[F.wellIsl]/WELL_REF*100)/100;state.inv.push(f);const dx=state.dex[c.sp.id]||(state.dex[c.sp.id]={n:0,best:0,muts:[]});const isNew=dx.n===0;if(isNew&&c.r>=3)setTimeout(()=>grantCrate('a new '+RAR[c.r].n+' species'),1400);dx.n++;dx.best=Math.max(dx.best,c.w);if(c.mut&&!dx.muts.includes(c.mut))dx.muts.push(c.mut);if(Math.random()<stats().dbl&&state.inv.length<maxInv()){state.inv.push({id:state.uid++,sp:c.sp.id,w:rollWeight(c.sp,stats().wt),mut:c.mut,lock:false});dx.n++;setTimeout(()=>toast('Double catch! A second '+c.sp.name+' came up too.','gold'),600);}
   held=buildFish(c.sp,c.mut);held.scale.setScalar(fishScale(c.sp,c.w));
   card=`${isNew?'<div class="cc-new">NEW SPECIES</div>':''}<div class="cc-name">${c.mut?MUTS[c.mut].n+' ':''}${esc(c.sp.name)}</div><div class="cc-tags">${rarPill(c.r)}${c.mut?mutPill(c.mut):''}</div><div class="cc-stats"><span><b>${fmtW(c.w)} kg</b>Weight</span><span><b>${fmt(fishValue(f))}c</b>Value</span></div>`;
   const avg=(c.sp.minW+c.sp.maxW)/2;gainXP(RAR[c.r].xp*(c.mut?1.5:1)*clamp(c.w/avg,.6,2));F.lastCatch={i:id,sp:c.sp.id,m:c.mut||null,w:c.w};$('#catchCard').style.setProperty('--rc',RAR[c.r].c);
@@ -307,6 +310,8 @@ function landCatch(){endFightUI();const c=F.catch;AU.catch(c.relic?3:c.r);buzz(c
 function finishCatch(){if(F.st!=='caught')return;$('#catchCard').hidden=true;disposeHeld(F.held);F.held=null;rodObj.g.visible=true;F.st='idle';
  if(!state.tips.sell&&state.inv.length>=3){state.tips.sell=1;toast('Sell your catch to a Fish Merchant for coins.');}}
 /* small motions that make the tackle feel alive: floats rock on the swell, lures point back up the line and wobble, spinner blades turn */
+const _lc=new THREE.Color();
+function lineLook(line,id,T){const L=LINEM[id]||LINEM.basic;_lc.set(L.c);if(L.shift)_lc.setHSL((T*.08)%1,.85,.65);if(L.glow)_lc.multiplyScalar(2.2);line.material.color.copy(_lc);line.material.opacity=L.r==='basic'?.7:.95;}
 function updateTackle(dt,T){const u=bobber.userData,b=bobber,R=F.reel;const base=fightBase(),face=Math.atan2(base.x-b.position.x,base.z-b.position.z);
  if(u.blade)u.blade.rotation.y+=dt*(F.st==='reeling'&&R&&R.hold?34:F.twK>0?24:F.st==='retract'?30:1.5);
  const rock=F.st==='bite'?Math.sin(F.t*30)*.3:F.st==='reeling'?.35+Math.sin(F.t*14)*.15:Math.sin(T*2.1+1)*.08+F.twK*.25;
@@ -330,12 +335,12 @@ function updateFishing(dt){F.t+=dt;const T=WIND.uTime.value;
  else if(F.st==='retract'){rodObj.tip.getWorldPosition(tipPos);const k=clamp(F.t/.35,0,1);bobber.position.lerpVectors(F.retFrom,tipPos,k);if(k>=1){F.st='idle';bobber.visible=false;fline.visible=false;}}
  else if(F.st==='caught'){if(F.held){const k=clamp(F.t/.5,0,1),e=1-Math.pow(1-k,3),hy=HEAD_TOP+.75+Math.sin(F.t*4)*.08*k;F.held.position.set(lerp(F.flyFrom.x,0,e),lerp(F.flyFrom.y,hy,e)+Math.sin(k*Math.PI)*2.2,lerp(F.flyFrom.z,0,e));
    F.held.rotation.y=Math.sin(F.t*2)*.25;F.held.rotation.z=Math.sin(F.t*9)*.14*Math.max(0,1-F.t/2.5)+(1-e)*F.t*12;if(F.held.userData.tail)F.held.userData.tail.rotation.y=Math.sin(F.t*14)*.45;if(F.t>=.5&&F.t-dt<.5)AU.flop();}if(F.t>3.4)finishCatch();}
- if(fline.visible){rodObj.tip.getWorldPosition(tipPos);const sag=F.st==='reeling'&&F.reel?lerp(.8,.02,clamp(F.reel.tens*1.4,0,1)):F.st==='casting'?.2:F.st==='bite'?.12:1.2;drawLine(fline,tipPos,bobber.position,sag,bobber.userData.top);updateTackle(dt,T);}
+ if(fline.visible){rodObj.tip.getWorldPosition(tipPos);const sag=F.st==='reeling'&&F.reel?lerp(.8,.02,clamp(F.reel.tens*1.4,0,1)):F.st==='casting'?.2:F.st==='bite'?.12:1.2;drawLine(fline,tipPos,bobber.position,sag,bobber.userData.top);updateTackle(dt,T);lineLook(fline,state.line,T);}
  if(isTouch){const cb=re('castBtn'),lb=F.st==='waiting'||F.st==='casting'?'REEL':F.st==='caught'?'DONE':'CAST';if(cb.textContent!==lb)cb.textContent=lb;}}
 
 /* ---------- XP / HUD ---------- */
 const xpNeed=l=>Math.round(80*Math.pow(l,1.45));
-function gainXP(n){state.xp+=Math.round(n*stats().xp);let up=false;while(state.xp>=xpNeed(state.level)){state.xp-=xpNeed(state.level);state.level++;up=true;const bonus=state.level*50;state.coins+=bonus;state.earned+=bonus;AU.level();toast(`Level ${state.level}! +${fmt(bonus)} coins, +1.5% luck`,'gold');}if(up){checkLevelTitles();rebuildPlayerTag();}}
+function gainXP(n){state.xp+=Math.round(n*stats().xp);let up=false;while(state.xp>=xpNeed(state.level)){state.xp-=xpNeed(state.level);state.level++;up=true;state.crates=(state.crates||0)+1;setTimeout(()=>toast('+1 Mystery Crate for reaching level '+state.level+'! Open it from your tackle (slot 2).','gold'),1600);const bonus=state.level*50;state.coins+=bonus;state.earned+=bonus;AU.level();toast(`Level ${state.level}! +${fmt(bonus)} coins, +1.5% luck`,'gold');}if(up){checkLevelTitles();rebuildPlayerTag();}}
 function rarPill(r){const R=RAR[r];return `<span class="pill ${r===6?'secret':r===5?'exotic':''}" style="--c:${R.p}">${R.n}</span>`;}
 function mutPill(m){return `<span class="pill" style="--c:${MUTS[m].c}">${MUTS[m].n} ×${MUTS[m].m}</span>`;}
 function updateHUD(){$('#coinTxt').textContent=fmt(state.coins);$('#lvlTxt').textContent='Level '+state.level;$('#xpFill').style.width=(state.xp/xpNeed(state.level)*100)+'%';$('#relicTxt').textContent=state.relics?state.relics+' relic'+(state.relics>1?'s':''):'';updateGear();}

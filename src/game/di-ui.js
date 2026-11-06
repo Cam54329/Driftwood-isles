@@ -72,14 +72,14 @@ function openAltar(n){let result='';openPanel('Tide Altar','Mossreach',()=>{cons
  bindPanel({ench:()=>{if(!state.relics)return;state.relics--;const k=pick(Object.keys(ENCH).filter(k=>k!==state.ench[state.rod]));state.ench[state.rod]=k;equipRodModel();AU.enchant();
   if(world.altarCrystal)splash(world.altarCrystal.position,30,7);result=`<div class="card eq"><b>The altar flares!</b><span class="muted">Your ${esc(r.n)} is now <span class="ench" style="--c:${ENCH[k].c}">${ENCH[k].n}</span> · ${ENCH[k].d}</span></div>`;save();updateHUD();rerender();}});});}
 function openDex(){if(JOIN.on)return;let tab=player.zone&&ZONES[player.zone]?player.zone:'cove';openPanel('Bestiary','',()=>{const got=SPECIES.filter(s=>state.dex[s.id]&&state.dex[s.id].n).length;$('#pSub').textContent=`${got} of ${SPECIES.length} species caught`;
- const zs=[...ISL,'sea',...ISL.map(k=>'pond_'+k),'well','hollow','pond_hollow'];const list=SPECIES.filter(s=>s.zone===tab);const cnt=z=>SPECIES.filter(s=>s.zone===z&&state.dex[s.id]&&state.dex[s.id].n).length;
+ const zs=[...ISL,'sea',...ISL.map(k=>'pond_'+k),'well','hollow','pond_hollow','abyss','pond_abyss'];const list=SPECIES.filter(s=>s.zone===tab);const cnt=z=>SPECIES.filter(s=>s.zone===z&&state.dex[s.id]&&state.dex[s.id].n).length;
  body(`<div class="tabs">${zs.map(z=>`<button class="tab ${tab===z?'on':''}" data-act="tab" data-id="${z}">${ZONES[z].n} ${cnt(z)}/${SPECIES.filter(s=>s.zone===z).length}</button>`).join('')}</div>
- <div class="dex">${list.map(s=>{const d=state.dex[s.id];const c=d&&d.n;return `<div class="dcard ${c?'':'no'}">${fishSVG(s,null,!c)}<b>${esc(s.name)}</b>${rarPill(s.r)}<small>${ZONES[s.zone].n}${s.cond?' · '+COND[s.cond]:''}<br>${fmtW(s.minW)}–${fmtW(s.maxW)} kg · base ${fmt(s.price)}c<br>${c?`Caught ×${d.n} · best ${fmtW(d.best)} kg${d.muts&&d.muts.length?'<br>Mutations: '+d.muts.map(m=>MUTS[m].n).join(', '):''}`:'Not caught yet'}</small></div>`;}).join('')}</div>`);
+ <div class="dex">${list.map(s=>{const d=state.dex[s.id];const c=d&&d.n;return `<div class="dcard ${c?'':'no'}">${fishSVG(s,null,!c)}<b>${esc(s.name)}</b>${rarPill(s.r)}<small>${ZONES[s.zone].n}${s.cond?' · '+COND[s.cond]:''}${s.lvl?' · Level '+s.lvl+'+':''}<br>${fmtW(s.minW)}–${fmtW(s.maxW)} kg · base ${fmt(s.price)}c<br>${c?`Caught ×${d.n} · best ${fmtW(d.best)} kg${d.muts&&d.muts.length?'<br>Mutations: '+d.muts.map(m=>MUTS[m].n).join(', '):''}`:'Not caught yet'}</small></div>`;}).join('')}</div>`);
  bindPanel({tab:id=>{tab=id;rerender();}});});}
 function vol(id,label,v){return `<label class="slider" for="${id}"><span>${label}</span><input type="range" id="${id}" min="0" max="1" step="0.01" value="${v}" style="--p:${v*100}%"><span>${Math.round(v*100)}</span></label>`;}
 let devMsg='';
 function devCard(){return `<div class="card"><h3>Developer</h3>${DEV.on?`<div class="muted">Developer tools are on for this device. Press <kbd>\`</kbd> or tap <b>DEV</b> at the top right.</div><button class="btn sky sm" data-act="devopen" style="align-self:flex-start">Open developer tools</button>`:
- `<div class="muted">For the server owner. Enter the owner code you set in Firebase (see SETUP-MULTIPLAYER.md).</div><div class="row" style="gap:8px"><input id="devCode" type="password" autocomplete="off" placeholder="Owner code" style="flex:1;min-width:0;background:var(--slot);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:8px;font:700 13px var(--hud)"><button class="btn sm" data-act="devunlock">Unlock</button></div>`}${devMsg?`<div class="muted" style="color:var(--gold2)">${esc(devMsg)}</div>`:''}</div>`;}
+ `<div class="muted">For the game's owner. Enter your dev key.</div><div class="row" style="gap:8px"><input id="devCode" type="password" autocomplete="off" placeholder="Dev key" style="flex:1;min-width:0;background:var(--slot);color:var(--ink);border:1px solid var(--line2);border-radius:4px;padding:8px;font:700 13px var(--hud)"><button class="btn sm" data-act="devunlock">Unlock</button></div>`}${devMsg?`<div class="muted" style="color:var(--gold2)">${esc(devMsg)}</div>`:''}</div>`;}
 /* ---------- your save: backups, save file and save code (move progress to another device or browser) ---------- */
 let saveUI={load:false,msg:'',restore:null};
 function saveCode(){const j=JSON.stringify(state);return 'DI3:'+btoa(unescape(encodeURIComponent(j)));}
@@ -191,9 +191,17 @@ function devAct(a,v){
  else if(a==='chatme')clearMyChat();else if(a==='chatall')clearAllChat();
  if(DEV.open)renderDev();}
 $('#devBar').addEventListener('click',e=>{const b=e.target.closest('[data-dev]');if(b){AU.ui();devAct(b.dataset.dev,b.dataset.v);}});
-function devUnlock(code){code=String(code||'').trim();if(!code)return Promise.resolve('Type the owner code first.');if(DEV_HOST){devAvailable();return Promise.resolve('');}
- if(!Net.adm)return Promise.resolve('Owner access is checked by your Firebase server. Connect online play first.');
- return Net.adm.claim(code).then(()=>{Net.admin=true;devAvailable();toast('Developer tools unlocked. Press ` or tap DEV.','gold');return '';}).catch(()=>'That code is not right, or the owner code has not been set in Firebase yet.');}
+/* the owner's dev key is checked against its SHA-256 fingerprint, so the key itself never appears in this public code.
+   If the same key is set as config/devCode in Firebase, the server also grants owner rights (clearing chat for everyone). */
+const DEV_HASH='94d329459b6a2bde18d3336b2dbc6098cda74ec216abcc65d537c420d502e29b';
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function devUnlock(code){code=String(code||'').trim();if(!code)return 'Type the dev key first.';let h='';try{h=await sha256(code);}catch(e){}
+ const claim=()=>Net.adm?Net.adm.claim(code).then(()=>{Net.admin=true;return true;}).catch(()=>false):Promise.resolve(false);
+ if(h===DEV_HASH){try{localStorage.setItem('driftwood-dev',h);}catch(e){}devAvailable();const ok=await claim();toast('Developer tools unlocked. Press ` or tap DEV.','gold');
+  return Net.adm&&!ok?'Dev bar unlocked. To clear chat for everyone, also set config/devCode to this key in Firebase (see SETUP-MULTIPLAYER.md).':'';}
+ if(DEV_HOST){devAvailable();return '';}
+ if(await claim()){devAvailable();toast('Developer tools unlocked. Press ` or tap DEV.','gold');return '';}
+ return 'That dev key is not right.';}
 function renderChatLog(){const el=$('#chatLog');el.innerHTML=Net.log.slice(-50).map(m=>m.sys?`<div class="cl sys">${esc(m.text)}</div>`:`<div class="cl ${m.feed?'feed':''}"><b style="color:${inkName(m.color)}">${esc(m.name)}</b>${esc(m.text)}</div>`).join('');el.scrollTop=el.scrollHeight;}
 function openChat(){if(JOIN.on)return;const c=$('#chat');if(isTouch)c.classList.add('open');$('#chatBadge').hidden=true;c.classList.remove('idle');CHAT.idleT=0;$('#chatIn').focus();}
 $('#chatBtn').addEventListener('click',()=>{AU.init();const c=$('#chat');if(c.classList.contains('open')){c.classList.remove('open');$('#chatIn').blur();}else openChat();});
@@ -236,7 +244,7 @@ function onPeers(ch){Net.peers=ch.peers;for(const p of ch.peers){if(p.isMe||p.ki
 function buildPresence(){const p=profileOr(),pos=player.mode==='boat'?boat.pos:player.pos;const r2=v=>Math.round(v*100)/100;
  return{v:2,uid:Net.uid||'',n:p.name,c:p.color,hc:p.hatC,h:p.hat,sk:p.skin,lv:state.level,ti:state.title||'',zn:player.zone||'cove',rd:state.rod,en:state.ench[state.rod]||'',
   x:r2(pos.x),y:r2(player.mode==='boat'?0:pos.y),z:r2(pos.z),r:Math.round(prig.root.rotation.y*1000)/1000,b:player.mode==='boat'?1:0,by:Math.round(boat.yaw*1000)/1000,
-  rb:RIDE?RIDE.uid:null,sk:RIDE?RIDE.seat:null,s:SC[F.st]||'i',bt:state.boat,fx:r2(F.to.x),fz:r2(F.to.z),k:F.lastCatch,e:player.emId?{i:player.emId,t:player.emType||'wave',f:player.emFish||null}:null};}
+  rb:RIDE?RIDE.uid:null,sk:RIDE?RIDE.seat:null,ln:state.line,s:SC[F.st]||'i',bt:state.boat,fx:r2(F.to.x),fz:r2(F.to.z),k:F.lastCatch,e:player.emId?{i:player.emId,t:player.emType||'wave',f:player.emFish||null}:null};}
 function netTick(dt){if(!Net.room||JOIN.on||!state.tips.joined)return;Net.pAcc+=dt;if(Net.pAcc<Net.rate)return;Net.pAcc=0;const p=buildPresence();const key=JSON.stringify(p),now=Date.now();if(key===Net.pKey&&now-Net.pLast<15000)return;Net.pKey=key;Net.pLast=now;p.ts=now;Net.room.presence(p).catch(()=>{});}
 function sendChat(raw){const text=cleanText(raw,140);if(!text)return;if(/^\/clear$/i.test(text)){clearMyChat();return;}if(/^\/clearall$/i.test(text)){clearAllChat();return;}const now=Date.now();if(now-Net.lastSend<900){toast('Slow down a little.');return;}Net.lastSend=now;const me=profileOr(),msg={i:rid(),t:now,x:text};
  addChat({id:msg.i,t:now,name:me.name,color:me.color,text,me:true});showMyBubble(text);AU.chat();
@@ -312,7 +320,7 @@ async function boot(data){loadStep(15,'Loading the islands…');const loaded=(da
  initWeather();loadStep(22,'Weathering the rocks…');await nextFrame();await genWorldTextures(TT().tex,async f=>{loadStep(22+f*24,'Weathering the rocks…');await nextFrame();});loadStep(48,'Growing palm trees…');await nextFrame();buildWorld();loadStep(75,'Filling the sea…');await nextFrame();initEnv();setupPlayer();applyTier();resize();WAVE.amp=WAVE_W[env.weather]||1;updateEnv(0);updateEnvMap();loadStep(90,'Lighting the sky…');await nextFrame();
  cam.yaw=player.face+Math.PI;cam.target.copy(player.pos).add(new V3(0,2.5,0));updateHUD();updateClockHUD();renderChatLog();loadStep(100,'Ready');
  requestAnimationFrame(t=>{clock.last=t;frame(t);});setTimeout(()=>{const l=$('#loading');l.classList.add('out');setTimeout(()=>l.remove(),900);},200);
- if(DEV_HOST)devAvailable();rebuildPlayerTag();if(/[?&]nomenu/.test(location.search)){if(!state.profile||!state.tips.joined)openJoin(false);else if(!state.tips.intro)openIntro();}else openMenu();
+ {let k='';try{k=localStorage.getItem('driftwood-dev')||'';}catch(e){}if(DEV_HOST||k===DEV_HASH)devAvailable();}rebuildPlayerTag();if(/[?&]nomenu/.test(location.search)){if(!state.profile||!state.tips.joined)openJoin(false);else if(!state.tips.intro)openIntro();}else openMenu();
  const unlock=()=>{AU.init();removeEventListener('pointerdown',unlock,true);removeEventListener('keydown',unlock,true);};addEventListener('pointerdown',unlock,true);addEventListener('keydown',unlock,true);
  netInit();try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({state}));}catch(e){}}
 const HOTH=window.claude&&window.claude.hot;
@@ -320,7 +328,7 @@ if(HOTH&&HOTH.ready)HOTH.ready(boot);else boot((HOTH&&HOTH.data)||{});
 
 /* ---------- boats, rods, buffs, stats ---------- */
 const mmss=s=>{s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
-function rodLocked(r){if(!r.req)return null;if(r.req.quest&&!state.rods.includes(r.id))return 'Reward for the quest '+((QM[r.req.quest]||{}).n||'');if(r.req.lvl&&state.level<r.req.lvl)return 'Unlocks at level '+r.req.lvl;if(r.req.sp&&!(state.dex[r.req.sp]&&state.dex[r.req.sp].n))return 'Catch a '+SPM[r.req.sp].name+' to unlock';return null;}
+function rodLocked(r){if(!r.req)return null;if(r.req.isl&&!state.unlocked.includes(r.req.isl))return 'Needs the '+ZONES[r.req.isl].n+' chart';if(r.req.quest&&!state.rods.includes(r.id))return 'Reward for the quest '+((QM[r.req.quest]||{}).n||'');if(r.req.lvl&&state.level<r.req.lvl)return 'Unlocks at level '+r.req.lvl;if(r.req.sp&&!(state.dex[r.req.sp]&&state.dex[r.req.sp].n))return 'Catch a '+SPM[r.req.sp].name+' to unlock';return null;}
 const UPG=[['e','Engine','+8% top speed per level'],['h','Hull','+5 storage slots and +5% handling per level'],['s','Sonar','+6% luck while fishing from the boat per level']];
 const upgCost=(B,lv)=>{const c=Math.max(2000,(B.price||0)*.12)*[1,2.5,5][lv];const q=c>=1e5?1e4:c>=1e4?1e3:100;return Math.round(c/q)*q;};
 function boatBars(B,u){u=u||{};const sp=B.speed*(1+.08*(u.e||0)),tn=B.turn*(1+.05*(u.h||0)),sg=B.storage+5*(u.h||0);const rows=[['Speed',sp/31,Math.round(sp)+' kn'],['Handling',tn/1.9,tn.toFixed(2)],['Storage',sg/85,'+'+sg+' slots']];
@@ -347,4 +355,4 @@ function renderBuffs(){const el=$('#buffBar');if(!el)return;const parts=[];for(c
 
 
 /* ---------- debug hook (only with ?debug in the URL) ---------- */
-if(/[?&]debug/.test(location.search))window.__DI={get state(){return state;},env,cam,camera,GFX,applyTier,get player(){return player;},get bobber(){return bobber;},get boat(){return boat;},get RIDE(){return RIDE;},activeWells,diveWell,surfaceFromHollow,spawnLittleEvent,LE,collectLE,DEV,openCasino,startRide,Net,setTackle,openSettings,backups,save,QUESTS,QM,QH,qState,questEvent,openNPC,NPCM,rarityOdds,get panelCtx(){return panelCtx;},setWeather,renderer,scene,world,ZONES,TT,clock,SKYJS,skyU,WAVE,sun,hemi,waterU,ENV,THREE,BIG,buildFish,makeWhale,makeChar,SPECIES,SPM,F,startBite,setHook,startFight,landCatch,finishCatch,fishPress};
+if(/[?&]debug/.test(location.search))window.__DI={get state(){return state;},env,cam,camera,GFX,applyTier,get player(){return player;},get bobber(){return bobber;},get boat(){return boat;},openGear,openUpdates,tryDescend,hollowProgress,grantCrate,Music,get fline(){return fline;},devUnlock,sha256,DEV_HASH,CASINO,CAS,get RIDE(){return RIDE;},activeWells,diveWell,surfaceFromHollow,spawnLittleEvent,LE,collectLE,DEV,openCasino,startRide,Net,setTackle,openSettings,backups,save,QUESTS,QM,QH,qState,questEvent,openNPC,NPCM,rarityOdds,get panelCtx(){return panelCtx;},setWeather,renderer,scene,world,ZONES,TT,clock,SKYJS,skyU,WAVE,sun,hemi,waterU,ENV,THREE,BIG,buildFish,makeWhale,makeChar,SPECIES,SPM,F,startBite,setHook,startFight,landCatch,finishCatch,fishPress};

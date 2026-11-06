@@ -133,21 +133,23 @@ function profile(I,f,x,z){let h;
  if(I.ponds)for(const p of I.ponds){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r*1.6){const fl=Math.max(p.y-1.1,.85);h=Math.min(h,lerp(fl,h,smooth(p.r*.75,p.r*1.6,d)));}}
  return h;}
 function terrainH(I,x,z){const dx=x-I.x,dz=z-I.z,d2=dx*dx+dz*dz,Rm=I.R*1.42;if(d2>Rm*Rm)return -60;const d=Math.sqrt(d2),th=Math.atan2(dz,dx);return profile(I,d/islandR(I,th),x,z);}
-const world={ponds:[],docks:[],colliders:[],inter:[],npcs:[],floaters:[],seaRocks:[],reserved:{},spawn:{},boatDock:{},halos:[],chimneys:[],puddles:[],smoke:[],altarCrystal:null,lamps:[]};
+const world={caveRings:[],floors:[],ponds:[],docks:[],colliders:[],inter:[],npcs:[],floaters:[],seaRocks:[],reserved:{},spawn:{},boatDock:{},halos:[],chimneys:[],puddles:[],smoke:[],altarCrystal:null,lamps:[]};
 function dockH(x,z){for(const d of world.docks){const dx=x-d.x,dz=z-d.z;const u=dx*d.cx+dz*d.sz,v=-dx*d.sz+dz*d.cx;if(u>=-1&&u<=d.len&&Math.abs(v)<=d.w/2)return d.h;}return -60;}
 function onDock(x,z){return dockH(x,z)>-1;}
 function pondAt(x,z){for(const p of world.ponds)if(Math.hypot(x-p.x,z-p.z)<p.r*1.02)return p;return null;}
 function surfY(x,z,t){const p=pondAt(x,z);return p?p.y+Math.sin(t*1.3+x*.7)*.025:waveH(x,z,t);}
-function groundH(x,z){if(world.ponds.length&&pondAt(x,z))return -60;let h=-60;for(const k of LANDS){const t=terrainH(ZONES[k],x,z);if(t>h)h=t;}return Math.max(h,dockH(x,z));}
+function groundH(x,z){if(world.ponds.length&&pondAt(x,z))return -60;let h=-60;for(const k of LANDS){const t=terrainH(ZONES[k],x,z);if(t>h)h=t;}return Math.max(h,dockH(x,z),floorH(x,z));}
+/* raised floors you can walk on (the casino hall) */
+function floorH(x,z){for(const f of world.floors){const dx=x-f.x,dz=z-f.z,lx=dx*f.c-dz*f.s,lz=dx*f.s+dz*f.c;if(Math.abs(lx)<f.w&&Math.abs(lz)<f.d)return f.y;}return -60;}
 function zoneAt(x,z){for(const k of LANDS){const I=ZONES[k];if(Math.hypot(x-I.x,z-I.z)<I.R*2.1)return k;}return 'sea';}
 /* waves calm down over the shallows around each island (matches the water vertex shader) */
 function shoreDamp(x,z){let d=1;for(const k of LANDS){const I=ZONES[k],dx=x-I.x,dz=z-I.z,dd=Math.hypot(dx,dz);if(dd>I.R*1.9)continue;const f=dd/islandR(I,Math.atan2(dz,dx));d=Math.min(d,lerp(.28,1,smooth(.92,1.75,f)));}return d;}
 function waveH(x,z,t){return waveRaw(x,z,t)*WAVE.amp*shoreDamp(x,z);}
-const TERR_GROUND={hollow:TL.dirt,cove:TL.grass,moss:TL.grass,frost:TL.snow,ember:TL.dirt,atoll:TL.grass,amber:TL.grass,petal:TL.grass,dune:TL.sand,glim:TL.grass};
+const TERR_GROUND={hollow:TL.dirt,abyss:TL.dirt,cove:TL.grass,moss:TL.grass,frost:TL.snow,ember:TL.dirt,atoll:TL.grass,amber:TL.grass,petal:TL.grass,dune:TL.sand,glim:TL.grass};
 function segDist(px,pz,a,b){const dx=b.x-a.x,dz=b.z-a.z,l2=dx*dx+dz*dz||1;const t=clamp(((px-a.x)*dx+(pz-a.z)*dz)/l2,0,1);return Math.hypot(px-a.x-dx*t,pz-a.z-dz*t);}
 function buildTerrain(I,key){const fs=[];for(let f=0;f<1.42;){fs.push(f);f+=f<.06&&I.volcano?.014:f<.4?(I.volcano&&f<.36?.024:.036):f<.7?.03:f<1.1?.02:.05;}fs.push(1.42);const paths=I.paths||[];
  const NS=GFX.tier==='low'?150:180,nv=1+(fs.length-1)*NS;const pos=new Float32Array(nv*3),col=new Float32Array(nv*3),spl=new Float32Array(nv*4),F=new Float32Array(nv);
- const cs=new THREE.Color(I.sand),cu=new THREE.Color(I.sand).multiplyScalar(.7),cg=new THREE.Color(I.grass),cg2=new THREE.Color(I.grass2),cr=new THREE.Color(I.rock),cd=new THREE.Color(key==='ember'?'#3a3330':key==='moss'?'#4a4034':key==='frost'?'#9aa3aa':key==='atoll'?'#d8c8a0':key==='amber'?'#6a5236':key==='hollow'?'#2a2a30':key==='dune'?'#b87a4a':key==='glim'?'#4a4458':key==='petal'?'#7a6450':'#6a5a44');
+ const cs=new THREE.Color(I.sand),cu=new THREE.Color(I.sand).multiplyScalar(.7),cg=new THREE.Color(I.grass),cg2=new THREE.Color(I.grass2),cr=new THREE.Color(I.rock),cd=new THREE.Color(key==='ember'?'#3a3330':key==='moss'?'#4a4034':key==='frost'?'#9aa3aa':key==='atoll'?'#d8c8a0':key==='amber'?'#6a5236':I.cave?'#2a2a30':key==='dune'?'#b87a4a':key==='glim'?'#4a4458':key==='petal'?'#7a6450':'#6a5a44');
  const set=(i,x,z,f)=>{pos[i*3]=x;pos[i*3+1]=profile(I,f,x,z);pos[i*3+2]=z;F[i]=f;};
  set(0,I.x,I.z,0);let i=1;for(let r=1;r<fs.length;r++)for(let j=0;j<NS;j++){const jt=(hashI(r,j,5)-.5)*.55,th=(j+jt*(fs[r]<1.3?1:0))/NS*TAU,R=islandR(I,th),d=(fs[r]+(fs[r]>.05&&fs[r]<1.3?(hashI(r,j,9)-.5)*.012:0))*R;set(i++,I.x+Math.cos(th)*d,I.z+Math.sin(th)*d,fs[r]);if(fs[r]<.78)pos[(i-1)*3+1]+=(hashI(r,j,13)-.5)*.12;}
  const idx=[];for(let j=0;j<NS;j++)idx.push(0,1+(j+1)%NS,1+j);
@@ -329,6 +331,46 @@ function gemCluster(sb,gl,x,y,z,s,col,r){sb.M(TL.ice);const c=new THREE.Color(co
 function standingStones(sb,gl,x,y,z,R,r){sb.M(TL.rock);for(let i=0;i<7;i++){const a=i/7*TAU,px=x+Math.cos(a)*R,pz=z+Math.sin(a)*R,py=groundH(px,pz),h=2.6+r()*1.8;sb.add(G.box,'#6a6478',px,py+h/2-.3,pz,.9,h,.6,0,-a,(r()-.5)*.1);gl.add(G.box,'#8ad8ff',px+Math.cos(a)*.31,py+h*.6,pz+Math.sin(a)*.31,.05,h*.4,.3,0,-a,0);world.colliders.push({x:px,z:pz,r:.7});}sb.M(0);}
 function floatRock(sb,gl,x,y,z,s,r){sb.M(TL.rock);sb.top={c:new THREE.Color('#5e7a6a'),lo:.45,hi:.85};sb.add(pick(G.rocks),'#5c5672',x,y,z,2*s,1.1*s,1.7*s,0,r()*3);sb.top=null;sb.add(G.cone,'#4e4862',x,y-1.1*s,z,1.2*s,1.8*s,1.1*s,Math.PI,0,0);gemCluster(sb,gl,x,y+.6*s,z,.5*s,pick(['#9a7ae8','#7ab8f0']),r);sb.M(0);}
 
+/* casinos: the Tidewater Casino hall on Pebble Cove (walk-in; its roof hides while you are inside) and a booth on every other island */
+function signTex(text,col='#ffd86a'){const c=document.createElement('canvas');c.width=512;c.height=128;const x=c.getContext('2d');x.fillStyle='#1a1018';x.fillRect(0,0,512,128);x.strokeStyle=col;x.lineWidth=8;x.strokeRect(8,8,496,112);
+ x.font='800 54px "Josefin Sans", Nunito, sans-serif';x.textAlign='center';x.textBaseline='middle';x.shadowColor=col;x.shadowBlur=18;x.fillStyle=col;x.fillText(text,256,68);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
+function signMesh(text,w,h,col){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:signTex(text,col),toneMapped:false,color:new THREE.Color(1.6,1.6,1.6)}));m.userData.noAO=true;return m;}
+function casinoHall(sb,gl,hx,hy,hz,ry,reserved){const W=16,D=12,H=5.2,P=new THREE.Matrix4().compose(V(hx,hy,hz),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,ry,0)),V(1,1,1)),c=Math.cos(ry),s=Math.sin(ry);
+ const wp=(x,z)=>({x:hx+x*c+z*s,z:hz-x*s+z*c});
+ sb.M(TL.cobble);sb.add(G.box,'#8e8a84',0,-.6,0,W+1.2,1.9,D+1.2,0,0,0,P);world.floors.push({x:hx,z:hz,c,s,w:W/2+.6,d:D/2+.6,y:hy+.43});
+ sb.M(TL.cloth);sb.add(G.box,'#7a1e2a',0,.38,0,W-.4,.06,D-.4,0,0,0,P);sb.add(G.box,'#c8a040',0,.39,0,W-1.4,.06,D-1.4,0,0,0,P);sb.add(G.box,'#8a2430',0,.4,0,W-1.8,.06,D-1.8,0,0,0,P);
+ sb.M(TL.siding);const wall='#e8dcc4',trim='#c8a040';
+ sb.add(G.box,wall,0,H/2,-D/2,W,H,.4,0,0,0,P);for(const sx of[-1,1])sb.add(G.box,wall,sx*W/2,H/2,0,.4,H,D,0,0,0,P);
+ for(const sx of[-1,1])sb.add(G.box,wall,sx*(W/4+1.1),H/2,D/2,W/2-2.2,H,.4,0,0,0,P);sb.add(G.box,wall,0,H-.7,D/2,4.4,1.4,.4,0,0,0,P);
+ sb.M(TL.paint);sb.add(G.box,trim,0,H+.05,0,W+.5,.3,D+.5,0,0,0,P);for(const sx of[-1,1])for(const sz of[-1,1])sb.add(G.cyl12,'#f0e8d0',sx*W/2,H/2,sz*D/2,.5,H+.2,.5,0,0,0,P);
+ for(const sx of[-1,1])sb.add(G.cyl12,trim,sx*2.3,H/2,D/2+.35,.3,H,.3,0,0,0,P);
+ for(let i=0;i<4;i++){const x=-6+i*4;if(Math.abs(x)<3)continue;gl.add(G.box,'#ffd890',x,2.6,D/2+.22,1.4,1.6,.05,0,0,0,P);}for(const sx of[-1,1])for(let i=0;i<3;i++)gl.add(G.box,'#ffd890',sx*(W/2+.22),2.6,-3.5+i*3.5,.05,1.6,1.4,0,0,0,P);
+ /* inside: a row of slot machines, the wheel on the back wall, a card table, a bar and chandeliers */
+ for(let i=0;i<7;i++){const z=-4.2+i*1.25;sb.M(TL.metal);sb.add(G.box,'#3a1e2a',-7.2,1.1,z,.9,2,1,0,0,0,P);sb.add(G.box,'#c8a040',-7.2,2.15,z,1,.12,1.05,0,0,0,P);gl.add(G.box,['#ff8a6a','#8affd0','#ffd86a','#a88aff'][i%4],-6.74,1.45,z,.05,.55,.7,0,0,0,P);gl.add(G.box,'#ffffff',-6.74,.9,z,.05,.1,.5,0,0,0,P);}
+ sb.M(TL.wood);sb.add(G.cyl12,'#5a2a1a',0,3,-D/2+.35,2.2,.25,2.2,Math.PI/2,0,0,P);for(let i=0;i<10;i++){const a=i/10*TAU;gl.add(G.box,i%2?'#ffd86a':'#ff6a5a',Math.cos(a)*1.6,3+Math.sin(a)*1.6,-D/2+.52,.5,.5,.05,0,0,a,P);}sb.add(G.box,'#3a1e1a',0,1,-4.6,2.6,1,1,0,0,0,P);
+ sb.M(TL.cloth);sb.add(G.cyl12,'#1e6a3a',4.2,1,-1,1.6,.12,1.6,0,0,0,P);sb.M(TL.wood);sb.add(G.cyl12,'#5a3a22',4.2,.5,-1,.35,1,.35,0,0,0,P);sb.add(G.cyl12,'#6a4428',4.2,.95,-1,1.75,.08,1.75,0,0,0,P);
+ sb.add(G.box,'#5a3a22',5.6,1.1,4,.9,2.2,4,0,0,0,P);sb.M(TL.paint);sb.add(G.box,'#c8a040',5.15,2.25,4,.1,.1,4.1,0,0,0,P);
+ for(const[x,z]of[[-2.5,0],[2.5,2.5],[-1,3.5]]){sb.M(TL.wood);sb.add(G.cyl12,'#5a3a22',x,.75,z,.6,.06,.6,0,0,0,P);sb.add(G.cyl12,'#5a3a22',x,.4,z,.1,.7,.1,0,0,0,P);}
+ for(const[x,z]of[[-3,-1.5],[3,-1.5],[0,2.5]]){gl.add(G.oct,'#fff0c0',x,H-1.1,z,.45,.6,.45,0,0,0,P);const w=wp(x,z);halo(w.x,hy+H-1.1,w.z,3.4,0xffe0a0).userData.always=true;world.lamps.push(V(w.x,hy+H-1.2,w.z));}
+ sb.M(0);
+ const rb=new Builder();rb.M(TL.roof);rb.add(G.box,'#5a2030',0,H+.45,0,W+1,.5,D+1,0,0,0,P);rb.add(G.box,'#6a2838',0,H+1.05,0,W*.72,.8,D*.62,0,0,0,P);rb.M(TL.paint);rb.add(G.box,'#c8a040',0,H+1.48,0,W*.74,.08,D*.64,0,0,0,P);
+ const roof=rb.mesh(worldMat);roof.position.set(0,0,0);roof.castShadow=true;scene.add(roof);
+ const sign=signMesh('TIDEWATER CASINO',6.4,1.6);const sp=wp(0,D/2+.5);sign.position.set(sp.x,hy+H+.9,sp.z);sign.rotation.y=ry;scene.add(sign);halo(sp.x,hy+H+.9,sp.z,6,0xffd27a).userData.always=true;
+ for(let x=-W/2;x<=W/2;x+=.9){const a=wp(x,-D/2),b=wp(x,D/2);world.colliders.push({x:a.x,z:a.z,r:.55});if(Math.abs(x)>2.3)world.colliders.push({x:b.x,z:b.z,r:.55});}
+ for(let z=-D/2;z<=D/2;z+=.9)for(const sx of[-1,1]){const a=wp(sx*W/2,z);world.colliders.push({x:a.x,z:a.z,r:.55});}
+ for(let i=0;i<7;i++){const a=wp(-7.1,-4.2+i*1.25);world.colliders.push({x:a.x,z:a.z,r:.55});}{const a=wp(4.2,-1);world.colliders.push({x:a.x,z:a.z,r:1.7});}{const a=wp(0,-4.6);world.colliders.push({x:a.x,z:a.z,r:1.2});}
+ for(let z=2.2;z<=5.8;z+=.9){const a=wp(5.6,z);world.colliders.push({x:a.x,z:a.z,r:.6});}
+ reserved.push({x:hx,z:hz,r:12});
+ return{x:hx,z:hz,y:hy,ry,W,D,roof,sign};}
+function casinoBooth(sb,gl,hx,hy,hz,ry,n){const P=new THREE.Matrix4().compose(V(hx,hy,hz),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,ry,0)),V(1,1,1));const col=n.look.shirt;
+ sb.M(TL.wood);sb.add(G.box,'#6a4428',0,.55,.6,3.2,1.1,.8,0,0,0,P);sb.add(G.box,'#8a5a34',0,1.15,.6,3.4,.1,1,0,0,0,P);sb.M(TL.cloth);sb.add(G.box,'#1e5a34',0,1.21,.6,3,.03,.8,0,0,0,P);
+ sb.M(TL.wood);for(const sx of[-1,1])for(const sz of[-1,1])sb.add(G.cyl,'#5a3a22',sx*1.6,1.45,sz*.95,.08,2.9,.08,0,0,0,P);sb.add(G.box,'#5a3a22',0,1.5,-1,3.2,2.6,.1,0,0,0,P);
+ sb.M(TL.cloth);for(let i=0;i<6;i++)sb.add(G.box,i%2?'#f4ecd8':col,-1.45+i*.58,2.98,0,.58,.08,2.4,-.12,0,0,P);
+ gl.add(G.box,'#ffd890',0,1.6,-.93,2.6,.08,.04,0,0,0,P);for(const sx of[-1,1])gl.add(G.sph,'#ffcf7a',sx*1.6,2.75,1.1,.14,.18,.14,0,0,0,P);sb.M(0);
+ const c=Math.cos(ry),s=Math.sin(ry);const sign=signMesh(n.title.toUpperCase(),3.2,.8,'#ffd86a');sign.position.set(hx+(-1.02)*s,hy+3.55,hz+(-1.02)*c);sign.rotation.y=ry;scene.add(sign);
+ halo(hx+1.1*s,hy+2.2,hz+1.1*c,3,0xffd27a).userData.always=true;world.lamps.push(V(hx+1.1*s,hy+2.4,hz+1.1*c));
+ for(const x of[-1.1,0,1.1])world.colliders.push({x:hx+x*c+.6*s,z:hz-x*s+.6*c,r:.6});}
+
 function halo(x,y,z,size=3.2,col=0xffd9a0){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX.halo,color:col,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.2}));s.position.set(x,y,z);s.scale.set(size,size,1);scene.add(s);world.halos.push(s);reflHide.push(s);return s;}
 function lamp(sb,gl,x,y,z){sb.M(TL.metal);const c='#2c3036';sb.add(G.cyl,c,x,y+1.6,z,.08,3.2,.08);sb.add(G.cyl,c,x,y+.12,z,.2,.24,.2);sb.add(G.box,c,x,y+3.25,z,.54,.08,.54);
  for(const sx of[-1,1])for(const sz of[-1,1])sb.add(G.box,c,x+sx*.2,y+3.55,z+sz*.2,.04,.5,.04);gl.add(G.box,'#ffd890',x,y+3.55,z,.34,.46,.34);sb.add(G.cone4,c,x,y+3.98,z,.42,.32,.42,0,Math.PI/4);sb.add(G.sph,c,x,y+4.18,z,.06,.06,.06);
@@ -374,7 +416,7 @@ function labelSprite(name,sub,dot){const t=nameTex(name,sub,dot);const s=new THR
 const solidMeshes=[];
 function buildWorld(){LEAFK=TT().leaf;
  for(const key of LANDS){const I=ZONES[key];const dT=key==='cove'?-.25:Math.atan2(-I.z,-I.x);const th=dT+Math.PI+(key==='moss'?.5:key==='dune'?.6:0),f=I.volcano?.52:I.mesa?.52:key==='moss'?.32:key==='glim'?.38:.24,R=islandR(I,th);const px=I.x+Math.cos(th)*R*f,pz=I.z+Math.sin(th)*R*f;
-  const pr=I.volcano?5.5:key==='hollow'?9:key==='atoll'?13:key==='dune'?11:key==='petal'?10:7.5;let rim=1e9;for(let a=0;a<16;a++){const rx=px+Math.cos(a/16*TAU)*pr*1.4,rz=pz+Math.sin(a/16*TAU)*pr*1.4;const dd=Math.hypot(rx-I.x,rz-I.z),ta=Math.atan2(rz-I.z,rx-I.x);rim=Math.min(rim,profile(I,dd/islandR(I,ta),rx,rz));}
+  const pr=I.volcano?5.5:I.cave?9:key==='atoll'?13:key==='dune'?11:key==='petal'?10:7.5;let rim=1e9;for(let a=0;a<16;a++){const rx=px+Math.cos(a/16*TAU)*pr*1.4,rz=pz+Math.sin(a/16*TAU)*pr*1.4;const dd=Math.hypot(rx-I.x,rz-I.z),ta=Math.atan2(rz-I.z,rx-I.x);rim=Math.min(rim,profile(I,dd/islandR(I,ta),rx,rz));}
   const p={x:px,z:pz,r:pr,y:Math.max(rim-.35,1.3),key:'pond_'+key,isl:key};I.ponds=[p];world.ponds.push(p);}
  for(const key of LANDS){const I=ZONES[key];const dockTh=key==='cove'?-.25:Math.atan2(-I.z,-I.x),cx=Math.cos(dockTh),sz=Math.sin(dockTh),Rd=islandR(I,dockTh)*.78;
   const base=V(I.x+cx*Rd,0,I.z+sz*Rd),sp=V(I.x+cx*islandR(I,dockTh)*.58,0,I.z+sz*islandR(I,dockTh)*.58);I.paths=[[base,sp]];let hi=0;
@@ -410,6 +452,9 @@ function buildWorld(){LEAFK=TT().leaf;
    }else if(n.role==='shipwright'){const Rr=islandR(I,dockTh)*.74;nx=I.x+cx*Rr+sz*3.4;nz=I.z+sz*Rr-cx*3.4;face=yaw-Math.PI*.5;const hy=groundH(nx,nz);const kx=nx+sz*1.6,kz=nz-cx*1.6;
     sb.M(TL.wood);sb.add(G.box,'#7d6a55',kx,hy+.5,kz,1.8,1,.9,0,yaw);sb.add(G.box,'#6a5846',kx,hy+1.05,kz,2,.1,1.05,0,yaw);for(let i=0;i<3;i++)sb.add(G.box,'#8a7458',kx+cx*(i-1)*.5,hy+1.6,kz+sz*(i-1)*.5,.14,1.5,.14,0,yaw,.25);sb.M(0);world.colliders.push({x:kx,z:kz,r:1});
    }else if(n.role==='altar'){nx=I.x+4.6;nz=I.z+1.5;face=-Math.PI/2;}
+   else if(n.role==='casino'){const th=dockTh+n.dth,Rh=islandR(I,th)*(I.volcano?.56:.42),hx=I.x+Math.cos(th)*Rh,hz=I.z+Math.sin(th)*Rh,toC=Math.atan2(I.x-hx,I.z-hz),hy=groundH(hx,hz),c=Math.cos(toC),s=Math.sin(toC);
+    if(n.hall){if(!world.casino){let top=hy;for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){const lx=i*4,lz=j*3.2;top=Math.max(top,groundH(hx+lx*c+lz*s,hz-lx*s+lz*c));}world.casino=casinoHall(sb,gl,hx,top+.05,hz,toC,reserved);}const sl=[[-5.6,-1,Math.PI/2],[0,-3.6,0],[5.8,-1,-Math.PI/2]][n.hallSlot||0];nx=hx+sl[0]*c+sl[1]*s;nz=hz-sl[0]*s+sl[1]*c;face=toC+sl[2];}
+    else{casinoBooth(sb,gl,hx,hy-.05,hz,toC,n);reserved.push({x:hx,z:hz,r:6});nx=hx-.15*s;nz=hz-.15*c;face=toC;}}
    else{const th=dockTh+n.dth,Rh=islandR(I,th)*(I.volcano?.56:.4);const hx=I.x+Math.cos(th)*Rh,hz=I.z+Math.sin(th)*Rh;const toC=Math.atan2(I.x-hx,I.z-hz);
     house(sb,gl,hx,groundH(hx,hz)-.15,hz,toC,n.house,{stilt:n.stilt,snow:n.house.snow});world.colliders.push({x:hx,z:hz,r:4.4});reserved.push({x:hx,z:hz,r:8});
     nx=hx+Math.sin(toC)*5.6;nz=hz+Math.cos(toC)*5.6;face=toC;}
@@ -452,9 +497,9 @@ function buildWorld(){LEAFK=TT().leaf;
   place(12,.2,.85,(x,y,z)=>{const s=.6+r()*1.1;rock(sb,x,y,z,s,I.rock,key==='moss'?'#5a7a3c':key==='frost'?'#eef3f8':key==='cove'||key==='petal'?'#6a7a48':key==='glim'?'#4e6a60':null);world.colliders.push({x,z,r:s*.9});},1.4);
   place(18,.82,.95,(x,y,z)=>{rock(sb,x,y-.1,z,.2+r()*.25,key==='ember'?'#3a3434':'#b8b2a6');},.3);
   // shoreline: driftwood, shells, seaweed
-  if(key!=='ember'&&key!=='glim'&&key!=='hollow'){place(10,.84,.93,(x,y,z)=>driftLog(sb,x,y,z,.8+r()*.5,r),1.2);place(26,.86,.95,(x,y,z)=>shell(sb,x,y,z,r),.2);}
+  if(key!=='ember'&&key!=='glim'&&!I.cave){place(10,.84,.93,(x,y,z)=>driftLog(sb,x,y,z,.8+r()*.5,r),1.2);place(26,.86,.95,(x,y,z)=>shell(sb,x,y,z,r),.2);}
   const bushC={cove:['#4f7a3a','#5a8442','#46703a'],moss:['#3e5e30','#486a36','#557a3e'],frost:['#6e8a7a','#7e968a','#e8eef2'],ember:['#4a4434','#55503e','#3e382e'],atoll:['#3e8a3a','#4aa048','#357a34'],amber:['#a8602a','#c8882a','#8a7a3a','#b8482a'],petal:['#5a8a44','#6a9a4a','#e8a8c0'],dune:['#8a8a4a','#9a9050','#7a7a40'],glim:['#3e5e58','#4a6a6a','#5a5a8a']}[key];
-  place(key==='frost'?12:key==='ember'?8:key==='dune'?10:key==='hollow'?0:38,.12,.78,(x,y,z)=>{bush(fb,x,y,z,.8+r()*.7,bushC,r,(key==='cove'||key==='atoll'||key==='petal')&&r()<.45?pick(key==='atoll'||key==='petal'?['#f06a9a','#f0c040','#ffffff']:['#f2e6a0','#f0b8c8','#e8e8f0']):null);world.colliders.push({x,z,r:.5});},1);
+  place(key==='frost'?12:key==='ember'?8:key==='dune'?10:I.cave?0:38,.12,.78,(x,y,z)=>{bush(fb,x,y,z,.8+r()*.7,bushC,r,(key==='cove'||key==='atoll'||key==='petal')&&r()<.45?pick(key==='atoll'||key==='petal'?['#f06a9a','#f0c040','#ffffff']:['#f2e6a0','#f0b8c8','#e8e8f0']):null);world.colliders.push({x,z,r:.5});},1);
   if(key==='cove'||key==='moss'||key==='amber'||key==='petal'||key==='glim')place(key==='moss'?44:22,.15,.75,(x,y,z)=>fern(fb,x,y,z,.8+r()*.6,key==='moss'?'#4e7a38':key==='amber'?'#a8782a':key==='glim'?'#3e6a62':'#5e8a42',r),.6);
   if(key==='moss')place(8,.2,.7,(x,y,z)=>{driftLog(sb,x,y,z,1.2,r);},1.5);
   if(key==='atoll'){place(30,.12,.84,(x,y,z)=>{palm(sb,fb,x,y,z,.9+r()*.35,r);world.colliders.push({x,z,r:.5});});
@@ -467,6 +512,44 @@ function buildWorld(){LEAFK=TT().leaf;
    place(1,.38,.5,(x,y,z)=>{windmill(sb,gl,x,y,z,Math.atan2(I.x-x,I.z-z));world.colliders.push({x,z,r:2.8});},6);
    place(10,.25,.65,(x,y,z)=>pumpkins(sb,x,y,z,r),1.4);place(6,.25,.65,(x,y,z)=>{hayBale(sb,x,y,z,r);world.colliders.push({x,z,r:1});},1.4);
    place(4,.3,.55,(x,y,z)=>bench(sb,x,y,z,r()*TAU),1.5);}
+  if(key==='petal'){place(28,.1,.66,(x,y,z)=>{const s=.85+r()*.5;blossomTree(sb,fb,x,y,z,s,r);world.colliders.push({x,z,r:.5*s});});
+   place(8,.2,.6,(x,y,z)=>{const s=.9+r()*.3;pine(sb,fb,x,y,z,s,false,r);world.colliders.push({x,z,r:.6*s});});
+   place(10,.4,.8,(x,y,z)=>{bamboo(sb,x,y,z,.9+r()*.3,r);world.colliders.push({x,z,r:.8});},1.6);
+   place(8,.18,.62,(x,y,z)=>{stoneLantern(sb,gl,x,y,z,r()*TAU);world.colliders.push({x,z,r:.5});},3);
+   {const sp=world.spawn[key],gx=lerp(sp.x,I.x,.28),gz=lerp(sp.z,I.z,.28),gy=groundH(gx,gz);if(gy>.5){paintedGate(sb,gx,gy-.1,gz,Math.atan2(I.x-sp.x,I.z-sp.z)+Math.PI/2);for(const s of[-1,1]){const d=V(I.x-sp.x,0,I.z-sp.z).normalize();world.colliders.push({x:gx-d.z*s*2.1,z:gz+d.x*s*2.1,r:.4});}}}
+   place(4,.3,.55,(x,y,z)=>bench(sb,x,y,z,r()*TAU),1.5);
+   for(let i=0;i<14;i++){const a=r()*TAU,rr=I.R*(1.05+r()*.3);addFloater('lily',I.x+Math.cos(a)*rr,I.z+Math.sin(a)*rr);}}
+  if(key==='dune'){place(26,.3,.86,(x,y,z)=>{cactus(sb,x,y,z,.9+r()*.5,r);world.colliders.push({x,z,r:.5});},1.2);
+   place(9,.32,.78,(x,y,z)=>{sandstone(sb,x,y,z,.8+r()*.6,r);world.colliders.push({x,z,r:2});},3);
+   place(2,.4,.7,(x,y,z)=>{stoneArch(sb,x,y-.2,z,r()*TAU,.9+r()*.3);world.colliders.push({x:x,z:z,r:1});},6);
+   place(5,.32,.6,(x,y,z)=>{tent(sb,x,y,z,r()*TAU,pick(['#d8603a','#2a8a8a','#e8c060','#a83a3a']));world.colliders.push({x,z,r:1.8});},3);
+   place(10,.3,.7,(x,y,z)=>pots(sb,x,y,z,r),1.2);place(8,.64,.86,(x,y,z)=>{palm(sb,fb,x,y,z,.95+r()*.3,r);world.colliders.push({x,z,r:.5});});
+   place(1,.34,.5,(x,y,z)=>{campfire(sb,gl,x,y,z);world.colliders.push({x,z,r:1});},4);world.colliders.push({x:I.x,z:I.z,r:I.R*.26});}
+  if(key==='glim'){place(14,.12,.7,(x,y,z)=>{const s=.85+r()*.5;pine(sb,fb,x,y,z,s,false,r);world.colliders.push({x,z,r:.6*s});});
+   place(18,.12,.82,(x,y,z)=>{gemCluster(sb,gl,x,y,z,.8+r()*.9,pick(['#9a7ae8','#7ab8f0','#e88ad8','#8af0d0']),r);world.colliders.push({x,z,r:.8});},1.4);
+   place(12,.12,.66,(x,y,z)=>{const s=.6+r()*.8;mushroom(sb,gl,x,y,z,s,pick(['#5a7ad8','#8a5ad8','#3ab8b8']));world.colliders.push({x,z,r:.4*s});});
+   {const a=I.dockTh+Math.PI*.6,sx=I.x+Math.cos(a)*I.R*.42,sz=I.z+Math.sin(a)*I.R*.42;if(groundH(sx,sz)>.5){standingStones(sb,gl,sx,0,sz,6.5,r);reserved.push({x:sx,z:sz,r:9});}}
+   for(let i=0;i<6;i++){const a=r()*TAU,d=I.R*(.25+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;floatRock(sb,gl,x,groundH(x,z)+9+r()*7,z,.8+r()*.8,r);}
+   {const cy=groundH(I.x,I.z);gemCluster(sb,gl,I.x,cy-.4,I.z,3.2,'#b08aff',r);halo(I.x,cy+4,I.z,9,0xb8a0ff).userData.always=true;world.colliders.push({x:I.x,z:I.z,r:3});reserved.push({x:I.x,z:I.z,r:8});}}
+  if(I.cave){/* the caves under the sea: the Drowned Hollow (teal crystals) and, below it, the Sunless Deep (violet crystals and lava) */
+   const deep=key==='abyss',gems=deep?['#b06aff','#ff4ad8','#7a5aff','#ff6a3a']:['#3ae8d0','#5aa8ff','#8a6aff','#3affa0'],caps=deep?['#6a1a4a','#3a1a6a','#8a2a2a']:['#2ab8a8','#3a6ad8','#6a3ad8'],hc=deep?0xc070ff:0x5affe0;
+   place(26,.1,.85,(x,y,z)=>{gemCluster(sb,gl,x,y,z,.7+r()*1.1,pick(gems),r);world.colliders.push({x,z,r:.8});},1.4);
+   place(16,.12,.7,(x,y,z)=>{const s=.7+r()*1;mushroom(sb,gl,x,y,z,s,pick(caps));world.colliders.push({x,z,r:.4*s});});
+   place(14,.15,.8,(x,y,z)=>{sb.M(TL.rock);const h=2+r()*4;sb.add(G.cone,'#2e343c',x,y+h/2-.2,z,.5+r()*.4,h,.5+r()*.4,0,r()*3,0);sb.M(0);world.colliders.push({x,z,r:.7});},1.2);
+   if(!deep)place(10,.84,.95,(x,y,z)=>coral(sb,x,y-.2,z,.6+r()*.6,r),.6);
+   else place(5,.3,.7,(x,y,z)=>{const s=1.4+r()*1.2;lv.add(G.cyl12,'#ff5a1a',x,y+.06,z,s,.12,s);for(let i=0;i<8;i++){const a=i/8*TAU;sb.M(TL.rock);sb.add(pick(G.rocks),'#1a1416',x+Math.cos(a)*(s+.3),y+.1,z+Math.sin(a)*(s+.3),.55,.38,.55,0,r()*3);sb.M(0);}world.colliders.push({x,z,r:s});for(let i=0;i<2;i++)world.smoke.push(makeSmoke({x,y:y+.2,z},1.4,i,5));},3.5);
+   const dome=new THREE.Mesh(new THREE.IcosahedronGeometry(I.R*1.85,3),new THREE.MeshStandardMaterial({color:deep?'#1a1218':'#1c2228',roughness:.95,flatShading:true,side:THREE.BackSide}));
+   {const pa=dome.geometry.attributes.position;for(let i=0;i<pa.count;i++){const k=1+(hashI(Math.round(pa.getX(i)*4)+Math.round(pa.getZ(i)*4)*131,Math.round(pa.getY(i)*4),9)-.5)*.12;pa.setXYZ(i,pa.getX(i)*k,pa.getY(i)*k*.55,pa.getZ(i)*k);}dome.geometry.computeVertexNormals();}
+   dome.position.set(I.x,-6,I.z);dome.userData.noAO=true;scene.add(dome);
+   const st=new Builder();st.M(TL.rock);for(let i=0;i<70;i++){const a=r()*TAU,d=Math.sqrt(r())*I.R*1.6,x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d,top=-6+Math.sqrt(Math.max(0,1-(d/(I.R*1.85))**2))*I.R*1.85*.55,h=4+r()*12;st.add(G.cone,deep?'#1e161c':'#262c34',x,top-h/2,z,.6+r()*1.2,h,.6+r()*1.2,Math.PI,r()*3,0);if(r()<.35)gl.add(G.oct,pick(gems),x,top-h-.3,z,.25,.5,.25);}
+   scene.add(st.mesh(worldMat));
+   for(let i=0;i<8;i++){const a=i/8*TAU+r(),d=I.R*(.2+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;halo(x,groundH(x,z)+2,z,6,hc).userData.always=true;world.lamps.push(V(x,groundH(x,z)+2,z));}
+   /* rings of light: back up (to the surface from the Hollow, to the Hollow from the Deep), and the sealed gate down to the Deep */
+   const ringAt=(fx,label,kind,act,col)=>{const sp=world.spawn[key],ex=lerp(sp.x,I.x,fx),ez=lerp(sp.z,I.z,fx),ey=groundH(ex,ez);const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.14,10,40),new THREE.MeshBasicMaterial({color:new THREE.Color(col)}));ring.position.set(ex,ey+1.9,ez);ring.rotation.y=Math.atan2(I.x-sp.x,I.z-sp.z);scene.add(ring);
+    halo(ex,ey+1.9,ez,3.2,0x9ffcff).userData.always=true;world.inter.push({x:ex,z:ez,r:4,label,kind,act});world.caveRings.push(ring);return{x:ex,z:ez};};
+   if(!deep){world.caveExit=ringAt(.12,'Swim back to the surface','Surface',()=>{if(typeof surfaceFromHollow==='function')surfaceFromHollow();},'#7ae8ff');
+    const gp=ringAt(.88,'Descend to the Sunless Deep','Descend',()=>{if(typeof tryDescend==='function')tryDescend();},'#c070ff');world.deepGate=gp;}
+   else world.deepExit=ringAt(.12,'Swim back up to the Drowned Hollow','Up',()=>{if(typeof toHollow==='function')toHollow();},'#c070ff');}
   if(key==='petal'){place(28,.1,.66,(x,y,z)=>{const s=.85+r()*.5;blossomTree(sb,fb,x,y,z,s,r);world.colliders.push({x,z,r:.5*s});});
    place(8,.2,.6,(x,y,z)=>{const s=.9+r()*.3;pine(sb,fb,x,y,z,s,false,r);world.colliders.push({x,z,r:.6*s});});
    place(10,.4,.8,(x,y,z)=>{bamboo(sb,x,y,z,.9+r()*.3,r);world.colliders.push({x,z,r:.8});},1.6);
@@ -508,7 +591,7 @@ function buildWorld(){LEAFK=TT().leaf;
   // dock-side life
   {const dk=world.docks[world.docks.length-1];crabPot(sb,dk.x+dk.cx*6-dk.sz*1.2,dk.h,dk.z+dk.sz*6+dk.cx*1.2,r);crabPot(sb,dk.x+dk.cx*6.9-dk.sz*1.15,dk.h,dk.z+dk.sz*6.9+dk.cx*1.15,r);
    const rx=dk.x-dk.cx*4+dk.sz*5,rz=dk.z-dk.sz*4-dk.cx*5,ry=groundH(rx,rz);if(ry>.4){dryRack(sb,rx,ry,rz,Math.atan2(dk.cx,dk.sz),r);world.colliders.push({x:rx,z:rz,r:1.3});}}
-  if(key!=='ember'&&key!=='hollow')for(let i=0;i<9;i++){const th=r()*TAU,f=.2+r()*.38,R=islandR(I,th),x=I.x+Math.cos(th)*R*f,z=I.z+Math.sin(th)*R*f;if(!ok(x,z,1.2))continue;addPuddle(x,groundH(x,z),z,1.1+r()*1.4);}
+  if(key!=='ember'&&!I.cave)for(let i=0;i<9;i++){const th=r()*TAU,f=.2+r()*.38,R=islandR(I,th),x=I.x+Math.cos(th)*R*f,z=I.z+Math.sin(th)*R*f;if(!ok(x,z,1.2))continue;addPuddle(x,groundH(x,z),z,1.1+r()*1.4);}
   const pm=sb.mesh(worldMat);pm.castShadow=true;pm.receiveShadow=true;scene.add(pm);solidMeshes.push(pm);
   if(fb.p.length){const fm=fb.mesh(worldMatS,true);fm.castShadow=true;fm.receiveShadow=true;scene.add(fm);}
   if(gl.p.length){const gm=gl.mesh(glowMat);gm.userData.noAO=true;scene.add(gm);}if(lv.p.length){const lm=lv.mesh(lavaMat);lm.userData.noAO=true;scene.add(lm);}}
