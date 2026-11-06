@@ -89,7 +89,15 @@ async function genWorldTextures(S,onStep){WTEX.size=S;const N=TL_N,ck='wtex-'+WT
 
 /* ---------- shared world uniforms ---------- */
 const WU={uAlb:{value:null},uNrm:{value:null},uTexScale:{value:TLP.map(p=>1/p[0])},uMetal:{value:TLP.map(p=>p[1])},uWet:{value:0},uTime:WIND.uTime,uWind:WIND.uStr,
- uSunDirW:{value:new THREE.Vector3(0,1,0)},uSunColW:{value:new THREE.Color(1,1,1)},uSnowK:{value:0},uDetail:{value:.32},uNStr:{value:.55}};
+ uSunDirW:{value:new THREE.Vector3(0,1,0)},uSunColW:{value:new THREE.Color(1,1,1)},uSnowK:{value:0},uDetail:{value:.32},uNStr:{value:.55},
+ uCloudOff:{value:new THREE.Vector2()},uCloudCov:{value:.4},uCloudShK:{value:0},uCloudDir:{value:new THREE.Vector3(0,1,0)},uCaus:{value:1}};
+/* drifting cloud shadows: the sun's light is dimmed where a (world-anchored) cloud field passes overhead */
+const GLSL_CLOUDSH=`uniform vec2 uCloudOff;uniform float uCloudCov;uniform float uCloudShK;uniform vec3 uCloudDir;
+float dwCH(vec2 p){vec3 q=fract(p.xyx*vec3(.1031,.1030,.0973));q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
+float dwCN(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.-2.*f);return mix(mix(dwCH(i),dwCH(i+vec2(1,0)),u.x),mix(dwCH(i+vec2(0,1)),dwCH(i+vec2(1,1)),u.x),u.y);}
+float dwCloud(vec3 wp){if(uCloudShK<.01)return 1.;vec2 q=(wp.xz+uCloudDir.xz/max(uCloudDir.y,.3)*(170.-wp.y))*.0045+uCloudOff;float n=dwCN(q)*.52+dwCN(q*2.13+3.7)*.3+dwCN(q*4.37+1.1)*.18;float lo=1.-uCloudCov;return 1.-smoothstep(lo,lo+.2,n)*uCloudShK;}
+`;
+const LIGHTS_CSH=THREE.ShaderChunk.lights_fragment_begin.replace('getDirectionalLightInfo( directionalLight, directLight );','getDirectionalLightInfo( directionalLight, directLight );directLight.color*=dwCSh;');
 const GLSL_TRI_PARS=`
 precision highp sampler2DArray;
 uniform sampler2DArray uAlb;uniform sampler2DArray uNrm;uniform float uTexScale[${TL_N}];uniform float uMetal[${TL_N}];uniform float uWet;uniform float uDetail;uniform float uNStr;
@@ -103,8 +111,9 @@ flat varying float vMat;varying vec3 vTp;varying float vUpW;varying vec3 vWPw;
 `+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
 vMat=mat;vTp=tp;vUpW=normalize(mat3(modelMatrix)*objectNormal).y;vWPw=(modelMatrix*vec4(position,1.)).xyz;
 ${o.sway?'{vec3 wp=(modelMatrix*vec4(position,1.)).xyz;float ph=uTime*1.5+wp.x*.12+wp.z*.1;float gs=sin(ph)+.35*sin(ph*2.3+1.);transformed.x+=gs*sway*.2*uWind;transformed.z+=cos(ph*.8)*sway*.15*uWind;transformed.y-=abs(gs)*sway*.03;}':''}`);
-  sh.fragmentShader=GLSL_TRI_PARS+`uniform vec3 uSunDirW;uniform vec3 uSunColW;flat varying float vMat;varying vec3 vTp;varying float vUpW;varying vec3 vWPw;
-`+sh.fragmentShader.replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
+  sh.fragmentShader=GLSL_TRI_PARS+GLSL_CLOUDSH+`uniform vec3 uSunDirW;uniform vec3 uSunColW;flat varying float vMat;varying vec3 vTp;varying float vUpW;varying vec3 vWPw;
+`+sh.fragmentShader.replace('#include <lights_fragment_begin>',LIGHTS_CSH).replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
+float dwCSh=dwCloud(vWPw);
 int dwL=int(vMat+.5);float dwS=uTexScale[dwL];vec3 dwP=vTp*dwS;
 vec3 dwTc=cross(dFdx(vTp),dFdy(vTp));float dwTl=length(dwTc);vec3 dwTn=dwTl>1e-10?dwTc/dwTl:vec3(0.,1.,0.);vec3 dwW=pow(abs(dwTn),vec3(4.));dwW/=(dwW.x+dwW.y+dwW.z+1e-5);
 vec4 dwAx=texture(uAlb,vec3(dwP.zy,float(dwL))),dwAy=texture(uAlb,vec3(dwP.xz,float(dwL))),dwAz=texture(uAlb,vec3(dwP.xy,float(dwL)));
@@ -131,8 +140,11 @@ function makeTerrainMat(groundL,snowy){const m=new THREE.MeshStandardMaterial({v
   sh.vertexShader=`attribute vec4 splat;varying vec4 vSplat;varying vec3 vWP;varying vec3 vWN;
 `+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
 vSplat=splat;vWP=(modelMatrix*vec4(position,1.)).xyz;vWN=normalize(mat3(modelMatrix)*objectNormal);`);
-  sh.fragmentShader=GLSL_TRI_PARS+`uniform float uGround;varying vec4 vSplat;varying vec3 vWP;varying vec3 vWN;
-`+sh.fragmentShader.replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
+  sh.fragmentShader=GLSL_TRI_PARS+GLSL_CLOUDSH+`uniform float uGround;uniform float uTime;uniform vec3 uSunColW;uniform float uCaus;varying vec4 vSplat;varying vec3 vWP;varying vec3 vWN;
+/* underwater caustics: the classic iterated-trig light net, only on the seabed */
+float dtCaus(vec2 uv,float time){vec2 p=mod(uv*6.28318,6.28318)-250.;vec2 i=p;float c=1.;for(int n=0;n<4;n++){float t=time*(1.-(3.5/float(n+1)));i=p+vec2(cos(t-i.x)+sin(t+i.y),sin(t-i.y)+cos(t+i.x));c+=1./length(vec2(p.x/(sin(i.x+t)/.005),p.y/(cos(i.y+t)/.005)));}c/=4.;c=1.17-pow(c,1.4);return pow(abs(c),7.);}
+`+sh.fragmentShader.replace('#include <lights_fragment_begin>',LIGHTS_CSH).replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
+float dwCSh=dwCloud(vWP);
 vec2 dtP=vWP.xz;float dtGl=uGround;
 vec4 dtS=texture(uAlb,vec3(dtP*uTexScale[1],1.)),dtG=texture(uAlb,vec3(dtP*uTexScale[int(dtGl)],dtGl)),dtD=texture(uAlb,vec3(dtP*uTexScale[12],12.));
 vec3 dtW=pow(abs(vWN),vec3(4.));dtW/=dtW.x+dtW.y+dtW.z;float dtRS=uTexScale[3];
@@ -144,7 +156,10 @@ vec4 dtB=texture(uNrm,vec3(dtP*uTexScale[1],1.))*dtSw.x+texture(uNrm,vec3(dtP*uT
 float dtMac=texture(uAlb,vec3(dtP*.021,2.)).r*.6+texture(uAlb,vec3(dtP*.0047,3.)).r*.4;
 float dtShore=1.-smoothstep(.05,.85,vWP.y);float dtWet=max(dtShore*.9,uWet*smoothstep(.3,.8,vWN.y));`)
   .replace('#include <color_fragment>',`#include <color_fragment>
-diffuseColor.rgb*=mix(vec3(1.),dtA.rgb*2.*(.8+.4*dtMac),uDetail);diffuseColor.rgb*=1.-dtWet*.38;`)
+diffuseColor.rgb*=mix(vec3(1.),dtA.rgb*2.*(.8+.4*dtMac),uDetail);diffuseColor.rgb*=1.-dtWet*.38;
+float dtUw=smoothstep(.0,-3.2,vWP.y);diffuseColor.rgb*=mix(vec3(1.),vec3(.62,.86,.84),dtUw);`)
+  .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+if(uCaus>0.&&vWP.y<.15){float cz=smoothstep(.15,-.35,vWP.y)*smoothstep(-8.,-1.5,vWP.y);float ca=dtCaus(vWP.xz*.075,uTime*.42)*.75+dtCaus(vWP.xz*.13+.37,uTime*.31)*.4;totalEmissiveRadiance+=diffuseColor.rgb*uSunColW*ca*cz*uCaus*1.6;}`)
   .replace('#include <roughnessmap_fragment>','float roughnessFactor=mix(dtB.b,.22,dtWet*.8);')
   .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
 {vec3 dtN=vec3((dtB.xy*2.-1.)*uNStr*(1.-dtWet*.6),1.);mat3 dtT=dwTBN(-vViewPosition,normal,dtP*uTexScale[1]);normal=normalize(dtT*dtN);}`)
@@ -188,8 +203,9 @@ function waveRaw(x,z,t){let h=0;for(let i=0;i<WAVE_GEO;i++){const w=WV[i];h+=w.A
 /* ---------- physically based sky (Preetham) with procedural clouds, night sky and horizon fog ---------- */
 const SKY={ray:1.7,turb:3,mie:.004,g:.8,k:.14};
 const skyU={uSun:{value:new THREE.Vector3(0,1,0)},uRay:{value:SKY.ray},uTurb:{value:SKY.turb},uMie:{value:SKY.mie},uG:{value:SKY.g},uDisc:{value:1},uK:{value:SKY.k},
- uT:WIND.uTime,uCov:{value:.3},uDark:{value:0},uNight:{value:0},uNightTop:{value:new THREE.Color('#0a1430')},uNightHor:{value:new THREE.Color('#1c2b52')},
- uFogC:{value:new THREE.Color(.5,.6,.7)},uFogK:{value:0},uCloudSun:{value:new THREE.Color(1,1,1)},uCloudAmb:{value:new THREE.Color(.4,.45,.5)},uFlash:{value:0}};
+ uT:WIND.uTime,uCov:{value:.3},uDark:{value:0},uNight:{value:0},uNightTop:{value:new THREE.Color('#030818')},uNightHor:{value:new THREE.Color('#12203d')},
+ uFogC:{value:new THREE.Color(.5,.6,.7)},uFogK:{value:0},uCloudSun:{value:new THREE.Color(1,1,1)},uCloudAmb:{value:new THREE.Color(.4,.45,.5)},uFlash:{value:0},
+ uMoon:{value:new THREE.Vector3(0,-1,0)},uMoonK:{value:0},uMetA:{value:new THREE.Vector4(0,1,0,0)},uMetB:{value:new THREE.Vector4(0,1,0,0)},uStarK:{value:0}};
 const skyMat=new THREE.ShaderMaterial({uniforms:skyU,side:THREE.BackSide,depthWrite:false,depthTest:false,fog:false,defines:{CLOUD_OCT:5},
  vertexShader:`uniform vec3 uSun;uniform float uRay;uniform float uTurb;uniform float uMie;varying vec3 vDir;varying vec3 vBetaR;varying vec3 vBetaM;varying float vSunE;
  const vec3 totalRayleigh=vec3(5.804542996261093E-6,1.3562911419845635E-5,3.0265902468824876E-5);const vec3 MieConst=vec3(1.8399918514433978E14,2.7798023919660528E14,4.0790479543861094E14);
@@ -197,10 +213,14 @@ const skyMat=new THREE.ShaderMaterial({uniforms:skyU,side:THREE.BackSide,depthWr
   vBetaR=totalRayleigh*uRay;vBetaM=.434*(.2*uTurb)*10E-18*MieConst*uMie;vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_Position=p.xyww;}`,
  fragmentShader:`uniform vec3 uSun;uniform float uG;uniform float uDisc;uniform float uK;uniform float uT;uniform float uCov;uniform float uDark;uniform float uNight;uniform vec3 uNightTop;uniform vec3 uNightHor;
  uniform vec3 uFogC;uniform float uFogK;uniform vec3 uCloudSun;uniform vec3 uCloudAmb;uniform float uFlash;varying vec3 vDir;varying vec3 vBetaR;varying vec3 vBetaM;varying float vSunE;
+ uniform vec3 uMoon;uniform float uMoonK;uniform vec4 uMetA;uniform vec4 uMetB;uniform float uStarK;
  const float pi=3.141592653589793;
  float h21(vec2 p){vec3 q=fract(p.xyx*vec3(.1031,.1030,.0973));q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
  float vn(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1,0)),u.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),u.x),u.y);}
  float cfbm(vec2 p){float a=0.,w=.5;for(int i=0;i<CLOUD_OCT;i++){a+=w*vn(p);p=mat2(1.6,1.2,-1.2,1.6)*p+vec2(3.1,1.7);w*=.5;}return a;}
+ float fb3(vec2 p){float a=0.,w=.5;for(int i=0;i<3;i++){a+=w*vn(p);p=mat2(1.6,1.2,-1.2,1.6)*p+vec2(3.1,1.7);w*=.5;}return a;}
+ /* cumulus: a domain-warped fbm, clustered by a broad coverage field, read as cloud thickness */
+ float cumT(vec2 p,float lo){vec2 w=vec2(vn(p*.33+vec2(uT*.004,0.)),vn(p*.33+vec2(5.2,1.3-uT*.003)));float n=cfbm(p*1.05+w*.85)*.78+vn(p*.21+vec2(11.,3.))*.36-.035;return smoothstep(lo,lo+.32,n);}
  void main(){vec3 d=normalize(vDir);vec3 s=normalize(uSun);
   float za=acos(max(0.,d.y));float inv=1./(cos(za)+.15*pow(93.885-za*180./pi,-1.253));vec3 Fex=exp(-(vBetaR*8.4E3*inv+vBetaM*1.25E3*inv));
   float ct=dot(d,s);float rP=.05968310365946075*(1.+pow(ct*.5+.5,2.));float g2=uG*uG;float mP=.07957747154594767*((1.-g2)/pow(1.-2.*uG*ct+g2,1.5));
@@ -209,12 +229,33 @@ const skyMat=new THREE.ShaderMaterial({uniforms:skyU,side:THREE.BackSide,depthWr
   float up=max(d.y,0.);L+=mix(uNightHor,uNightTop,pow(up,.4))*uNight;
   float grey=dot(L,vec3(.3,.55,.15));L=mix(L,vec3(grey)*vec3(.92,.96,1.04),uDark*.7)*(1.-uDark*.35);
   float disc=smoothstep(.99990,.99997,ct)*uDisc;L+=disc*min(vSunE*Fex,vec3(60.))*10.*uK;
-  if(d.y>.0&&uCov>.01){vec2 cp=d.xz/(d.y+.1)*.85+vec2(uT*.006,uT*.0025);
-   float n=cfbm(cp*1.15)*.85+cfbm(cp*3.1+7.)*.15;float lo=1.-uCov;float den=smoothstep(lo,lo+.3,n);
-   vec2 sd=normalize(s.xz+1e-4);float n2=cfbm((cp+sd*.05)*1.15);float occ=clamp((n2-n)*3.2+.55,0.,1.);
-   float sil=pow(max(ct,0.),10.)*(1.-den)*2.2;
-   vec3 cl=uCloudSun*(.35+.75*(1.-occ)+sil)+uCloudAmb;cl*=1.-uDark*.55*den;
-   float hz=smoothstep(.0,.16,d.y);L=mix(L,cl,den*hz*(.85+.15*uCov));}
+  /* night sky: Milky Way, a fine star field, moon glow and the odd shooting star (all hidden by cloud below) */
+  if(uStarK>.002&&d.y>-.05){vec3 mwN=normalize(vec3(.42,.62,-.66));float b=dot(d,mwN);vec3 ax=normalize(cross(mwN,vec3(0.,1.,0.)));vec3 ay=cross(mwN,ax);
+   vec2 mp=vec2(atan(dot(d,ay),dot(d,ax))*3.2,b*9.);float core=exp(-b*b*22.);float neb=fb3(mp*1.7)*.75+vn(mp*6.)*.35;
+   float lane=smoothstep(.22,.0,abs(b+(vn(mp*1.1)-.5)*.1))*smoothstep(.35,.7,fb3(mp*2.6+4.));
+   L+=mix(vec3(.45,.55,1.),vec3(1.,.82,.62),core*core*.7)*core*neb*neb*(1.-lane*.75)*.22*uStarK;
+   vec3 ad=abs(d);vec2 uc;float fc;if(ad.x>ad.y&&ad.x>ad.z){uc=d.yz/ad.x;fc=sign(d.x);}else if(ad.y>ad.z){uc=d.xz/ad.y;fc=2.+sign(d.y);}else{uc=d.xy/ad.z;fc=4.+sign(d.z);}
+   vec2 g=uc*170.;vec2 gi=floor(g),gf=fract(g)-.5;float h=h21(gi+fc*37.1);float th=.982-core*.03;
+   if(h>th){vec2 o=(vec2(h21(gi+1.3),h21(gi+7.1))-.5)*.5;float br=pow((h-th)/(1.-th),2.);float r=length(gf-o);
+    L+=mix(vec3(.7,.8,1.),vec3(1.,.85,.7),h21(gi+3.3))*smoothstep(.42,.0,r)*(.12+br*.9)*(.65+.35*sin(uT*2.3+h*500.))*uStarK*smoothstep(-.05,.15,d.y);}
+   float mc=max(dot(d,normalize(uMoon)),0.);L+=vec3(.42,.52,.8)*(pow(mc,90.)*.5+pow(mc,12.)*.07+pow(mc,3.)*.02)*uMoonK;
+   if(uMetB.w>.001){vec3 A=normalize(uMetA.xyz),B=normalize(uMetB.xyz);float t=uMetA.w;vec3 P=normalize(mix(A,B,t)),Q=normalize(mix(A,B,max(t-.3,0.)));vec3 pq=P-Q;
+    float hh=clamp(dot(d-Q,pq)/max(dot(pq,pq),1e-7),0.,1.);float dd=length(d-Q-pq*hh);L+=vec3(.85,.92,1.)*exp(-dd*dd*1.6e6)*hh*hh*uMetB.w*2.2;}}
+  if(d.y>.0&&uCov>.01){vec2 cp=d.xz/(d.y+.09)*.8+vec2(uT*.006,uT*.0025);float lo=1.-uCov;
+   vec3 ls=uSun.y>-.04?s:normalize(uMoon);vec2 sd=normalize(ls.xz+1e-4);float lc=dot(d,ls);
+   /* high wispy cirrus, mostly in fair weather */
+   vec2 cq=mat2(.8,-.6,.6,.8)*(d.xz/(d.y+.05)*.5)+vec2(uT*.0035,uT*.001);float ci=fb3(cq*vec2(.55,3.6))*vn(cq*.3+3.);ci=smoothstep(.2,.5,ci)*(1.-uDark)*.42*smoothstep(.02,.3,d.y);
+   L=mix(L,uCloudSun*(.9+.6*pow(max(lc,0.),6.))+uCloudAmb*.75,ci);
+   /* puffy cumulus: thickness, light from the sun side, dark bases, bright thin edges */
+   float T=cumT(cp,lo);
+   if(T>.001){float Ts=cumT(cp+sd*.13,lo);float Tq=cumT(cp+sd*.05,lo);
+    float er=fb3(cp*5.3+vec2(uT*.01,0.));T=clamp(T-(1.-T)*(1.-T)*er*.55,0.,1.);
+    float trans=exp(-(Ts*1.9+Tq*1.1));float powder=1.-exp(-T*4.5);
+    float silver=pow(max(lc,0.),9.)*(1.-T)*2.6+pow(max(lc,0.),3.)*.25;
+    float base=mix(.72,1.,smoothstep(.75,.12,d.y));
+    vec3 cl=uCloudSun*((trans*1.1+.06)*(.5+.5*powder)*1.4+silver)+uCloudAmb*(1.12-.58*T)*base;
+    cl*=1.-uDark*.55*T;cl=mix(cl,L,(1.-smoothstep(.0,.3,d.y))*.35);
+    float hz=smoothstep(.0,.14,d.y);L=mix(L,cl,smoothstep(0.,.42,T)*hz*(.9+.1*uCov));}}
   L=mix(L,uFogC,clamp(uFogK*pow(1.-up,8.)+step(d.y,0.)*.0,0.,1.));
   if(d.y<0.)L=mix(L,uFogC,smoothstep(0.,-.12,d.y));
   L+=uFlash*vec3(.9,.95,1.)*.6;

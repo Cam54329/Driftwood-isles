@@ -25,11 +25,11 @@ const CG2=(()=>{const tp=[[0,0],[.33,.01],[.36,.12],[.34,.3],[.37,.5],[.42,.7],[
   cyl:new THREE.CylinderGeometry(1,1,1,12),cylS:new THREE.CylinderGeometry(1,1,1,7),cylT:new THREE.CylinderGeometry(.86,1,1,14),ring:new THREE.TorusGeometry(1,.22,5,16),smile:new THREE.TorusGeometry(1,.17,4,10,Math.PI),disc:new THREE.CircleGeometry(1,12),box:new THREE.BoxGeometry(1,1,1)};})();
 /* one mesh per moving body part: merges the many small pieces under each joint so a character costs ~15 draw calls, not ~80 */
 const CHAR_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.7,metalness:0});
-function mergeRigGroups(root){const groups=[];root.traverse(o=>{if(!o.isMesh)groups.push(o);});const col=new THREE.Color();
+function mergeRigGroups(root,MAT=CHAR_MAT){const groups=[];root.traverse(o=>{if(!o.isMesh)groups.push(o);});const col=new THREE.Color();
  for(const g of groups){const ms=g.children.filter(c=>c.isMesh&&c.material&&!c.material.transparent);if(ms.length<2)continue;const parts=[];
   for(const m of ms){m.updateMatrix();const src=m.geometry,geo=src.index?src.toNonIndexed():src.clone();for(const k of Object.keys(geo.attributes))if(k!=='position'&&k!=='normal')geo.deleteAttribute(k);
    col.copy(m.material.color);if(m.material.emissive)col.add(m.material.emissive);const n=geo.attributes.position.count,ca=new Float32Array(n*3);for(let i=0;i<n;i++){ca[i*3]=col.r;ca[i*3+1]=col.g;ca[i*3+2]=col.b;}geo.setAttribute('color',new THREE.BufferAttribute(ca,3));geo.applyMatrix4(m.matrix);parts.push(geo);g.remove(m);}
-  let merged=null;try{merged=BGU.mergeGeometries(parts,false);}catch(e){}parts.forEach(p=>p.dispose());if(!merged){for(const m of ms)g.add(m);continue;}const mesh=new THREE.Mesh(merged,CHAR_MAT);mesh.castShadow=true;mesh.userData.merged=true;g.add(mesh);}}
+  let merged=null;try{merged=BGU.mergeGeometries(parts,false);}catch(e){}parts.forEach(p=>p.dispose());if(!merged){for(const m of ms)g.add(m);continue;}const mesh=new THREE.Mesh(merged,MAT);mesh.castShadow=true;mesh.userData.merged=true;g.add(mesh);}}
 function makeChar(L){const root=new THREE.Group(),body=new THREE.Group();root.add(body);const vis=new THREE.Group();vis.scale.setScalar(CHAR_S);body.add(vis);
  const mk=(geo,mat,par,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0)=>{const big=Math.max(sx,sy,sz);if(big<.13){if(geo===CG2.sph)geo=CG2.sphS;else if(geo===CG2.cap)geo=CG2.capS;else if(geo===CG2.cyl)geo=CG2.cylS;}const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.set(rx,ry,rz);m.castShadow=true;par.add(m);return m;};
  const vr=((L.shirt||'')+(L.skin||'')+(L.pants||'')).split('').reduce((a,c)=>a+c.charCodeAt(0),0)%4,hs=(L.hairStyle!=null?L.hairStyle:((L.skin||'')+(L.hat||'')).split('').reduce((a,c)=>a+c.charCodeAt(0),0))%4;
@@ -87,6 +87,73 @@ function makeChar(L){const root=new THREE.Group(),body=new THREE.Group();root.ad
  const blob=new THREE.Mesh(BLOBG,BLOBM);blob.rotation.x=-Math.PI/2;blob.position.y=.05;blob.renderOrder=1;root.add(blob);
  const aL=arm(-1),aR=arm(1),lL=leg(-1),lR=leg(1);mergeRigGroups(vis);
  return{root,body,hips,spine,neck,head,eyes,blob,aL,aR,lL,lR};}
+/* ---------- player anglers (6.0): low-poly, flat-shaded fishermen after the reference art: bucket hat, short-sleeve
+   shirt with collar and buttons, suspenders, shorts, bare knees, knee socks and work boots, with an optional beard.
+   NPCs keep makeChar. Same joints, so every animation fits. ---------- */
+const CHAR_MAT_LP=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8,metalness:0,flatShading:true});
+const LPG=(()=>{const lat=(pts,seg)=>new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])),seg);
+ return{ico:new THREE.IcosahedronGeometry(1,1),ico0:new THREE.IcosahedronGeometry(1,0),sph:new THREE.SphereGeometry(1,8,6),dome:new THREE.SphereGeometry(1,8,4,0,TAU,0,Math.PI/2),
+  cyl:new THREE.CylinderGeometry(1,1,1,8),cyl6:new THREE.CylinderGeometry(1,1,1,6),tap:new THREE.CylinderGeometry(.8,1,1,8),tapU:new THREE.CylinderGeometry(1,.82,1,8),box:new THREE.BoxGeometry(1,1,1),
+  torso:lat([[0,0],[.38,0],[.41,.14],[.45,.36],[.47,.56],[.46,.72],[.43,.84],[.32,.93],[.16,.98],[0,.99]],8),
+  shorts:lat([[0,0],[.38,0],[.4,.1],[.385,.26],[.34,.3],[0,.31]],8)};})();
+const HAIRS=['#2a1e18','#4a3020','#6a4426','#9a6a3a','#c8a060','#8a8784'];
+const BEARDS=[{id:'full',n:'Full beard'},{id:'short',n:'Short beard'},{id:'stubble',n:'Stubble'},{id:'none',n:'Clean shaven'}];
+const SHORTSC=['#3f4d35','#2f3a4a','#5a4632','#4a4a4e','#6a5a3e','#2a2a2e'];
+function makeAngler(L){const root=new THREE.Group(),body=new THREE.Group();root.add(body);const vis=new THREE.Group();vis.scale.setScalar(CHAR_S);body.add(vis);
+ const mk=(geo,mat,par,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.set(rx,ry,rz);m.castShadow=true;par.add(m);return m;};
+ const dk=(c,k)=>'#'+new THREE.Color(c).multiplyScalar(k).getHexString(),mixc=(a,b,k)=>'#'+new THREE.Color(a).lerp(new THREE.Color(b),k).getHexString();
+ const skin=L.skin||'#e0ac80',shirt=L.shirt||'#8e9398',hatc=L.hat||'#56723c',shorts=L.pants||'#3f4d35',hairC=L.hair||HAIRS[(skin.charCodeAt(2)||0)%HAIRS.length];
+ const SK=smat(skin,'skin'),SKD=smat(dk(skin,.86),'skin'),HR=smat(hairC,'hair'),SH=smat(shirt),SHD=smat(dk(shirt,.74)),PA=smat(shorts),PAD=smat(dk(shorts,.72)),
+  SO=smat('#e4dfd2','knit'),SOS=smat(mixc(hatc,'#4a4a4a',.35),'knit'),ST=smat('#2b2420','leather'),BO=smat('#3d2c21','leather'),BOD=smat('#2a1f18','leather'),SOLE=smat('#17120e','leather'),GOLD=smat('#c8a04a','metal'),EYE=smat('#1c1510','eye');
+ /* hips and shorts */
+ const hips=new THREE.Group();hips.position.y=1.5;vis.add(hips);mk(LPG.shorts,PA,hips,0,-.19,0,1.1,1,.84);mk(LPG.cyl,PAD,hips,0,.1,0,.43,.06,.335);mk(LPG.ico,PA,hips,0,-.13,0,.3,.17,.24);
+ const spine=new THREE.Group();spine.position.y=.1;hips.add(spine);
+ /* shirt: torso, short sleeves, collar, button placket and a chest pocket */
+ mk(LPG.torso,SH,spine,0,-.08,0,1.1,.96,.8);for(const s of[-1,1])mk(LPG.sph,SH,spine,s*.38,.76,0,.2,.17,.2);
+ for(const s of[-1,1])mk(LPG.box,SHD,spine,s*.08,.8,.21,.16,.025,.12,.75,s*.35,-s*.35);
+ mk(LPG.box,SHD,spine,0,.45,.37,.065,.64,.02,.05,0,0);for(let i=0;i<4;i++)mk(LPG.box,smat('#ece6da'),spine,0,.7-i*.16,.384,.026,.026,.012);
+ mk(LPG.box,SHD,spine,-.29,.52,.35,.13,.13,.02,.08,-.35,0);mk(LPG.box,SHD,spine,-.29,.59,.357,.14,.028,.026,.08,-.35,0);
+ /* suspenders: up the front, over the shoulders and crossed at the back, with brass clips */
+ for(const s of[-1,1]){mk(LPG.box,ST,spine,s*.18,.25,.36,.08,.54,.025,.1,0,s*.04);mk(LPG.box,ST,spine,s*.195,.66,.32,.08,.38,.025,-.4,0,s*.02);
+  mk(LPG.box,ST,spine,s*.2,.86,0,.08,.025,.5);mk(LPG.box,GOLD,spine,s*.175,.02,.335,.095,.075,.03);
+  mk(LPG.box,ST,spine,s*.1,.56,-.345,.075,.62,.025,-.1,0,-s*.3);}
+ mk(LPG.box,ST,spine,0,.12,-.325,.08,.3,.025,.06,0,0);
+ /* neck and head */
+ const neck=new THREE.Group();neck.position.y=.94;spine.add(neck);mk(LPG.cyl6,SK,neck,0,.04,0,.12,.14,.12);
+ const head=new THREE.Group();head.position.y=.06;head.scale.setScalar(.62);neck.add(head);
+ mk(LPG.ico,SK,head,0,.62,-.02,.56,.6,.56);mk(LPG.ico,SK,head,0,.42,.08,.48,.38,.46);
+ mk(LPG.ico,SKD,head,0,.5,.56,.11,.13,.12);for(const s of[-1,1])mk(LPG.sph,SK,head,s*.56,.55,0,.08,.13,.07,0,s*.3,0);
+ const eyes=[];for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*.2,.63,.49);head.add(e);mk(LPG.sph,EYE,e,0,0,0,.062,.08,.04);mk(LPG.sph,smat('#f4f0e8','eye'),e,s*-.012,.024,.03,.018,.018,.01);eyes.push(e);
+  mk(LPG.box,HR,head,s*.21,.76,.5,.18,.05,.07,0,0,s*.14);}
+ const bd=L.beard||'none';const BD=smat(hairC,'hair');
+ if(bd==='full'){mk(LPG.ico,BD,head,0,.3,.2,.5,.38,.42);for(const s of[-1,1])mk(LPG.ico,BD,head,s*.33,.44,.2,.18,.25,.24);mk(LPG.ico,BD,head,0,.42,.55,.2,.07,.09);mk(LPG.ico,BD,head,0,.16,.32,.26,.16,.22);}
+ else if(bd==='short'){mk(LPG.ico,BD,head,0,.34,.17,.48,.3,.42);mk(LPG.ico,BD,head,0,.42,.55,.19,.06,.08);mk(LPG.box,smat('#7a3a30','skin'),head,0,.35,.6,.1,.025,.02);}
+ else if(bd==='stubble'){mk(LPG.ico,smat(mixc(skin,hairC,.45),'skin'),head,0,.39,.1,.49,.36,.47);mk(LPG.box,smat('#7a3a30','skin'),head,0,.36,.57,.11,.025,.02);}
+ else mk(LPG.box,smat('#7a3a30','skin'),head,0,.36,.55,.12,.028,.02);
+ /* hair below the hat */
+ const hat=L.hatType||'bucket',bare=hat==='none';mk(LPG.ico,HR,head,0,.62,-.17,.58,.56,.48);for(const s of[-1,1])mk(LPG.box,HR,head,s*.52,.56,.1,.08,.22,.14);
+ if(bare||hat==='bandana'||hat==='beret'){mk(LPG.dome,HR,head,0,.66,-.04,.6,.55,.6,-.28,0,0);if(bare){mk(LPG.ico0,HR,head,.12,1.1,.3,.22,.12,.2,.3,0,.3);mk(LPG.ico0,HR,head,-.14,1.08,.32,.2,.1,.18,.3,0,-.3);}}
+ const hk=hat==='beanie'?'knit':hat==='sunhat'?'straw':'cloth',HC=smat(hatc,hk),HCD=smat(dk(hatc,.68),hk);
+ if(hat==='bucket'){mk(LPG.tap,HC,head,0,.9,0,1.02,.1,1.02);mk(LPG.tap,HC,head,0,1.13,0,.63,.42,.63);mk(LPG.dome,HC,head,0,1.33,0,.5,.13,.5);mk(LPG.cyl,HCD,head,0,1.,0,.645,.09,.645);}
+ else if(hat==='cap'){mk(LPG.dome,HC,head,0,.76,-.02,.65,.56,.65);mk(LPG.box,HC,head,0,.8,.6,.5,.04,.36,-.1,0,0);mk(LPG.cyl6,HCD,head,0,1.31,-.02,.07,.04,.07);}
+ else if(hat==='beanie'){mk(LPG.dome,HC,head,0,.7,-.02,.68,.72,.68);mk(LPG.cyl,HCD,head,0,.78,-.02,.7,.2,.7);mk(LPG.ico0,smat('#f2efe8','knit'),head,0,1.43,-.02,.17,.17,.17);}
+ else if(hat==='sunhat'){mk(LPG.tap,HC,head,0,.93,0,1.3,.06,1.3);mk(LPG.tap,HC,head,0,1.1,0,.58,.32,.58);mk(LPG.dome,HC,head,0,1.26,0,.46,.1,.46);mk(LPG.cyl,HCD,head,0,1.0,0,.6,.08,.6);}
+ else if(hat==='top'){mk(LPG.cyl,HC,head,0,.96,0,.86,.05,.86);mk(LPG.cyl,HC,head,0,1.43,0,.48,.9,.48);mk(LPG.cyl,HCD,head,0,1.06,0,.49,.12,.49);}
+ else if(hat==='captain'){mk(LPG.cyl,smat('#1e2a44'),head,0,.9,0,.67,.16,.67);mk(LPG.ico,smat('#f4f1ea'),head,0,1.06,0,.74,.22,.74);mk(LPG.box,smat('#14161a','leather'),head,0,.88,.56,.5,.04,.3);mk(LPG.box,GOLD,head,0,1.0,.67,.14,.1,.03);}
+ else if(hat==='beret'){mk(LPG.ico,HC,head,.08,1.05,0,.72,.18,.7,0,0,-.18);mk(LPG.cyl6,HC,head,.1,1.21,0,.05,.06,.05);}
+ else if(hat==='bandana'){mk(LPG.dome,HC,head,0,.72,-.02,.66,.62,.66);mk(LPG.cyl,HCD,head,0,.8,-.02,.67,.16,.67);for(const s of[-1,1])mk(LPG.box,HC,head,s*.08,.66,-.66,.12,.3,.04,.3,0,s*.3);}
+ /* arms: short sleeves, bare arms, big working hands */
+ const arm=s=>{const sh=new THREE.Group();sh.position.set(s*.54,.8,0);spine.add(sh);mk(LPG.tapU,SH,sh,0,-.12,0,.18,.28,.18);mk(LPG.cyl,SHD,sh,0,-.265,0,.175,.05,.175);mk(LPG.cyl,SK,sh,0,-.37,0,.115,.2,.115);
+  const el=new THREE.Group();el.position.y=-.44;sh.add(el);mk(LPG.ico0,SK,el,0,0,0,.12,.12,.12);mk(LPG.tapU,SK,el,0,-.17,0,.118,.32,.118);
+  const hand=new THREE.Group();hand.position.y=-.38;el.add(hand);mk(LPG.ico,SK,hand,0,-.04,0,.12,.135,.1);mk(LPG.sph,SK,hand,-s*.085,0,.045,.048,.075,.048,0,0,s*.6);return{sh,el,hand};};
+ /* legs: shorts, bare knees, knee socks with a stripe, work boots */
+ const leg=s=>{const hp=new THREE.Group();hp.position.set(s*.19,0,0);hips.add(hp);mk(LPG.tap,PA,hp,0,-.2,0,.235,.42,.235);mk(LPG.cyl,PAD,hp,0,-.41,0,.237,.04,.237);mk(LPG.cyl,SK,hp,0,-.54,0,.13,.26,.13);
+  const kn=new THREE.Group();kn.position.y=-.66;hp.add(kn);mk(LPG.ico0,SK,kn,0,0,.01,.135,.13,.135);mk(LPG.cyl,SK,kn,0,-.07,0,.12,.14,.12);
+  mk(LPG.tapU,SO,kn,0,-.31,0,.138,.38,.138);mk(LPG.cyl,SOS,kn,0,-.15,0,.141,.035,.141);mk(LPG.cyl,SOS,kn,0,-.205,0,.139,.02,.139);
+  mk(LPG.cyl,BO,kn,0,-.58,0,.155,.2,.155);mk(LPG.cyl,BOD,kn,0,-.485,0,.165,.04,.165);mk(LPG.ico,BO,kn,0,-.7,.08,.165,.11,.25);mk(LPG.box,SOLE,kn,0,-.785,.07,.22,.04,.37);mk(LPG.box,BOD,kn,0,-.66,.2,.13,.04,.06);return{hp,kn};};
+ const blob=new THREE.Mesh(BLOBG,BLOBM);blob.rotation.x=-Math.PI/2;blob.position.y=.05;blob.renderOrder=1;root.add(blob);
+ const aL=arm(-1),aR=arm(1),lL=leg(-1),lR=leg(1);mergeRigGroups(vis,CHAR_MAT_LP);
+ return{root,body,hips,spine,neck,head,eyes,blob,aL,aR,lL,lR,angler:true};}
 function disposeRig(rig){if(!rig)return;rig.root.parent&&rig.root.parent.remove(rig.root);}
 
 class CharAnim{constructor(rig){this.r=rig;this.t=Math.random()*10;this.ph=0;this.blink=rand(1,4);this.blinkT=0;this.lookT=rand(2,5);this.look=0;this.c=null;this.lastStep=0;this.onStep=null;}
@@ -117,6 +184,10 @@ class CharAnim{constructor(rig){this.r=rig;this.t=Math.random()*10;this.ph=0;thi
   if(f==='idle'&&!em&&!p.sit&&s<.04){this.fidT=(this.fidT==null?rand(6,12):this.fidT)-dt;if(this.fidT<=0){this.fid=1.6;this.fidT=rand(9,16);}}
   if(this.fid>0){this.fid-=dt;if(f!=='idle'||s>.04||em)this.fid=0;const k=Math.sin(clamp(1-this.fid/1.6,0,1)*Math.PI);T.sLx=lerp(T.sLx,-2.8,k);T.sRx=lerp(T.sRx,-2.8,k);T.sLz=lerp(T.sLz,-.35,k);T.sRz=lerp(T.sRz,.35,k);T.spX-=.12*k;T.nX=-.22*k;}
   if(s>.04&&p.ground)T.nX+=Math.sin(this.ph*2)*.04;
+  /* standing idle: a slow weight shift from foot to foot, so nobody stands like a statue */
+  if(f==='idle'&&!em&&!p.sit&&s<.04&&p.ground!==false){const w=Math.sin(t*.55);T.hipsRY+=w*.06;T.twist-=w*.04;T.kL+=Math.max(0,w)*.12;T.kR+=Math.max(0,-w)*.12;T.hL-=Math.max(0,w)*.05;T.hR-=Math.max(0,-w)*.05;T.bodyY-=Math.abs(w)*.012;T.roll=(T.roll||0)+w*.025;}
+  /* landing a big one: fish held high in one hand, a fist pump with the other */
+  if(f==='caught'&&p.big&&!p.sit&&ft<2.2){const pm=Math.abs(Math.sin(ft*9));T.sRx=-2.95;T.sRz=.25;T.eR=-.2;T.sLx=-2.2-pm*.6;T.sLz=-.55;T.eL=-1.5+pm*.9;T.spX=-.12;}
   if(!this.c)this.c=Object.assign({},T);const k=1-Math.exp(-20*dt),c=this.c;for(const key in T)c[key]=lerp(c[key],T[key],key==='bodyY'&&p.sit?1:k);
   r.body.position.y=c.bodyY;r.body.rotation.x=c.lean;r.hips.rotation.y=c.hipsRY;r.spine.rotation.x=c.spX;r.spine.rotation.y=c.twist;r.neck.rotation.y=c.nY;r.neck.rotation.x=c.nX;
   r.aL.sh.rotation.x=c.sLx;r.aL.sh.rotation.z=c.sLz;r.aL.el.rotation.x=c.eL;r.aR.sh.rotation.x=c.sRx;r.aR.sh.rotation.z=c.sRz;r.aR.el.rotation.x=c.eR;
@@ -425,10 +496,10 @@ class RemotePlayer{constructor(peer){this.peer=peer;this.rig=null;this.anim=null
   this.boat=null;this.onBoat=false;this.byaw=0;this.s='i';this.sT=0;this.fx=0;this.fz=0;this.kId=null;this.eId=null;this.held=null;this.heldT=0;this.emote=null;this.emT=0;this.first=true;
   this.name='Angler';this.color='#9db4d8';this.level=1;this.zone='cove';this.uid=null;this.label=null;this.bubble=null;this.bubbleT=0;this.bob=makeBobber();this.line=makeLine();this.from=new THREE.Vector3();this.rod=null;this.rodKey='';this.fade=0;this.p={};}
  ingest(p,sender){if(!p||typeof p!=='object')return;this.p=p;this.uid=(sender&&sender.by)||(typeof p.uid==='string'?p.uid.slice(0,80):null);
-  const name=cleanText(p.n,16)||'Angler',color=isHex(p.c)?p.c:'#9db4d8',hc=isHex(p.hc)?p.hc:'#f6d36a',sk=isHex(p.sk)?p.sk:SKINS[1],hat=HATS.some(h=>h.id===p.h)?p.h:'bucket';
+  const name=cleanText(p.n,16)||'Angler',color=isHex(p.c)?p.c:'#9db4d8',hc=isHex(p.hc)?p.hc:'#f6d36a',sk=isHex(p.sk)?p.sk:SKINS[1],hat=HATS.some(h=>h.id===p.h)?p.h:'bucket',bd=BEARDS.some(b=>b.id===p.bd)?p.bd:'none',hr=isHex(p.hr)?p.hr:null,pc=isHex(p.pc)?p.pc:'#3f4d35';
   this.name=name;this.color=color;this.level=clamp(Math.round(num(p.lv,1)),1,999);this.zone=ZONES[p.zn]?p.zn:'sea';
-  const lk=[color,hc,sk,hat].join('|');if(lk!==this.lookKey){this.lookKey=lk;const old=this.rig;const pos=old?old.root.position.clone():null;disposeRig(old);
-   this.rig=makeChar({skin:sk,shirt:color,pants:'#3f4a6a',hat:hc,hatType:hat});scene.add(this.rig.root);this.anim=new CharAnim(this.rig);if(pos)this.rig.root.position.copy(pos);this.label=null;this.labelKey='';this.rodKey='';if(this.held){this.rig.root.add(this.held);}}
+  const lk=[color,hc,sk,hat,bd,hr,pc].join('|');if(lk!==this.lookKey){this.lookKey=lk;const old=this.rig;const pos=old?old.root.position.clone():null;disposeRig(old);
+   this.rig=makeAngler({skin:sk,shirt:color,pants:pc,hat:hc,hatType:hat,beard:bd,hair:hr});scene.add(this.rig.root);this.anim=new CharAnim(this.rig);if(pos)this.rig.root.position.copy(pos);this.label=null;this.labelKey='';this.rodKey='';if(this.held){this.rig.root.add(this.held);}}
   this.title=ALL_TITLES.includes(p.ti)?p.ti:'Novice Angler';const lbk=name+'|'+this.level+'|'+this.title;if(lbk!==this.labelKey){this.labelKey=lbk;if(this.label)this.rig.root.remove(this.label);this.label=tagSprite('Level '+this.level,name,this.title,TITLE_COL[this.title]);this.label.position.set(0,HEAD_TOP+.45,0);this.rig.root.add(this.label);}
   const rk=(RODM[p.rd]?p.rd:'drift')+'|'+(ENCH[p.en]?p.en:'');if(rk!==this.rodKey){this.rodKey=rk;if(this.rod)this.rod.g.parent&&this.rod.g.parent.remove(this.rod.g);this.rod=buildRod(RODM[p.rd]||RODM.drift,ENCH[p.en]?p.en:null);this.rig.aR.hand.add(this.rod.g);}
   const ts=num(p.ts,0,1e15);if(ts>0&&Number.isFinite(p.x)&&Number.isFinite(p.z)){const est=Date.now()-ts;this.off=this.off==null?est:Math.min(est,this.off+.5);
