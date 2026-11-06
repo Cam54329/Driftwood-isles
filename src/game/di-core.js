@@ -142,6 +142,9 @@ const SPECIES=[
  ['void_lantern','Void Lantern','abyss',2,3,12,100,'tall','#0a0a1a','#b06aff',null,'lure'],['bone_gar','Bone Gar','abyss',2,6,24,100,'long','#d8d0c0','#8a3a3a'],['sunless_shark','Sunless Shark','abyss',3,80,320,100,'shark','#1a0a2a','#ff4ad8'],['starless_ray','Starless Ray','abyss',4,60,260,100,'ray','#05050a','#7a5aff'],
  ['old_leviathan','The Old Leviathan','abyss',5,600,1800,100,'shark','#14080e','#ff6a3a'],['sunless_one','The Sunless One','abyss',6,900,2400,100,'tall','#020204','#ff2ad8',null,'lure'],
  ['cinder_fry','Cinder Fry','pond_abyss',0,.05,.4,40,'fish','#ff6a2a','#ffd8a8'],['molten_koi','Molten Koi','pond_abyss',2,3,12,100,'tall','#ff3a1a','#ffd84a'],['abyss_pearl','Abyss Pearlfish','pond_abyss',4,10,40,100,'tall','#f0e8ff','#b06aff'],
+  /* 4.0 */ ['tidepool_goby','Tidepool Goby','cove',1,0.1,0.6,14,'fish','#c8a070','#f4e0b8'],['sunspot_trout','Sunspot Trout','cove',3,2,7,50,'fish','#e8784a','#ffd8a0'],['mossback_carp','Mossback Carp','moss',1,1,6,20,'tall','#5a7a4a','#c8d8a0'],['fen_glowfin','Fen Glowfin','moss',4,1,4,60,'fish','#2a3a2a','#c8ff7a','night','lure'],['parrot_puffer','Parrot Pufferfish','atoll',2,0.5,3,40,'tall','#3ab8b0','#ffd84a'],['reef_marlin','Reef Marlin','atoll',5,60,240,100,'long','#2a5aa8','#a8e0ff'],['glacier_cod','Glacier Cod','frost',1,2,9,30,'fish','#a8c0d0','#f0f8ff'],['snowcap_angler','Snowcap Angler','frost',4,4,16,80,'tall','#e8f0f8','#8ad8ff','night','lure'],['blossom_betta','Blossom Betta','petal',2,0.2,1,40,'fish','#ff8ac8','#ffe0f0'],['petalfall_ray','Petalfall Ray','petal',4,20,90,90,'ray','#f0a0c0','#fff0f8'],['harvest_bass','Harvest Bass','amber',1,1,5,30,'fish','#a87a3a','#f0d8a0'],['scarecrow_gar','Scarecrow Gar','amber',3,6,22,70,'long','#7a5a2a','#e8c870','night'],['ash_snapper','Ash Snapper','ember',1,1,6,30,'fish','#4a4040','#ff8a5a'],['magma_leviathan','Magma Leviathan','ember',5,150,600,100,'shark','#2a0a0a','#ff6a1a'],['mirage_minnow','Mirage Minnow','dune',0,0.05,0.4,20,'fish','#e8c890','#fff4d8'],['dune_serpent','Dune Serpent','dune',4,10,40,90,'eel','#c89a5a','#2ab8b8','day'],['crystal_tetra','Crystal Tetra','glim',1,0.1,0.5,30,'fish','#c8a8ff','#ffffff'],['geode_grouper','Geode Grouper','glim',4,40,160,100,'tall','#4a3a6a','#e8c8ff'],['silverwing_flyer','Silverwing Flyer','sea',1,0.3,1.5,20,'fish','#8ab0d8','#f0f8ff'],['ocean_sunfish','Ocean Sunfish','sea',3,80,300,60,'tall','#a8b0b8','#e8ecf0'],
+ ['lighthouse_phantom','Lighthouse Phantom','cove',6,20,80,100,'eel','#cfe8ff','#7ab8ff','secret:lighthouse','whisk'],['bell_ray','Sunken Bell Ray','atoll',6,40,160,100,'ray','#c8a040','#fff0b0','secret:dawn'],
+ ['star_koi','Starlit Koi','petal',6,4,16,100,'tall','#1a1a3a','#ffe8a0','secret:starfall','lure'],['frost_wyrm','Frost Wyrm','frost',6,100,400,100,'eel','#e8f4ff','#8ad8ff','secret:storm'],
  ['glowmote','Glowmote','pond_hollow',0,.05,.3,40,'fish','#7affd8','#ffffff'],['pearl_tetra','Pearl Tetra','pond_hollow',1,.1,.6,100,'fish','#f0f0f8','#d8e8ff'],['sapphire_eel','Sapphire Eel','pond_hollow',3,2,9,100,'eel','#2a4ad8','#a8c8ff'],['lantern_queen','Lantern Queen','pond_hollow',5,8,30,100,'tall','#1a1a3a','#ffe08a',null,'lure'],
 ].map(a=>({id:a[0],name:a[1],zone:a[2],r:a[3],minW:a[4],maxW:a[5],price:a[6],shape:a[7],c1:a[8],c2:a[9],cond:a[10]||null,feat:a[11]||null}));
 /* fish value: every island has a base price for its commons, and each rarity is a fixed multiple of it, so each
@@ -186,6 +189,14 @@ const RODS=[
  {id:'mirage',deco:'compass',n:'Mirage Caster',price:240000,luck:105,reel:1.5,ctrl:.15,res:.42,shaft:'#e8c890',handle:'#5a3a1a',reelC:'#2ab8b8',len:3.05,metal:.4,wrap:'#2a8a8a',glow:'#9affff',req:{isl:'dune'},perk:{luck:30,wait:.85,cond:'day',d:'+30% luck and bites 15% faster by day'}},
  {id:'prismheart',deco:'stars',n:'Prismheart',price:500000,luck:160,reel:1.62,ctrl:.18,res:.48,shaft:'#8a6ad8',handle:'#1e1630',reelC:'#e8d8ff',len:3.15,metal:.6,wrap:'#c8a8ff',glow:'#e8c8ff',req:{isl:'glim'},perk:{mut:.06,luck:20,d:'+6% mutation chance, +20% luck'}},
  {id:'drowncrown',deco:'crystal',n:'Drowned Crown',price:900000,luck:200,reel:1.75,ctrl:.22,res:.52,shaft:'#14303a',handle:'#c8a040',reelC:'#5affd8',len:3.25,metal:.7,wrap:'#c8a040',glow:'#5affd8',req:{sp:'abyss_angler'},perk:{luck:40,tire:1.2,d:'+40% luck, fish tire 20% faster'}},
+ /* 4.0: more rods for the middle of the climb, a rod forged from relics and a secret one */
+ {id:'willow',deco:'petals',n:'Weeping Willow',price:16000,luck:33,reel:1.14,ctrl:.07,res:.16,shaft:'#7a8a5a',handle:'#3a2e22',reelC:'#b8c098',len:2.75,wrap:'#c8d8a0',glow:'#d8f0b0',req:{isl:'moss'},perk:{tire:1.15,d:'Fish tire 15% faster'}},
+ {id:'pearl',deco:'crystal',n:'Pearl Diver',price:26000,luck:42,reel:1.18,ctrl:.08,res:.18,shaft:'#e8e0d0',handle:'#2a4a5a',reelC:'#f4f0ea',len:2.8,metal:.3,wrap:'#8ad8e0',glow:'#f0f8ff',req:{isl:'atoll'},perk:{mut:.04,d:'+4% mutation chance'}},
+ {id:'auroral',deco:'stars',n:'Aurora Rod',price:70000,luck:66,reel:1.32,ctrl:.12,res:.3,shaft:'#2a3a5a',handle:'#1a2230',reelC:'#9af0d8',len:2.9,metal:.5,wrap:'#c88aff',glow:'#7affd8',req:{isl:'frost'},perk:{luck:30,cond:'night',d:'+30% luck at night'}},
+ {id:'thornwood',deco:'sun',n:'Thornwood',price:110000,luck:78,reel:1.38,ctrl:.14,res:.36,shaft:'#5a3a22',handle:'#2a1a10',reelC:'#c89a5a',len:2.95,wrap:'#8a2a2a',glow:'#ffb060',req:{isl:'amber'},perk:{hook:.25,tire:1.1,d:'Strike window 0.25 s longer, fish tire 10% faster'}},
+ {id:'scarab',deco:'compass',n:'Scarab Rod',price:180000,luck:92,reel:1.45,ctrl:.14,res:.4,shaft:'#2a5a5a',handle:'#c8a040',reelC:'#e8c860',len:3,metal:.6,wrap:'#1a3a3a',glow:'#60ffe0',req:{isl:'dune'},perk:{sell:1.12,d:'Fish sell 12% higher'}},
+ {id:'relicforged',deco:'crystal',n:'Relic-Forged Rod',price:0,luck:150,reel:1.6,ctrl:.2,res:.48,shaft:'#1e3a4a',handle:'#5fd6ff',reelC:'#c8f4ff',len:3.1,metal:.7,wrap:'#5fd6ff',glow:'#8af0ff',req:{relic:25},perk:{mut:.06,luck:15,d:'+6% mutation chance and +15% luck'}},
+ {id:'driftking',deco:'compass',n:'Driftwood King',price:0,luck:175,reel:1.68,ctrl:.22,res:.5,shaft:'#9a7448',handle:'#d8b040',reelC:'#f0e0b0',len:3.15,metal:.3,wrap:'#d8b040',glow:'#ffe8a0',req:{secret:'pages'},perk:{luck:20,mut:.04,wt:.1,d:'+20% luck, +4% mutations, +10% weight'}},
 ];
 const RODM={};RODS.forEach(r=>RODM[r.id]=r);
 const BAITS=[
@@ -216,6 +227,22 @@ const LINES=[
  {id:'aurora',n:'Aurora Line',r:'legendary',c:'#5affd0',glow:1,shift:1,fx:{mut:.04,luck:20,d:'+4% mutation chance, +20% luck'}},
  {id:'void',n:'Void Line',r:'secret',c:'#b06aff',glow:1,fx:{luck:35,mut:.05,tire:1.2,d:'+35% luck, +5% mutations, fish tire 20% faster'}}];
 const LINEM={};LINES.forEach(l=>LINEM[l.id]=l);
+/* boat paint: works on every boat; some are sold by shipwrights, the rarest only come from Mystery Crates */
+const PAINTS=[
+ {id:'classic',n:'Classic',price:0,r:'common'},
+ {id:'sunset',n:'Sunset Coral',price:15000,r:'common',hull:'#f2a184',stripe:'#ffd76e',bottom:'#7a3a3a'},
+ {id:'mint',n:'Seafoam Mint',price:15000,r:'common',hull:'#a4e2cc',stripe:'#f4f1ea',bottom:'#2a5a50'},
+ {id:'lemon',n:'Lemon Zest',price:20000,r:'common',hull:'#f4d84a',stripe:'#2a8ab0',bottom:'#4a3a20'},
+ {id:'midnight',n:'Midnight Navy',price:25000,r:'common',hull:'#1e2a44',stripe:'#c8a040',bottom:'#0e1420'},
+ {id:'racing',n:'Racing Red',price:30000,r:'common',hull:'#d83a2e',stripe:'#f4f1ea',bottom:'#2a2a2e'},
+ {id:'royal',n:'Royal Purple',price:40000,r:'common',hull:'#5a3a8a',stripe:'#e8c860',bottom:'#2a1a40'},
+ {id:'koi',n:'Koi Pond',crate:true,r:'rare',hull:'#f4f1ea',stripe:'#e8583a',bottom:'#2a3a4a'},
+ {id:'reef',n:'Coral Reef',crate:true,r:'rare',hull:'#3ab8b0',stripe:'#ff8a6a',bottom:'#1a4a5a'},
+ {id:'goldleaf',n:'Gold Leaf',crate:true,r:'legendary',hull:'#e8c050',stripe:'#fff4c8',bottom:'#6a4a1a'},
+ {id:'abyssal',n:'Abyssal Glow',crate:true,r:'legendary',hull:'#0e2a30',stripe:'#4affd0',bottom:'#06161a'},
+ {id:'aurora',n:'Aurora',crate:true,r:'secret',hull:'#6ae0d0',stripe:'#c88aff',bottom:'#1a2a4a'},
+];
+const PAINTM={};PAINTS.forEach(s=>PAINTM[s.id]=s);
 const LINE_RAR={basic:{n:'Starter',c:'#c9d2da'},common:{n:'Common',c:'#cfd6df',w:60},rare:{n:'Rare',c:'#4fa8ff',w:28},legendary:{n:'Legendary',c:'#ffae2b',w:10.5},secret:{n:'Secret',c:'#c890ff',w:1.5}};
 /* lures: permanent tackle (never used up). The equipped lure sets what's on the end of your line */
 const LURES=[
@@ -229,6 +256,7 @@ const LUREM={};LURES.forEach(l=>LUREM[l.id]=l);
 const CRATE_PRICE=25000;
 /* what's new: shown once after each update, and any time from the menus */
 const UPDATES=[
+ {v:'4.0',d:'Secrets of the isles',items:['20 new fish across every island and the open sea, plus 4 secret fish that only bite in one place, at one time, in one kind of weather. The Bestiary hints at them','12 Lost Pages are hidden around the isles. Look for a faint glow; find them all for a secret rod and the Pagekeeper title','A Bounty Board by every spawn: three new jobs each day, the same for everyone, paying coins and Mystery Crates, plus a Tide Relic for finishing all three','7 new rods: Weeping Willow (Mossreach), Pearl Diver (Sunken Atoll), Aurora Rod (Frostmere), Thornwood (Amberglen), Scarab Rod (Duneveil), the Relic-Forged Rod (forged at the Tide Altar for 25 relics) and a secret one','4 new brews: Deepwater Draught, Golden Tonic, Tidecaller Brew and Keen Eye Elixir','Boat paint: 12 paint jobs for any boat. Six are sold at shipwrights (press Paint), the rarest come from Mystery Crates','Better characters: brighter eyes, collars, thumbs, outfit variety (neckerchiefs, knee patches, rolled sleeves) and three new hats: Captain\'s cap, Beret and Bandana','Casting: the rod loads up and whips through, the camera follows the lure, and spray marks its flight','Reeling: when the fish gets close it surfaces, thrashes and is dragged in, so you see what you hooked; the line quivers under heavy tension','Fish leap out of the sea around you now and then']},
  {v:'3.9',d:'Strike!',items:['A real strike: the float is dragged under, the fish\'s shadow shows below it, and a clean strike hits with a beat of slow motion, a punch-in and a flash','Strikes are graded Perfect, Good or Late. A dashed ring marks the Perfect window; a late strike leaves the hook loose for a few seconds','Fishing is harder: shorter strike windows (tighter still for rare fish), stronger fish that rest less and shake harder, and less spare line','Twitching on a nibble is a chance, not a sure thing, and too much twitching scares fish away','Relics have new uses: a permanent Relic Charm (+3% luck per level, up to 10), a 10-minute Tide Blessing, a swap for a Mystery Crate, and choosing an exact enchant at the Tide Altar. Find them under Tackle, Relics, or click the gem in the corner','Seaplanes fly at about half the speed, with smooth take-offs and landings and no more clipping through hills','Much faster: far-off townsfolk and the rods on display are drawn as single pieces, and unseen glows are skipped, cutting draw calls by about 75%','Brighter nights: stronger moonlight, more sky light, more lamp lights near you and lamps halfway along each dock','The camera sits a little higher while you walk, sail and fly']},
  {v:'3.8',d:'Clean corner, brighter isles',items:['A simple stats corner: a row of status icons, your level and your coins, nothing else in the way','Status icons show the time of day, the weather, a running event, an open Tide Well and an active brew (hover for details)','On PC, Esc opens the menu; the corner buttons moved into it (Leaderboards, Players online, Photo mode), and L, O and P still work','Richer, more vibrant colours across the isles','Boats change as you upgrade them: Engine adds racing stripes, chrome exhausts and finally gold stripes and a stern wing; Hull adds fenders, chrome rails and a bow plate, then gold trim and a cargo chest; Sonar adds an antenna, a radar dome and then a spinning scanner. Other players see your upgrades too']},
  {v:'3.7',d:'Know your next rod',items:['A Next rod tracker in the top corner shows the rod to aim for, where it is sold and how close you are to affording it','The Rod path lists every rod island by island; press Find and a gold pin on your compass leads you to its rack','A chunkier coin counter and level badge, with a fat XP bar and coin pops when you earn or spend','Lanterns and lamps now give a soft, natural glow instead of a bright bubble, and the midday sun is gentler on the eyes','Docks have rope coils, buckets, tackle boxes, flags and gulls on the posts; beaches have starfish, crabs, upturned boats and umbrellas','A backup copy of the game on a second web address, in case one is blocked']},
@@ -265,7 +293,11 @@ const BUFFS=[
  {id:'charm',n:'Mutation Charm',price:1500,dur:180,ico:'M',c:'#86708f',fx:{mut:.06,d:'+6% mutation chance'}},
  {id:'brew',n:'XP Brew',price:1000,dur:300,ico:'X',c:'#9a8350',fx:{xp:.5,d:'+50% XP'}},
  {id:'scent',n:'Lure Scent',price:700,dur:240,ico:'B',c:'#946650',fx:{wait:.7,d:'Bites come 30% faster'}},
- {id:'blessing',n:'Tide Blessing',relic:true,price:0,dur:600,ico:'T',c:'#4ec8e0',fx:{luck:30,mut:.03,d:'+30% luck and +3% mutation chance'}},
+ {id:'deep',n:'Deepwater Draught',price:1800,dur:240,ico:'W',c:'#3a7ab0',fx:{wt:.2,d:'Fish weigh 20% more'}},
+ {id:'gold',n:'Golden Tonic',price:2500,dur:180,ico:'G',c:'#c8a040',fx:{sell:1.15,d:'Fish sell 15% higher'}},
+ {id:'tide',n:'Tidecaller Brew',price:2200,dur:240,ico:'T',c:'#3aa08a',fx:{tire:1.3,d:'Fish tire 30% faster'}},
+ {id:'keen',n:'Keen Eye Elixir',price:1600,dur:240,ico:'K',c:'#b0705a',fx:{hook:.3,d:'Strike window 0.3 s longer'}},
+ {id:'blessing',n:'Tide Blessing',relic:true,price:0,dur:600,ico:'R',c:'#4ec8e0',fx:{luck:30,mut:.03,d:'+30% luck and +3% mutation chance'}},
 ];
 const BUFFM={};BUFFS.forEach(b=>BUFFM[b.id]=b);
 const ENCH={
@@ -355,7 +387,7 @@ const NPCS=[
 ];
 const SHIRTS=['#a8604e','#b88452','#b89c58','#6c8558','#4f7f7a','#4f6a8c','#6a6188','#8e5e78','#d6d0c2','#3e4a5c'];
 const SKINS=['#f6d3b3','#eab894','#d39b72','#a8714d','#7a4e33'];
-const HATS=[{id:'bucket',n:'Bucket hat'},{id:'cap',n:'Cap'},{id:'beanie',n:'Beanie'},{id:'sunhat',n:'Sun hat'},{id:'top',n:'Top hat'},{id:'none',n:'No hat'}];
+const HATS=[{id:'bucket',n:'Bucket hat'},{id:'cap',n:'Cap'},{id:'beanie',n:'Beanie'},{id:'sunhat',n:'Sun hat'},{id:'top',n:'Top hat'},{id:'captain',n:"Captain's cap"},{id:'beret',n:'Beret'},{id:'bandana',n:'Bandana'},{id:'none',n:'No hat'}];
 const EMOTES={wave:{n:'Wave',d:2.6},dance:{n:'Dance',d:6},cheer:{n:'Cheer',d:3},show:{n:'Show off',d:4.5}};
 
 /* developer tools state (the dev bar unlocks only for the server owner, or on localhost) */
@@ -364,7 +396,7 @@ const DEV={on:false,open:false,fast:false,rar:null,ev:null};
 /* ================= STATE / SAVE ================= */
 /* The save key never changes between updates: new versions read the same save and fill in anything new.
    Before an update touches a save (and once a day) a backup copy is kept, see backupSave. */
-const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='3.9';
+const KEY='driftwood-isles-save-v1',BKEY='driftwood-isles-backups',GAME_VER='4.0';
 /* profiles: your normal profile (cloud save, leaderboards, no tools) and the owner's dev profile (its own save on this
    device, the dev tools, never on leaderboards and never synced to the cloud). The dev profile needs the dev key. */
 const KEY_DEV='driftwood-isles-save-dev',DEV_HASH='94d329459b6a2bde18d3336b2dbc6098cda74ec216abcc65d537c420d502e29b';
@@ -390,7 +422,7 @@ function sanitize(s){const f=freshState();if(!s||typeof s!=='object')return f;co
  /* fish of a species this version doesn't know are parked, not deleted, and come back if the species does */
  if(!Array.isArray(o.inv))o.inv=[];if(!Array.isArray(o.invHold))o.invHold=[];{const all=o.inv.concat(o.invHold).filter(x=>x&&typeof x==='object');o.inv=all.filter(x=>SPM[x.sp]);o.invHold=all.filter(x=>!SPM[x.sp]).slice(0,500);}o.gv=GAME_VER;if(!Array.isArray(o.rods)||!o.rods.length)o.rods=['drift'];if(!RODM[o.rod])o.rod='drift';
  if(!Array.isArray(o.unlocked))o.unlocked=['cove'];if(!o.unlocked.includes('cove'))o.unlocked.push('cove');if(!ZONES[o.last]||o.last==='sea')o.last='cove';
- if(o.baitOn&&!BAITM[o.baitOn])o.baitOn=null;if(!Array.isArray(o.lines))o.lines=['basic'];if(!o.lines.includes('basic'))o.lines.unshift('basic');if(!LINEM[o.line]||!o.lines.includes(o.line))o.line='basic';if(!Array.isArray(o.lures))o.lures=[];if(o.lure&&(!LUREM[o.lure]||!o.lures.includes(o.lure)))o.lure=null;o.crates=Math.max(0,Math.floor(Number(o.crates)||0));o.charm=Math.max(0,Math.min(10,Math.floor(Number(o.charm)||0)));o.relics=Math.max(0,Math.floor(Number(o.relics)||0));if(!Array.isArray(o.boats)||!o.boats.length)o.boats=['dinghy'];if(!BOATM[o.boat])o.boat='dinghy';if(!o.bup||typeof o.bup!=='object')o.bup={};if(!o.buffs||typeof o.buffs!=='object')o.buffs={};for(const k in o.buffs)if(!BUFFM[k]||!(o.buffs[k]>0))delete o.buffs[k];if(typeof o.earned!=='number')o.earned=o.coins||0;
+ if(o.baitOn&&!BAITM[o.baitOn])o.baitOn=null;if(!Array.isArray(o.lines))o.lines=['basic'];if(!o.lines.includes('basic'))o.lines.unshift('basic');if(!LINEM[o.line]||!o.lines.includes(o.line))o.line='basic';if(!Array.isArray(o.lures))o.lures=[];if(o.lure&&(!LUREM[o.lure]||!o.lures.includes(o.lure)))o.lure=null;o.crates=Math.max(0,Math.floor(Number(o.crates)||0));o.charm=Math.max(0,Math.min(10,Math.floor(Number(o.charm)||0)));if(!o.bounty||typeof o.bounty!=='object'||!Array.isArray(o.bounty.list))o.bounty={day:'',list:[],all:false};if(!Array.isArray(o.pages))o.pages=[];o.pages=[...new Set(o.pages.filter(n=>Number.isInteger(n)&&n>=0&&n<12))];if(!o.skins||!Array.isArray(o.skins))o.skins=['classic'];if(!o.skins.includes('classic'))o.skins.unshift('classic');if(!o.skin||typeof o.skin!=='object')o.skin={};o.relics=Math.max(0,Math.floor(Number(o.relics)||0));if(!Array.isArray(o.boats)||!o.boats.length)o.boats=['dinghy'];if(!BOATM[o.boat])o.boat='dinghy';if(!o.bup||typeof o.bup!=='object')o.bup={};if(!o.buffs||typeof o.buffs!=='object')o.buffs={};for(const k in o.buffs)if(!BUFFM[k]||!(o.buffs[k]>0))delete o.buffs[k];if(typeof o.earned!=='number')o.earned=o.coins||0;
  if(o.profile){const p=o.profile;o.profile={name:cleanText(p.name,16)||'Angler',color:isHex(p.color)?p.color:SHIRTS[5],hatC:isHex(p.hatC)?p.hatC:SHIRTS[2],skin:isHex(p.skin)?p.skin:SKINS[1],hat:HATS.some(h=>h.id===p.hat)?p.hat:'bucket'};}
  return o;}
 let state=freshState();

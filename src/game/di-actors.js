@@ -16,7 +16,7 @@ const CHAR_S=.74,HEAD_TOP=2.45;
 function makeChar(L){const root=new THREE.Group(),body=new THREE.Group();root.add(body);const vis=new THREE.Group();vis.scale.setScalar(CHAR_S);body.add(vis);
  const mk=(geo,mat,par,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.set(rx,ry,rz);m.castShadow=true;par.add(m);return m;};
  const T=pbr,hairC=L.hair||hairCols[(L.skin||'').charCodeAt(2)%hairCols.length||0],shirt=L.shirt,shirtD='#'+new THREE.Color(L.shirt).multiplyScalar(.72).getHexString(),pants=L.pants||'#3f4a6a',vest=new THREE.Color(L.shirt).lerp(new THREE.Color('#5a4a36'),.7).getStyle();
- const skin=T(L.skin,'skin'),hair=T(hairC,'hair');
+ const skin=T(L.skin,'skin'),hair=T(hairC,'hair'),vr=((L.shirt||'')+(L.skin||'')+(L.pants||'')).split('').reduce((a,c)=>a+c.charCodeAt(0),0)%4,pantsD='#'+new THREE.Color(L.pants||'#3f4a6a').multiplyScalar(.7).getHexString();
  const hips=new THREE.Group();hips.position.y=1.5;vis.add(hips);mk(CG.limbT,T(pants),hips,0,.02,0,.36,.3,.26);
  const spine=new THREE.Group();spine.position.y=.1;hips.add(spine);
  mk(CG.torso,T(shirt),spine,0,.47,0,.98,1.02,.66);mk(CG.sphL,T(shirt),spine,0,.9,0,.46,.13,.28);for(const s of[-1,1])mk(CG.sphL,T(shirt),spine,s*.33,.86,0,.16,.12,.17);
@@ -24,7 +24,8 @@ function makeChar(L){const root=new THREE.Group(),body=new THREE.Group();root.ad
  mk(CG.torso,T(vest,'cloth'),spine,0,.42,-.012,.96,.78,.74);mk(CG.box,T(vest,'cloth'),spine,-.17,.36,.27,.15,.14,.06,0,0,.06);mk(CG.box,T(vest,'cloth'),spine,.17,.36,.27,.15,.14,.06,0,0,-.06);
  mk(CG.box,T('#c8a24a','metal'),spine,-.17,.43,.3,.04,.03,.02);mk(CG.box,T('#c8a24a','metal'),spine,.17,.43,.3,.04,.03,.02);
  mk(CG.limb,T('#4a3426','leather'),spine,0,.02,0,.34,.08,.27);mk(CG.box,T('#c8a24a','metal'),spine,0,.02,.27,.1,.07,.03);
- mk(CG.box,T(shirtD),spine,0,.9,.2,.24,.08,.06,.3);
+ mk(CG.box,T(shirtD),spine,0,.9,.2,.24,.08,.06,.3);for(const s of[-1,1])mk(CG.box,T(shirt),spine,s*.11,.9,.24,.14,.04,.11,.55,s*.45,s*.3);
+ if(vr===1){const nc=T(['#c8402e','#2a6ab0','#e8b030','#3a8a5a'][(L.skin||'a').length%4],'cloth');mk(CG.cone,nc,spine,0,.82,.27,.13,.2,.04,Math.PI,0,0);}
  const strap=mk(CG.limb,T('#6a4630','leather'),spine,0,.5,.29,.025,1.12,.025,0,0,.72);strap.position.z=.295;
  mk(CG.box,T('#7a5636','leather'),spine,.31,.08,.18,.26,.22,.14,0,-.3,0);mk(CG.box,T('#5e4028','leather'),spine,.31,.18,.2,.27,.06,.15,0,-.3,0);
  const neck=new THREE.Group();neck.position.y=.98;spine.add(neck);mk(CG.limb,skin,neck,0,.07,0,.1,.18,.1);
@@ -32,7 +33,7 @@ function makeChar(L){const root=new THREE.Group(),body=new THREE.Group();root.ad
  mk(CG.sph,skin,head,0,.56,0,.56,.66,.6);mk(CG.box,skin,head,0,.28,.22,.38,.26,.34);           // head + jaw
  mk(CG.cone,skin,head,0,.5,.6,.07,.16,.07,Math.PI/2);                                            // nose
  for(const s of[-1,1])mk(CG.sphL,skin,head,s*.58,.5,0,.08,.12,.06);                              // ears
- const eyes=[];for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*.2,.58,.52);head.add(e);mk(CG.sphL,T('#1e1814','eye'),e,0,0,0,.05,.06,.03);eyes.push(e);
+ const eyes=[];for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*.2,.58,.52);head.add(e);mk(CG.sphL,T('#1e1814','eye'),e,0,0,0,.05,.06,.03);mk(CG.sphL,T('#ffffff','eye'),e,.017,.024,.022,.017,.017,.01);eyes.push(e);
   mk(CG.box,hair,head,s*.21,.72,.52,.17,.04,.04,0,0,-s*.12);mk(CG.box,T('#e8a090','skin'),head,s*.34,.4,.47,.09,.05,.02);}
  mk(CG.box,T('#7a3a34','skin'),head,0,.31,.555,.14,.025,.02);                                      // mouth
  mk(CG.cap,hair,head,0,.6,-.03,.63,.5,.61);mk(CG.box,hair,head,0,.47,-.32,.92,.5,.3);for(const s of[-1,1])mk(CG.box,hair,head,s*.52,.46,-.06,.14,.34,.34);
@@ -42,12 +43,15 @@ function makeChar(L){const root=new THREE.Group(),body=new THREE.Group();root.ad
  else if(L.hatType==='cap'){mk(CG.cap,hc,head,0,.68,0,.67,.52,.66);mk(CG.box,hc,head,0,.84,.56,.62,.04,.42,.12);mk(CG.sphL,T('#f2efe8'),head,0,1.2,0,.06,.04,.06);}
  else if(L.hatType==='beanie'){mk(CG.cap,hc,head,0,.64,0,.68,.64,.67);mk(CG.limb,hc,head,0,.76,0,.69,.18,.68);mk(CG.sphL,T('#f2efe8','knit'),head,0,1.32,0,.16,.16,.16);}
  else if(L.hatType==='sunhat'){mk(CG.brim,hc,head,0,.93,0,1.2,.04,1.2);mk(CG.limbT,hc,head,0,1.09,0,.55,.32,.55);mk(CG.cap,hc,head,0,1.25,0,.47,.1,.47);mk(CG.limb,acc,head,0,.99,0,.56,.08,.56);}
+ else if(L.hatType==='captain'){const nv=T('#1e2a44','cloth');mk(CG.limb,nv,head,0,.9,0,.66,.16,.66);mk(CG.cap,T('#f4f1ea','cloth'),head,0,1.02,0,.7,.3,.7);mk(CG.box,T('#14161a','leather'),head,0,.86,.58,.6,.04,.34,.15);mk(CG.box,T('#d8b040','metal'),head,0,1.0,.66,.14,.1,.03);}
+ else if(L.hatType==='beret'){mk(CG.sphL,hc,head,.08,1.0,0,.72,.2,.7,0,0,-.18);mk(CG.sphL,hc,head,.1,1.16,0,.06,.06,.06);}
+ else if(L.hatType==='bandana'){mk(CG.limb,hc,head,0,.86,0,.64,.2,.64);mk(CG.cap,hc,head,0,.9,-.02,.62,.4,.6);for(const s of[-1,1])mk(CG.box,hc,head,s*.08,.78,-.66,.08,.28,.04,.3,0,s*.3);}
  else if(L.hatType==='top'){mk(CG.brim,hc,head,0,.95,0,.82,.05,.82);mk(CG.limb,hc,head,0,1.42,0,.47,.9,.47);mk(CG.limb,acc,head,0,1.05,0,.48,.12,.48);}
  const arm=s=>{const sh=new THREE.Group();sh.position.set(s*.47,.84,0);spine.add(sh);mk(CG.sphL,T(shirt),sh,0,0,0,.15,.15,.15);mk(CG.limbT,T(shirt),sh,0,-.17,0,.13,.36,.13);mk(CG.limb,T(shirtD),sh,0,-.36,0,.125,.06,.125);mk(CG.limb,skin,sh,0,-.42,0,.09,.1,.09);
   const el=new THREE.Group();el.position.y=-.46;sh.add(el);mk(CG.sphL,skin,el,0,0,0,.095,.095,.095);mk(CG.limbT,skin,el,0,-.19,0,.085,.38,.085);
-  const hand=new THREE.Group();hand.position.y=-.4;el.add(hand);mk(CG.box,skin,hand,0,-.02,0,.13,.15,.11);return{sh,el,hand};};
+  if(vr===3)mk(CG.limb,T(shirtD),el,0,-.02,0,.105,.07,.105);const hand=new THREE.Group();hand.position.y=-.4;el.add(hand);mk(CG.box,skin,hand,0,-.02,0,.13,.15,.11);mk(CG.box,skin,hand,-s*.07,.0,.035,.045,.09,.05,0,0,s*.35);return{sh,el,hand};};
  const leg=s=>{const hp=new THREE.Group();hp.position.set(s*.17,0,0);hips.add(hp);mk(CG.limbT,T(pants),hp,0,-.33,0,.15,.68,.15);
-  const kn=new THREE.Group();kn.position.y=-.66;hp.add(kn);mk(CG.sphL,T(pants),kn,0,0,0,.13,.13,.13);mk(CG.limbT,T(pants),kn,0,-.27,0,.12,.46,.12);
+  const kn=new THREE.Group();kn.position.y=-.66;hp.add(kn);mk(CG.sphL,T(pants),kn,0,0,0,.13,.13,.13);if(vr===2)mk(CG.box,T(pantsD,'cloth'),kn,0,-.06,.11,.14,.15,.03);mk(CG.limbT,T(pants),kn,0,-.27,0,.12,.46,.12);
   mk(CG.limb,T('#3a2c22','leather'),kn,0,-.56,0,.14,.26,.14);mk(CG.boot,T('#3a2c22','leather'),kn,0,-.73,.07,.19,.12,.33);mk(CG.box,T('#2a201a','leather'),kn,0,-.795,.07,.2,.035,.34);return{hp,kn};};
  const blob=new THREE.Mesh(BLOBG,BLOBM);blob.rotation.x=-Math.PI/2;blob.position.y=.05;blob.renderOrder=1;root.add(blob);
  return{root,body,hips,spine,neck,head,eyes,blob,aL:arm(-1),aR:arm(1),lL:leg(-1),lR:leg(1)};}
@@ -260,7 +264,7 @@ function bakeMeshes(root,skip){root.updateMatrixWorld(true);const inv=new THREE.
   g.setAttribute('color',new THREE.BufferAttribute(ca,3));m4.multiplyMatrices(inv,o.matrixWorld);g.applyMatrix4(m4);parts.push(g);});
  if(!parts.length)return null;let merged=null;try{merged=BGU.mergeGeometries(parts,false);}catch(e){merged=null;}parts.forEach(g=>g.dispose());if(!merged)return null;
  const mesh=new THREE.Mesh(merged,BAKE_MAT);mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.baked=true;return mesh;}
-function makeBoat(accent,type,up){const BT=BOATM[type]||BOATS[0],M=BT.m,b=new Builder(),N=16,st=[];b.M(TL.paint);const L=M.L,W=M.W,H=M.H,D=M.D,z0=-L*.45;
+function makeBoat(accent,type,up,skin){const BT=BOATM[type]||BOATS[0],SK=skin&&skin!=='classic'&&PAINTM[skin],M=SK?Object.assign({},BT.m,{hull:SK.hull,stripe:SK.stripe,bottom:SK.bottom}):BT.m,b=new Builder(),N=16,st=[];b.M(TL.paint);const L=M.L,W=M.W,H=M.H,D=M.D,z0=-L*.45;
  const white=new THREE.Color(M.hull),acc=new THREE.Color(M.stripe||accent||'#8a4a3a'),bot=new THREE.Color(M.bottom||'#4a3a32'),wood=new THREE.Color('#6e5a46');
  for(let i=0;i<=N;i++){const t=i/N,z=z0+t*L;const bowK=clamp((t-.55)/.45,0,1);const w=W*Math.sqrt(Math.max(0,1-bowK*bowK))*(t<.1?.88+t*1.2:1);const top=H+bowK*bowK*H*.5,bt=D-bowK*bowK*D*1.4;st.push({z,w,top,bt,chY:lerp(bt,top,.45)});}
  const T=M.type,V=THREE.Vector3,hulls=T==='catamaran'?[[-W*1.25,.5],[W*1.25,.5]]:T==='pontoon'?[[-W*1.05,.34],[W*1.05,.34]]:T==='seaplane'?[[-W*1.8,.45],[W*1.8,.45]]:[[0,1]];
@@ -396,7 +400,7 @@ class RemotePlayer{constructor(peer){this.peer=peer;this.rig=null;this.anim=null
    const idx=this.buf.indexOf(a);if(idx>1)this.buf.splice(0,idx-1);}
   const moved=Math.hypot(this.pos.x-this.lastPos.x,this.pos.z-this.lastPos.z);this.spd=damp(this.spd,dt>0?moved/dt:0,10,dt);this.lastPos.copy(this.pos);
   const R=this.rig.root;const T=WIND.uTime.value;
-  if(this.onBoat){{const bt=BOATM[this.p.bt]?this.p.bt:'dinghy';const bu=typeof this.p.bu==='string'?this.p.bu.slice(0,3):'',bk=bt+'|'+bu;if(!this.boat||this.boatT!==bk){if(this.boat)scene.remove(this.boat);this.boat=makeBoat(this.color,bt,{e:+bu[0]||0,h:+bu[1]||0,s:+bu[2]||0});this.boatT=bk;}if(this.boat.userData.radar)this.boat.userData.radar.rotation.y+=.04;}this.boat.visible=true;const al=clamp(num(this.p.al,0),0,120),wy=waveH(this.pos.x,this.pos.z,T)*Math.max(0,1-al/3)+al;this.boat.position.set(this.pos.x,wy-.15,this.pos.z);if(this.boat.userData.prop)this.boat.userData.prop.rotation.z+=dt*(al>.1?55:8);this.boat.rotation.set(0,this.byaw,0);
+  if(this.onBoat){{const bt=BOATM[this.p.bt]?this.p.bt:'dinghy';const bu=typeof this.p.bu==='string'?this.p.bu.slice(0,3):'',bs=typeof this.p.bs==='string'&&PAINTM[this.p.bs]?this.p.bs:'',bk=bt+'|'+bu+'|'+bs;if(!this.boat||this.boatT!==bk){if(this.boat)scene.remove(this.boat);this.boat=makeBoat(this.color,bt,{e:+bu[0]||0,h:+bu[1]||0,s:+bu[2]||0},bs);this.boatT=bk;}if(this.boat.userData.radar)this.boat.userData.radar.rotation.y+=.04;}this.boat.visible=true;const al=clamp(num(this.p.al,0),0,120),wy=waveH(this.pos.x,this.pos.z,T)*Math.max(0,1-al/3)+al;this.boat.position.set(this.pos.x,wy-.15,this.pos.z);if(this.boat.userData.prop)this.boat.userData.prop.rotation.z+=dt*(al>.1?55:8);this.boat.rotation.set(0,this.byaw,0);
    {const ud=this.boat.userData;R.position.set(this.pos.x+Math.sin(this.byaw)*ud.seat,wy-.15+ud.seatY,this.pos.z+Math.cos(this.byaw)*ud.seat);}}
   else if(typeof remoteSeat==='function'&&remoteSeat(this,R.position)){if(this.boat)this.boat.visible=false;this.riding=true;}
   else{if(this.boat)this.boat.visible=false;R.position.copy(this.pos);this.riding=false;}

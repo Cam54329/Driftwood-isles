@@ -210,8 +210,8 @@ function updateCasino(){const H=world.casino;if(!H)return;const dx=player.pos.x-
 /* ================= ROD DISPLAYS =================
    Every island lays its rods out on stands beside the arrival path. Walk up to one and press E to look it over,
    buy it or equip it. The same rods are also in the rodmakers' shops. */
-const ROD_RACKS={cove:['pine','bamboo','tidepool','coral','reed'],moss:['bogwood','moss'],atoll:['reefcomber'],frost:['frostbite','glacier'],petal:['petalwind','blossom','storm'],
- amber:['harvestmoon','magma','twin'],ember:['cinderheart','sage','star','lantern'],dune:['mirage','dune'],glim:['prismheart','amethyst','spine','celestial'],hollow:['drowncrown']};
+const ROD_RACKS={cove:['pine','bamboo','tidepool','coral','reed'],moss:['bogwood','willow','moss'],atoll:['reefcomber','pearl'],frost:['frostbite','glacier','auroral'],petal:['petalwind','blossom','storm'],
+ amber:['harvestmoon','thornwood','magma','twin'],ember:['cinderheart','sage','star','lantern'],dune:['mirage','dune','scarab'],glim:['prismheart','amethyst','spine','celestial'],hollow:['drowncrown']};
 const RACK={built:false,list:[]};
 function rodState(r){return state.rod===r.id?'eq':state.rods.includes(r.id)?'own':rodLocked(r)?'lock':'buy';}
 function rackLabel(it){const r=it.r,s=rodState(r);const sub=s==='eq'?'Equipped':s==='own'?'Owned · press E to equip':s==='lock'?rodLocked(r):fmt(r.price)+' coins';const col=s==='eq'?'#9be07a':s==='own'?'#a6d4f7':s==='lock'?'#ff9a8a':'#f2c14e';
@@ -265,7 +265,7 @@ function openRodPath(){openPanel('Rod path','Every rod, island by island',()=>{p
   for(const id of ids){const r=RODM[id],s=rodState(r),need=rodNeed(r),isN=nx&&nx.id===id;
    h+=`<div class="rpRow ${s}${isN?' next':''}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}${isN?'<em>Next</em>':''}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':need?`<span class="tag lock">${esc(need)}</span>`:`<span class="tag buy">${fmt(r.price)}c</span>`}${s==='eq'||s==='own'?'':`<button class="btn sm ghost" data-act="guide" data-id="${id}" title="Mark it on your compass">Find</button>`}</div></div>`;}
   h+='</div>';}
- const qr=RODS.filter(r=>r.req&&r.req.quest);if(qr.length){h+=`<div class="rpIsl"><h4><i style="--c:#ffd76e"></i>Quest rewards</h4>`+qr.map(r=>{const s=rodState(r);return `<div class="rpRow ${s}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':`<span class="tag lock">${esc(rodLocked(r)||'')}</span>`}</div></div>`;}).join('')+'</div>';}
+ const qr=RODS.filter(r=>r.req&&(r.req.quest||r.req.relic||r.req.secret));if(qr.length){h+=`<div class="rpIsl"><h4><i style="--c:#ffd76e"></i>Quests, relics and secrets</h4>`+qr.map(r=>{const s=rodState(r);return `<div class="rpRow ${s}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':`<span class="tag lock">${esc(rodLocked(r)||'')}</span>`}</div></div>`;}).join('')+'</div>';}
  body(h);bindPanel({guide:id=>{setRodGuide(id);closePanel();},nrtog:()=>{state.settings.nextRod=state.settings.nextRod===false;NR.key='';save();rerender();}});});}
 function guideBeam(){const g=new THREE.CylinderGeometry(.16,.3,60,12,1,true);g.translate(0,30,0);
  const m=new THREE.Mesh(g,new THREE.ShaderMaterial({uniforms:{uT:{value:0},uA:{value:1}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
@@ -284,8 +284,73 @@ function guideTick(){const pin=document.getElementById('guidePin');if(!pin)retur
  pin.hidden=false;pin.style.transform=`translateX(calc(-50% + ${x.toFixed(1)}px))`;pin.classList.toggle('edge',Math.abs(rel*COMP.ppd)>max);
  const t=d>=1000?(d/1000).toFixed(1)+' km':Math.round(d)+' m';const s=pin.lastChild;if(s.textContent!==t)s.textContent=t;
  if(NR.beam){const u=NR.beam.material.uniforms;u.uT.value=performance.now()/1000;u.uA.value=smooth(4,16,d)*(1-env.day*.35);}}
+
+/* ================= LOST PAGES: twelve torn journal pages hidden around the isles ================= */
+const PAGES_N=12,PAGES={built:false,list:[]};
+const PAGE_TXT=['Day one. The ferryman says the isles move when no one is looking. I laughed. I have stopped laughing.','The keeper of the lighthouse leaves a lamp lit on foggy nights, "for the one that swims up the beam."','Moss grows thickest where the old altar hums. Sister Fen says the relics sing back to it.','Under the atoll the coral rings like a bell at dawn. Something large answers.','Frostmere ice is clear as glass. I saw a shape below it longer than my boat.','The cherry blossoms on Petalshore only fall when the stars do. The koi there watch the sky.','Amberglen\'s farmers fish at harvest moon. They throw the first catch back, always.','The volcano breathes at night. The fish near the vents have eyes like coals.','In the dunes I found a ship\'s wheel, a hundred miles from any sea that could have carried it.','The crystals of Glimmerholt keep the light of every lamp that ever shone on them.','Where the tide wells open, the water goes down forever. I have heard a king sing there.','My rod is driftwood, like the first one. It has caught everything worth catching. Leave it where it can be found.'];
+const PAGE_ISL=['cove','cove','moss','atoll','frost','petal','amber','ember','dune','glim','moss','cove'];
+function pageMesh(){const g=new THREE.Group(),pm=new THREE.MeshStandardMaterial({color:'#efe2c0',roughness:.85}),rm=new THREE.MeshStandardMaterial({color:'#a83a2a',roughness:.6});
+ const roll=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.55,10),pm);roll.rotation.z=Math.PI/2;roll.position.y=.12;g.add(roll);const flap=new THREE.Mesh(new THREE.BoxGeometry(.5,.012,.32),pm);flap.position.set(0,.03,.16);flap.rotation.x=-.12;g.add(flap);
+ const rib=new THREE.Mesh(new THREE.TorusGeometry(.095,.018,6,12),rm);rib.rotation.y=Math.PI/2;rib.position.y=.12;g.add(rib);
+ const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX.halo,color:0xffe6a0,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.55}));sp.scale.set(1.3,1.3,1);sp.position.y=.3;g.add(sp);g.userData.glow=sp;
+ g.traverse(o=>{if(o.isMesh)o.castShadow=true;});return g;}
+function buildPages(){PAGES.built=true;const r=rng(4242);
+ PAGE_ISL.forEach((k,i)=>{const I=ZONES[k];if(!I)return;let spot=null;for(let t=0;t<120&&!spot;t++){const a=r()*TAU,f=.22+r()*.62,R=islandR(I,a),x=I.x+Math.cos(a)*R*f,z=I.z+Math.sin(a)*R*f,y=groundH(x,z);
+   if(y<.7||world.colliders.some(c=>Math.abs(c.x-x)<c.r+1.4&&Math.abs(c.z-z)<c.r+1.4&&Math.hypot(c.x-x,c.z-z)<c.r+1.2))continue;spot={x,y,z};}
+  if(!spot||state.pages.includes(i))return;const g=pageMesh();g.position.set(spot.x,spot.y+.02,spot.z);g.rotation.y=r()*TAU;scene.add(g);
+  const it={i,g,x:spot.x,z:spot.z,k};const inter={x:spot.x,z:spot.z,r:2.2,label:'Pick up the Lost Page',kind:'Take',act:()=>takePage(it,inter)};world.inter.push(inter);PAGES.list.push(it);});}
+function takePage(it,inter){if(state.pages.includes(it.i))return;state.pages.push(it.i);scene.remove(it.g);const k=world.inter.indexOf(inter);if(k>=0)world.inter.splice(k,1);PAGES.list.splice(PAGES.list.indexOf(it),1);
+ AU.bell(1046,.5,.08);setTimeout(()=>AU.bell(1568,.6,.06),140);const n=state.pages.length,all=n>=PAGES_N;
+ if(all&&!state.rods.includes('driftking')){state.rods.push('driftking');grantTitle('Pagekeeper');}
+ save();openPanel(`Lost Page ${n} of ${PAGES_N}`,ZONES[it.k].n,()=>{body(`<div class="card page"><div class="pageTxt">${esc(PAGE_TXT[it.i])}</div></div>${all?`<div class="card eq"><h3>The journal is whole</h3><div class="muted">Tucked in the last page is a map to a driftwood rod. The Driftwood King is yours (+175% luck), along with the title Pagekeeper.</div><div class="row" style="justify-content:flex-end"><button class="btn" data-act="eqk">Equip it</button></div></div>`:`<div class="muted">${PAGES_N-n} more page${PAGES_N-n>1?'s':''} hidden around the isles. Look for a faint glow.</div>`}`);
+  bindPanel({eqk:()=>{state.rod='driftking';equipRodModel();save();closePanel();}});});}
+function updatePages(){if(!PAGES.built){if(world.spawn.cove&&state&&Array.isArray(state.pages))buildPages();return;}const p=player.pos,T=WIND.uTime.value;
+ for(const it of PAGES.list){const d=Math.abs(it.x-p.x)+Math.abs(it.z-p.z);it.g.visible=d<140;if(d<60){it.g.userData.glow.material.opacity=.35+Math.sin(T*2.4+it.i)*.15+(isNight()?.2:0);it.g.rotation.y+=.004;}}}
+
+/* ================= BOUNTY BOARD: three new jobs every day, the same for everyone ================= */
+const BOARD={built:false,list:[]};
+const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+function bountyPay(){let best=9;for(const k of state.unlocked)best=Math.max(best,ZONE_BASE[k]||9);return best;}
+function makeBounties(){const day=todayKey();if(state.bounty.day===day&&state.bounty.list.length)return;let h=0;for(const ch of day)h=(h*31+ch.charCodeAt(0))>>>0;const r=rng(h%100000+7);
+ const isl=state.unlocked.filter(k=>ZONES[k]),pickI=()=>isl[Math.floor(r()*isl.length)]||'cove',pay=bountyPay(),L=[];
+ {const k=pickI(),pool=SPECIES.filter(s=>s.zone===k&&s.r<=2&&!s.cond);const sp=pool[Math.floor(r()*pool.length)]||SPM.pebble_perch;L.push({t:'species',sp:sp.id,need:sp.r>=2?1:3,n:0,coins:Math.round(pay*(sp.r>=2?60:35)),txt:`Catch ${sp.r>=2?'a':'3'} ${sp.name}${sp.r>=2?'':''}`,where:ZONES[sp.zone].n});}
+ {const k=pickI(),need=8+Math.floor(r()*8);L.push({t:'count',zone:k,need,n:0,coins:Math.round(pay*need*3.2),txt:`Catch ${need} fish around ${ZONES[k].n}`,where:ZONES[k].n});}
+ {const roll=r();if(roll<.4){const k=pickI(),pool=SPECIES.filter(s=>s.zone===k&&s.r<=3&&s.maxW>=1);const sp=pool[Math.floor(r()*pool.length)]||SPM.pebble_perch,w=Math.round(sp.maxW*.62*10)/10;L.push({t:'heavy',sp:sp.id,w,need:1,n:0,coins:Math.round(pay*90),crate:1,txt:`Land a ${sp.name} over ${fmtW(w)} kg`,where:ZONES[sp.zone].n});}
+  else if(roll<.75){L.push({t:'rare',need:2,n:0,coins:Math.round(pay*80),crate:1,txt:'Catch 2 Rare-or-better fish',where:'Anywhere'});}
+  else{L.push({t:'mut',need:1,n:0,coins:Math.round(pay*85),crate:1,txt:'Catch a fish with a mutation',where:'Anywhere'});}}
+ state.bounty={day,list:L,all:false};save();}
+function bountyCatch(c,zone){if(!c||c.relic||!state.bounty)return;makeBounties();let ch=false;
+ for(const b of state.bounty.list){if(b.n>=b.need)continue;let hit=false;const isl=c.sp&&(c.sp.zone.startsWith('pond_')?c.sp.zone.slice(5):c.sp.zone);
+  if(b.t==='species')hit=c.sp.id===b.sp;else if(b.t==='count')hit=isl===b.zone||zone===b.zone;else if(b.t==='heavy')hit=c.sp.id===b.sp&&c.w>=b.w;else if(b.t==='rare')hit=c.r>=2;else if(b.t==='mut')hit=!!c.mut;
+  if(hit){b.n++;ch=true;if(b.n>=b.need)setTimeout(()=>toast(`Bounty done: ${b.txt}. Claim it at any Bounty Board.`,'gold'),900);}}
+ if(ch)save();}
+function openBounties(){makeBounties();openPanel('Bounty Board','New bounties every day · the same for everyone',()=>{panelCtx.kind='bounty';const B=state.bounty;
+ body(`<div class="muted">Finish all three for a bonus Tide Relic. Rewards grow as you unlock new islands.</div><div class="list">${B.list.map((b,i)=>{const done=b.n>=b.need;return `<div class="card ${b.claimed?'eq':''}"><div class="row"><div class="grow"><h3>${esc(b.txt)}</h3><div class="muted">${esc(b.where)} · reward ${fmt(b.coins)}c${b.crate?' + a Mystery Crate':''}</div><div class="bbar"><i style="width:${Math.min(100,b.n/b.need*100)}%"></i><span>${Math.min(b.n,b.need)} / ${b.need}</span></div></div>${b.claimed?'<span class="pill" style="--c:#9be07a">Claimed</span>':`<button class="btn sm" data-act="claim" data-id="${i}" ${done?'':'disabled'}>Claim</button>`}</div></div>`;}).join('')}</div>
+  <div class="card"><div class="row"><div class="grow"><h3>Daily bonus</h3><div class="muted">${B.all?'Claimed today. Come back tomorrow for new bounties.':'Claim all three bounties for a Tide Relic.'}</div></div>${B.all?'<span class="pill" style="--c:#5fd6ff">Relic claimed</span>':''}</div></div>`);
+ bindPanel({claim:v=>{const b=state.bounty.list[+v];if(!b||b.claimed||b.n<b.need)return;b.claimed=true;state.coins+=b.coins;state.earned+=b.coins;AU.coin();coinBurst(8);if(b.crate)grantCrate('a bounty');
+  if(!state.bounty.all&&state.bounty.list.every(q=>q.claimed)){state.bounty.all=true;state.relics++;toast('All bounties done! +1 Tide Relic','gold');}save();updateHUD();rerender();}});});}
+function buildBoards(){BOARD.built=true;const b=new Builder();
+ for(const k of ISL){const sp=world.spawn[k];if(!sp)continue;let spot=null;for(const off of[[-4.5,1.5],[4.5,1.5],[-5.5,-2],[5.5,-2],[-3.5,4]]){const sx=Math.cos(sp.yaw),sz=-Math.sin(sp.yaw),fx=Math.sin(sp.yaw),fz=Math.cos(sp.yaw);const x=sp.x+sx*off[0]+fx*off[1],z=sp.z+sz*off[0]+fz*off[1],y=groundH(x,z);
+   if(y<.4||world.colliders.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+1.1))continue;spot={x,y,z};break;}if(!spot)continue;const ry=sp.yaw+Math.PI,{x,y,z}=spot,c=Math.cos(ry),s=Math.sin(ry);
+  b.M(TL.wood);for(const sx of[-1,1])b.add(G.box,'#5a3e26',x+c*sx*.9,y+1.1,z-s*sx*.9,.14,2.2,.14,0,ry,0);b.add(G.box,'#8a6440',x,y+1.5,z,2.1,1.25,.1,0,ry,0);b.add(G.box,'#5a3e26',x,y+2.3,z,2.5,.12,.5,.0,ry,0);
+  b.M(TL.paint);const cols=['#f4ead2','#efe2c0','#f8f0dc'];for(let i=0;i<3;i++){const ox=(i-1)*.62;b.add(G.box,cols[i],x+c*ox+s*.07,y+1.5+(i===1?.08:-.04),z-s*ox+c*.07,.5,.66,.02,0,ry,(i-1)*.06);b.add(G.box,'#c8402e',x+c*ox+s*.085,y+1.78+(i===1?.08:-.04),z-s*ox+c*.085,.06,.06,.02,0,ry,0);}
+  b.M(0);world.colliders.push({x,z,r:1.1});const label=tagSprite(null,'Bounty Board','Daily jobs','#f2c14e');label.position.set(x,y+3,z);scene.add(label);BOARD.list.push({x,z,label});
+  world.inter.push({x,z,r:2.6,label:'Read the Bounty Board',kind:'Read',act:openBounties});}
+ if(b.p.length){const m=b.mesh(worldMat);m.castShadow=true;m.receiveShadow=true;scene.add(m);}}
+function updateBoards(){if(!BOARD.built){if(world.spawn.cove)buildBoards();return;}const p=player.pos;for(const it of BOARD.list){const d=Math.abs(it.x-p.x)+Math.abs(it.z-p.z);it.label.visible=state.settings.tags&&d<30;}}
+
+/* ================= LIFE ON THE WATER: fish leap now and then near you ================= */
+const LEAP={t:4,list:[]};
+function updateLeaps(dt){LEAP.t-=dt;const T=WIND.uTime.value;
+ if(LEAP.t<=0){LEAP.t=rand(3.5,8);const p=player.mode==='boat'?boat.pos:player.pos;if(!env.cave&&!MENU.on){for(let tr=0;tr<8;tr++){const a=Math.random()*TAU,d=rand(12,38),x=p.x+Math.cos(a)*d,z=p.z+Math.sin(a)*d;if(groundH(x,z)>-1.6||pondAt(x,z))continue;
+   const zone=zoneAt(x,z),pool=SPECIES.filter(s=>s.zone===zone&&s.r<=1&&s.shape!=='ray'&&s.shape!=='flat');const sp=pick(pool.length?pool:SPECIES.filter(s=>s.zone==='cove'&&s.r===0));
+   let L=LEAP.list.find(q=>q.k>=1);if(!L){if(LEAP.list.length>=3)break;L={m:null,k:1};LEAP.list.push(L);}if(L.m){scene.remove(L.m);disposeHeld(L.m);}L.m=buildFish(sp,null);L.m.scale.setScalar(fishScale(sp,(sp.minW+sp.maxW)/2)*.9);scene.add(L.m);
+   L.x=x;L.z=z;L.a=Math.random()*TAU;L.k=0;L.h=rand(.8,1.6);L.len=rand(1.4,2.6);L.dur=rand(.7,1);splash(new V3(x,surfY(x,z,T),z),8,3.5);break;}}}
+ for(const L of LEAP.list){if(L.k>=1){if(L.m&&L.m.visible)L.m.visible=false;continue;}L.k+=dt/L.dur;const k=Math.min(1,L.k),hx=Math.cos(L.a),hz=Math.sin(L.a),x=L.x+hx*L.len*k,z=L.z+hz*L.len*k;
+  L.m.visible=true;L.m.position.set(x,surfY(x,z,T)+Math.sin(k*Math.PI)*L.h-.15,z);L.m.rotation.set(0,-L.a,(.5-k)*2.4);if(L.m.userData.tail)L.m.userData.tail.rotation.y=Math.sin(L.k*40)*.6;
+  if(L.k>=1){const pp=new V3(x,surfY(x,z,T),z);splash(pp,12,4);addRipple(x,z,1.1);if(Math.hypot(x-player.pos.x,z-player.pos.z)<26)AU.splash(.3);}}}
 /* ================= per-frame ================= */
 let updT=0;
-function updateExtra(dt){updateWells(dt);updateLittleEvents(dt);updateCasino();updateRodRacks(dt);nextRodTick(dt);guideTick();
+function updateExtra(dt){updateWells(dt);updateLittleEvents(dt);updateCasino();updateRodRacks(dt);nextRodTick(dt);guideTick();updatePages();updateBoards();updateLeaps(dt);
  /* show what's new once after each update */
  if(!MENU.on&&!JOIN.on&&state.tips.joined&&state.tips.intro&&state.seenVer!==GAME_VER&&!panelCtx){if(!updT)updT=performance.now();if(performance.now()-updT>2500){state.seenVer=GAME_VER;save();openUpdates();}}if(Net.uid)noteRiders();}
