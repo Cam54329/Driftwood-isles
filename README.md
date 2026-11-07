@@ -76,7 +76,7 @@ sites on its own. To carry it over, open **Settings → Your save** on the old s
   - `di-world.js`: renderer, post-processing, quality tiers, terrain, ocean, props and ambient life.
   - `di-actors.js`: characters, rods, fish, boats and remote players.
   - `di-game.js`: input, weather and day/night, fishing and the event clock.
-  - `di-events.js`: big world events (Leviathan Passage, Starfall, Aurora Tide, The Great Swell).
+  - `di-events.js`: big world events (Whalesong Migration, Starfall, Glowtide, The Great Swell).
   - `di-ui.js`: panels, chat, online play and the main loop.
 
 ## Testing helpers

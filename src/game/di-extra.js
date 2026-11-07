@@ -1,68 +1,91 @@
 'use strict';
-/* Driftwood Isles — extras: Tide Wells and the Drowned Hollow, little sea events, the Tidewater Casino,
+/* Driftwood Isles — extras: storm twisters and the Drowned Hollow, little sea events, the Tidewater Casino,
    and riding along in a friend's boat. */
 
-/* ================= TIDE WELLS =================
-   On a shared clock (the same on every device), every WELL_CYCLE seconds a whirling Tide Well opens off every island
-   for WELL_LEN seconds. Fishing inside one only catches Rare fish or better, and its fish live nowhere else. Their
-   value follows the island the well opened by. Sail into the middle and dive to find the Drowned Hollow. */
-const WELL_CYCLE=480,WELL_LEN=210,WELL_R=9,WELL_REF=ZONE_BASE.well;
+/* ================= STORM TWISTERS =================
+   On a shared clock (the same on every device), every WELL_CYCLE seconds a storm front rolls over the isles for WELL_LEN
+   seconds and a twister forms off every island, drifting slowly over the sea. The churned water round its base (the
+   Storm's Eye) only gives up Rare fish or better, and those fish live nowhere else; their value follows the nearby island.
+   Sail or swim into a twister and it lifts you away to the Drowned Hollow. */
+const WELL_CYCLE=600,WELL_LEN=210,WELL_R=16,TW_CORE=4.6,TW_H=96,WELL_REF=ZONE_BASE.well;
 const hashN=(a,b)=>{let h=(a*2654435761^b*40503)>>>0;h=(h^(h>>>15))*2246822519>>>0;return (h^(h>>>13))>>>0;};
-function wellSpots(){const out=[];for(const k of ISL){const I=ZONES[k];for(let i=0;i<4;i++){const a=i/4*TAU+I.p1+.4;out.push({x:I.x+Math.cos(a)*I.R*2.02,z:I.z+Math.sin(a)*I.R*2.02,isl:k,i});}}return out;}
+function wellSpots(){const out=[];for(const k of ISL){const I=ZONES[k];for(let i=0;i<4;i++){const a=i/4*TAU+I.p1+.4;out.push({x:I.x+Math.cos(a)*I.R*2.1,z:I.z+Math.sin(a)*I.R*2.1,isl:k,i});}}return out;}
 let WSPOTS=null;
-function activeWells(){if(!WSPOTS)WSPOTS=wellSpots();const now=Date.now()/1000,k=Math.floor(now/WELL_CYCLE),ph=now-k*WELL_CYCLE;let left=WELL_LEN-ph;
- if(DEV.wellUntil&&Date.now()<DEV.wellUntil)left=(DEV.wellUntil-Date.now())/1000;else if(left<=0)return{list:[],next:WELL_CYCLE-ph};
- const list=[];for(const isl of ISL){const opts=WSPOTS.filter(s=>s.isl===isl);list.push(opts[hashN(k,isl.length*31+isl.charCodeAt(0))%opts.length]);}return{list,left};}
+function activeWells(){if(!WSPOTS)WSPOTS=wellSpots();const now=Date.now()/1000,k=Math.floor(now/WELL_CYCLE),ph=now-k*WELL_CYCLE;let left=WELL_LEN-ph,el=ph;
+ if(DEV.wellUntil&&Date.now()<DEV.wellUntil){left=(DEV.wellUntil-Date.now())/1000;el=WELL_LEN-left;}else if(left<=0)return{list:[],next:WELL_CYCLE-ph};
+ const list=[];for(const isl of ISL){const opts=WSPOTS.filter(s=>s.isl===isl),b=opts[hashN(k,isl.length*31+isl.charCodeAt(0))%opts.length],a=el*.05+b.i*1.7;list.push({x:b.x+Math.cos(a)*10,z:b.z+Math.sin(a*1.3)*10,isl,i:b.i});}return{list,left};}
 function wellAt(x,z){const A=activeWells();for(const w of A.list)if(Math.hypot(x-w.x,z-w.z)<WELL_R)return w;return null;}
-const TWV={pool:[],state:false,t:0,near:null};
-function wellMat(){return new THREE.ShaderMaterial({uniforms:{uT:WIND.uTime,uA:{value:0}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+const TWV={pool:[],state:false,t:0,near:null};let TW_LIFT=null;
+function twisterMat(inner){return new THREE.ShaderMaterial({uniforms:{uT:WIND.uTime,uA:{value:0},uH:{value:TW_H},uR0:{value:inner?1.8:3.2},uR1:{value:inner?14:22},uSpin:{value:inner?8:5},uIn:{value:inner?1:0},uLit:{value:new THREE.Color(1,1,1)},uFogC:{value:new THREE.Color()},uFogN:{value:100},uFogF:{value:400}},
+ transparent:true,depthWrite:false,side:THREE.DoubleSide,
+ vertexShader:`uniform float uT;uniform float uH;uniform float uR0;uniform float uR1;varying float vH;varying float vAng;varying float vD;
+  void main(){float h=position.y;float r=mix(uR0,uR1,pow(h,1.45))+5.*exp(-h*26.);vec2 wob=vec2(sin(h*3.1+uT*.7),cos(h*2.3+uT*.55))*h*7.+vec2(sin(uT*.9+h*9.),cos(uT*.8+h*7.))*.6;
+   vec3 p=vec3(position.x*r+wob.x,h*uH-3.,position.z*r+wob.y);vH=h;vAng=atan(position.z,position.x);vec4 wp=modelMatrix*vec4(p,1.);vD=distance(wp.xyz,cameraPosition);gl_Position=projectionMatrix*viewMatrix*wp;}`,
+ fragmentShader:`uniform float uT;uniform float uA;uniform float uSpin;uniform float uIn;uniform vec3 uLit;uniform vec3 uFogC;uniform float uFogN;uniform float uFogF;varying float vH;varying float vAng;varying float vD;
+  float h1(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h1(i),h1(i+vec2(1,0)),f.x),mix(h1(i+vec2(0,1)),h1(i+vec2(1,1)),f.x),f.y);}
+  void main(){float a=vAng/6.28318+.5;vec2 q=vec2(a*7.+vH*2.5-uT*uSpin*.12,vH*9.-uT*.9);float s=n2(q)*.6+n2(q*2.3+3.1)*.3+n2(q*5.1+7.)*.1;
+   float bands=smoothstep(.3,.8,s);float edge=smoothstep(0.,.04,vH)*(1.-smoothstep(.86,1.,vH));float dust=exp(-vH*14.);
+   float al=(.34+bands*.5+dust*.35)*edge*uA*mix(1.,.8,uIn);vec3 col=mix(vec3(.13,.15,.18),vec3(.58,.63,.69),bands*.75+vH*.12)*mix(1.,.7,uIn);col=mix(col,vec3(.42,.38,.33),dust*.55);col*=uLit;
+   col=mix(col,uFogC,smoothstep(uFogN,uFogF*1.6,vD)*.6);gl_FragColor=vec4(col,al);`+OUT_CHUNKS+`}`});}
+function twisterBaseMat(){return new THREE.ShaderMaterial({uniforms:{uT:WIND.uTime,uA:{value:0}},transparent:true,depthWrite:false,
  vertexShader:'varying vec2 vP;void main(){vP=position.xz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
- fragmentShader:`uniform float uT;uniform float uA;varying vec2 vP;void main(){float r=length(vP)/${WELL_R.toFixed(1)};if(r>1.)discard;float a=atan(vP.y,vP.x);
-  float sw=.5+.5*sin(a*3.+r*14.-uT*3.2);float edge=smoothstep(1.,.82,r)*smoothstep(.0,.25,r);float core=smoothstep(.35,.0,r);
-  vec3 c=mix(vec3(.05,.35,.9),vec3(.35,1.,.95),sw*r)+vec3(.6,.9,1.)*core*.8;gl_FragColor=vec4(c*(edge*(.35+.65*sw)+core)*uA,1.);}`});}
-function buildWellFx(){for(let i=0;i<3;i++){const g=new THREE.Group();const geo=new THREE.CircleGeometry(WELL_R,48);geo.rotateX(-Math.PI/2);const disc=new THREE.Mesh(geo,wellMat());disc.renderOrder=3;g.add(disc);
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(WELL_R,.16,6,56),new THREE.MeshBasicMaterial({color:new THREE.Color(1.2,2.6,3),transparent:true,opacity:.8}));ring.rotation.x=Math.PI/2;g.add(ring);
-  const bg=new THREE.CylinderGeometry(1.2,2.2,60,20,1,true);bg.translate(0,30,0);const beam=new THREE.Mesh(bg,new THREE.ShaderMaterial({uniforms:{uA:{value:0}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
-   vertexShader:'varying float vY;void main(){vY=uv.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform float uA;varying float vY;void main(){gl_FragColor=vec4(vec3(.3,.9,1.)*pow(1.-vY,2.)*uA*.6,1.);}'}));g.add(beam);
-  g.visible=false;g.userData={disc,ring,beam,w:null};g.traverse(o=>{o.userData.noAO=true;o.frustumCulled=false;});scene.add(g);reflHide.push(g);TWV.pool.push(g);}}
+ fragmentShader:`uniform float uT;uniform float uA;varying vec2 vP;void main(){float r=length(vP)/16.;if(r>1.)discard;float a=atan(vP.y,vP.x);float sw=.5+.5*sin(a*5.+r*18.-uT*5.);
+  float foam=smoothstep(.55,1.,sw)*smoothstep(1.,.35,r)*smoothstep(.05,.2,r);gl_FragColor=vec4(vec3(.9,.95,1.),foam*.7*uA);`+OUT_CHUNKS+`}`});}
+function buildWellFx(){const fg=new THREE.CylinderGeometry(1,1,1,40,30,true);fg.translate(0,.5,0);const cg=new THREE.SphereGeometry(1,24,12),bg=new THREE.CircleGeometry(16,56);bg.rotateX(-Math.PI/2);
+ for(let i=0;i<3;i++){const g=new THREE.Group();const outer=new THREE.Mesh(fg,twisterMat(false)),inner=new THREE.Mesh(fg,twisterMat(true));outer.renderOrder=4;inner.renderOrder=3;g.add(outer,inner);
+  const cap=new THREE.Mesh(cg,new THREE.MeshLambertMaterial({color:'#3a4048',transparent:true,opacity:.92,depthWrite:false}));cap.scale.set(60,11,60);cap.position.y=TW_H*.98;g.add(cap);
+  const base=new THREE.Mesh(bg,twisterBaseMat());base.renderOrder=3;g.add(base);
+  g.visible=false;g.userData={funnels:[outer,inner],cap,base};g.traverse(o=>{o.userData.noAO=true;o.frustumCulled=false;});scene.add(g);reflHide.push(g);TWV.pool.push(g);}}
 function updateWells(dt){if(!TWV.pool.length)buildWellFx();const A=activeWells(),T=WIND.uTime.value,cp=camera.position;
- const near=A.list.map(w=>({w,d:Math.hypot(w.x-cp.x,w.z-cp.z)})).filter(o=>o.d<520).sort((a,b)=>a.d-b.d).slice(0,TWV.pool.length);
- TWV.pool.forEach((g,i)=>{const o=near[i];if(!o||MENU.on){g.visible=false;return;}const w=o.w,fade=Math.min(1,(A.left||0)/8)*Math.min(1,(WELL_LEN-(A.left||0))/4+.2);g.visible=true;
-  g.position.set(w.x,waveH(w.x,w.z,T)+.06,w.z);g.userData.disc.material.uniforms.uA.value=fade;g.userData.ring.material.opacity=.8*fade;g.userData.ring.scale.setScalar(1+Math.sin(T*2)*.03);g.userData.beam.material.uniforms.uA.value=fade*(1-(env.cave||0));
-  if(o.d<120&&Math.random()<dt*3)splash(new THREE.Vector3(w.x+rand(-3,3),g.position.y,w.z+rand(-3,3)),3,2.5);});
+ const near=A.list.map(w=>({w,d:Math.hypot(w.x-cp.x,w.z-cp.z)})).filter(o=>o.d<900).sort((a,b)=>a.d-b.d).slice(0,TWV.pool.length),lit=lerp(.32,1,env.day)+(env.flash||0)*.8;
+ TWV.pool.forEach((g,i)=>{const o=near[i];if(!o||MENU.on||(env.cave||0)>.5){g.visible=false;return;}const w=o.w,fade=Math.min(1,(A.left||0)/10)*Math.min(1,(WELL_LEN-(A.left||0))/8+.05);g.visible=true;
+  g.position.set(w.x,0,w.z);const U=g.userData;for(const m of U.funnels){const u=m.material.uniforms;u.uA.value=fade;u.uLit.value.setScalar(lit);u.uFogC.value.copy(scene.fog.color);u.uFogN.value=scene.fog.near;u.uFogF.value=scene.fog.far;}
+  U.cap.material.opacity=.92*fade;U.cap.rotation.y+=dt*.15;U.base.position.y=waveH(w.x,w.z,T)+.12;U.base.material.uniforms.uA.value=fade;
+  if(o.d<180&&Math.random()<dt*12){const a=Math.random()*TAU,r=2+Math.random()*5;splash(new THREE.Vector3(w.x+Math.cos(a)*r,waveH(w.x,w.z,T),w.z+Math.sin(a)*r),4,4.5);}});
  TWV.near=near[0]?near[0].w:null;
- const on=A.list.length>0;if(on!==TWV.state){TWV.state=on;if(on&&!MENU.on){const nw=near[0];toast(nw&&nw.d<400?`A Tide Well has opened off ${ZONES[nw.w.isl].n}! Fish inside it for rare catches, or dive in.`:'Tide Wells have opened off every island for a few minutes!','gold');AU.enchant();}}}
-/* sailing into a well */
-function wellPrompt(){if(player.mode!=='boat'||F.st!=='idle')return null;const w=wellAt(boat.pos.x,boat.pos.z);if(!w||Math.hypot(boat.pos.x-w.x,boat.pos.z-w.z)>WELL_R*.6)return null;return{label:'Dive into the Tide Well',kind:'Dive',act:()=>diveWell(w)};}
+ /* the storm front brings storm weather (unless the weather is locked in Settings) */
+ const on=A.list.length>0,fw=state.settings.weather,auto=!fw||fw==='auto';
+ if(on&&auto&&!MENU.on){if(env.weather!=='storm')setWeather('storm',true);env.wTimer=Math.max(env.wTimer,(A.left||0)+5);}
+ if(on!==TWV.state){TWV.state=on;if(on&&!MENU.on){const nw=near[0];toast(nw&&nw.d<500?`A storm front is rolling in! A twister is forming off ${ZONES[nw.w.isl].n}. Fish round its base for rare catches, or sail straight into it…`:'A storm front is rolling in! Twisters are forming off every island for a few minutes.','gold');AU.thunder(60);}
+  else if(!on&&auto)env.wTimer=Math.min(env.wTimer,4);}
+ /* touching a twister lifts you away */
+ if(TW_LIFT){TW_LIFT.t+=dt;cam.yaw+=dt*(3+TW_LIFT.t*6);return;}
+ if(on&&!MENU.on&&!(typeof PHOTO!=='undefined'&&PHOTO.on)&&!(typeof RIDE!=='undefined'&&RIDE)){const onBoat=player.mode==='boat',p=onBoat?boat.pos:player.pos;
+  if((onBoat&&(boat.alt||0)<40)||(!onBoat&&groundH(p.x,p.z)<-.6))for(const w of A.list)if(Math.hypot(p.x-w.x,p.z-w.z)<TW_CORE){twisterLift(w);break;}}}
+function wellPrompt(){return null;}
+function twisterLift(w){if(TW_LIFT)return;if(F.st!=='idle')cancelFishing();stopEmote();const onBoat=player.mode==='boat',p=onBoat?boat.pos:player.pos;TW_LIFT={t:0,w};
+ AU.thunder(25);AU.splash(1.4);AU.leap();camShake(1.4);splash(new THREE.Vector3(p.x,0,p.z),30,8);toast('The twister lifts you clean off the sea!','gold');
+ const dx=p.x-w.x,dz=p.z-w.z,dl=Math.hypot(dx,dz)||1,rx=w.x+dx/dl*(WELL_R+14),rz=w.z+dz/dl*(WELL_R+14);
+ fadeTo(()=>{HOLLOW_RET={x:rx,z:rz,yaw:onBoat?boat.yaw:Math.atan2(dx,dz)};const sp=world.spawn.hollow;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;cam.yaw=sp.yaw+Math.PI;cam.tdist=12;TW_LIFT=null;
+  if(!state.tips.hollow){state.tips.hollow=1;setTimeout(()=>toast('The twister set you down in a secret place: the Drowned Hollow. Its fish live nowhere else. The ring of light takes you back up.','gold'),900);}save();});}
 
 /* ================= THE DROWNED HOLLOW ================= */
 let HOLLOW_RET=null;
 function fadeTo(fn){const f=$('#fadeOver');f.classList.add('on');setTimeout(()=>{fn();setTimeout(()=>f.classList.remove('on'),250);},650);}
-function diveWell(w){if(F.st!=='idle')cancelFishing();stopEmote();AU.splash(1.2);AU.leap();splash(boat.pos.clone(),26,6);
- fadeTo(()=>{HOLLOW_RET={x:boat.pos.x,z:boat.pos.z,yaw:boat.yaw};const sp=world.spawn.hollow;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;cam.yaw=sp.yaw+Math.PI;cam.tdist=12;
-  if(!state.tips.hollow){state.tips.hollow=1;setTimeout(()=>toast('You found a secret place: the Drowned Hollow. Its fish live nowhere else. The ring of light takes you back up.','gold'),900);}save();});}
-/* the Sunless Deep opens once every Drowned Hollow fish is in your Bestiary (the Drowned King needs level 30) */
+function diveWell(w){twisterLift(w||{x:boat.pos.x,z:boat.pos.z});}
+/* the Lightless Trench opens once every Drowned Hollow fish is in your Journal (the Drowned King needs level 30) */
 function hollowProgress(){const all=SPECIES.filter(s=>s.zone==='hollow'||s.zone==='pond_hollow');return{have:all.filter(s=>state.dex[s.id]&&state.dex[s.id].n).length,total:all.length};}
 function tryDescend(){const P=hollowProgress();if(P.have<P.total){const king=!(state.dex.drowned_king&&state.dex.drowned_king.n);AU.escape();
   toast(`The seal holds. Catch every Drowned Hollow fish to open it (${P.have}/${P.total}).${king?state.level<30?' The Drowned King only bites for anglers of level 30 or higher.':' The Drowned King rises once every other Hollow fish is caught.':''}`);return;}
  fadeTo(()=>{const sp=world.spawn.abyss;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;cam.yaw=sp.yaw+Math.PI;cam.tdist=12;
-  if(!state.tips.abyss){state.tips.abyss=1;if(typeof grantTitle==='function')grantTitle('Abyss Diver');setTimeout(()=>toast('You reached the Sunless Deep, the last chamber under the sea. Its fish are the most valuable anywhere.','gold'),900);}save();AU.level();});}
+  if(!state.tips.abyss){state.tips.abyss=1;if(typeof grantTitle==='function')grantTitle('Abyss Diver');setTimeout(()=>toast('You reached the Lightless Trench, the last chamber under the sea. Its fish are the most valuable anywhere.','gold'),900);}save();AU.level();});}
 /* the linked caves: walk through a ring of light to reach the next cave */
 const CAVE_INTRO={kelp:'The Kelp Cathedral: a drowned forest lit gold from above. Its fish live nowhere else.',ruins:'The Sunken Ruins: a city the sea took long ago. Its fish are rich and rare.'};
 function caveProgress(z){const all=SPECIES.filter(s=>s.zone===z);return{have:all.filter(s=>state.dex[s.id]&&state.dex[s.id].n).length,total:all.length};}
 function goCave(k){fadeTo(()=>{const sp=world.spawn[k];if(!sp)return;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;cam.yaw=sp.yaw+Math.PI;cam.tdist=12;
  if(!state.tips['cave_'+k]){state.tips['cave_'+k]=1;if(CAVE_INTRO[k])setTimeout(()=>toast(CAVE_INTRO[k],'gold'),900);if(k==='ruins'&&typeof grantTitle==='function')grantTitle('Ruin Diver');if(k==='kelp'&&typeof grantTitle==='function')grantTitle('Kelp Wanderer');}save();AU.splash(.6);});}
 function tryRuins(){const P=caveProgress('kelp');if(P.have<5){AU.escape();toast(`The tunnel is choked with kelp. Catch 5 different Kelp Cathedral fish to clear it (${P.have}/5).`);return;}goCave('ruins');}
-function tryRuinsDeep(){if(!state.tips.abyss){AU.escape();toast('A great seal blocks the passage. It opens from the other side once you reach the Sunless Deep through the Drowned Hollow.');return;}goCave('abyss');}
+function tryRuinsDeep(){if(!state.tips.abyss){AU.escape();toast('A great seal blocks the passage. It opens from the other side once you reach the Lightless Trench through the Drowned Hollow.');return;}goCave('abyss');}
 function toHollow(){fadeTo(()=>{const sp=world.spawn.hollow;player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;cam.yaw=sp.yaw+Math.PI;});}
-function surfaceFromHollow(){fadeTo(()=>{if(HOLLOW_RET){boat.pos.set(HOLLOW_RET.x,0,HOLLOW_RET.z);boat.yaw=HOLLOW_RET.yaw;boat.speed=0;player.mode='boat';cam.tdist=17;}
+function surfaceFromHollow(){fadeTo(()=>{if(HOLLOW_RET){boat.pos.set(HOLLOW_RET.x,0,HOLLOW_RET.z);boat.yaw=HOLLOW_RET.yaw;boat.speed=0;boat.alt=0;boat.fly=false;player.mode='boat';cam.tdist=17;}
   else{const k=state.last||'cove',sp=world.spawn[k];player.mode='walk';player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);placeBoatAt(k);}HOLLOW_RET=null;AU.splash(.9);});}
 
 /* ================= LITTLE SEA EVENTS =================
    Every few minutes something turns up on the water near you: a floating chest, a message in a bottle,
    or a bubbling fish school (bites come fast and luck runs high while you fish inside it). */
 const LE={items:[],t:70};
-const BOTTLE_NOTES=['"Tide Wells open around every island every few minutes. Dive into one, if you dare."','"The rarest fish rise for the patient. And for the lucky."','"I buried nothing. The sea took it all. — Captain M."',
+const BOTTLE_NOTES=['"When a storm front rolls in, twisters form off every island. Sail into one, if you dare."','"The rarest fish rise for the patient. And for the lucky."','"I buried nothing. The sea took it all. — Captain M."',
  '"Lucky Lou\'s wheel has a 5× slice. I saw it once. Once."','"At night the Mirror Pool shows a second moon."','"Glowflies at night, shrimp by day. That\'s the whole secret."','"Pull against a running fish and it tires twice as fast."'];
 function leMesh(type){const g=new THREE.Group();
  if(type==='chest'){const w=pbr('#8a5a32','wood'),gold=new THREE.MeshStandardMaterial({color:'#f2c14e',metalness:.9,roughness:.3});const b=new THREE.Mesh(new THREE.BoxGeometry(1.1,.6,.75),w);b.position.y=.1;g.add(b);
@@ -80,7 +103,7 @@ function spawnLittleEvent(){const base=player.mode==='boat'?boat.pos:player.pos;
   toast(type==='chest'?'A floating chest is bobbing nearby! Sail into it or cast onto it.':type==='bottle'?'A message in a bottle drifts by. Sail into it or cast onto it.':'A fish school is boiling the water nearby! Cast into it for fast bites and better luck.');AU.bell(1318.5,.5,.06);return;}}
 function leNear(x,z,r,types){for(const it of LE.items)if((!types||types.includes(it.type))&&Math.hypot(it.x-x,it.z-z)<r)return it;return null;}
 function collectLE(it){LE.items.splice(LE.items.indexOf(it),1);disposeHeld(it.g);splash(new THREE.Vector3(it.x,0,it.z),14,4);const isl=nearestIslandKey(it.x,it.z),b=ZONE_BASE[isl]||14;
- if(it.type==='chest'){const c=Math.round(b*rand(18,45)/10)*10;state.coins+=c;state.earned+=c;let extra='';const r=Math.random();if(r<.06){state.relics++;extra=' and a Tide Relic';}else if(r<.35){const bt=pick(BAITS.slice(0,6));state.bait[bt.id]=(state.bait[bt.id]||0)+3;extra=' and 3 '+bt.n;}
+ if(it.type==='chest'){const c=Math.round(b*rand(18,45)/10)*10;state.coins+=c;state.earned+=c;let extra='';const r=Math.random();if(r<.06){state.relics++;extra=' and some Sea Glass';}else if(r<.35){const bt=pick(BAITS.slice(0,6));state.bait[bt.id]=(state.bait[bt.id]||0)+3;extra=' and 3 '+bt.n;}
   AU.sell(4);coinBurst(8);toast(`You hauled in a floating chest: ${fmt(c)} coins${extra}!`,'gold');}
  else{const c=Math.round(b*rand(6,14)/10)*10;state.coins+=c;state.earned+=c;AU.coin();toast(`A note in the bottle: ${pick(BOTTLE_NOTES)} (+${fmt(c)} coins)`);}
  save();updateHUD();}
@@ -93,7 +116,7 @@ function updateLittleEvents(dt){const T=WIND.uTime.value;LE.t-=dt;if(LE.t<=0){LE
   if(it.type!=='school'&&player.mode==='boat'&&Math.hypot(boat.pos.x-it.x,boat.pos.z-it.z)<3.6)collectLE(it);}}
 /* casting onto a chest or bottle hooks it; casting into a school gives the bonus */
 function onCastLanded(){const it=leNear(F.to.x,F.to.z,3,['chest','bottle']);if(it){collectLE(it);cancelFishing();return true;}F.inSchool=!!leNear(F.to.x,F.to.z,7,['school']);if(F.inSchool)toast('Casting into the school: fast bites and +40% luck!');return false;}
-function drawExtraMap(x,toX,toY,S,opt){const A=activeWells();for(const w of A.list){x.strokeStyle='#8af0ff';x.fillStyle='rgba(120,230,255,.35)';x.lineWidth=2;x.beginPath();x.arc(toX(w.x),toY(w.z),Math.max(4,WELL_R*S),0,TAU);x.fill();x.stroke();}
+function drawExtraMap(x,toX,toY,S,opt){const A=activeWells();for(const w of A.list){const cx=toX(w.x),cy=toY(w.z),R=Math.max(5,WELL_R*S);x.fillStyle='rgba(60,70,84,.55)';x.beginPath();x.arc(cx,cy,R,0,TAU);x.fill();x.strokeStyle='#e8eef4';x.lineWidth=1.6;x.beginPath();for(let t=0;t<=1.001;t+=.04){const a=t*TAU*2.2,rr=R*(.15+.85*t);if(t===0)x.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);else x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}x.stroke();}
  for(const it of LE.items){x.fillStyle=it.type==='chest'?'#ffd27a':it.type==='bottle'?'#c8ffe8':'#8af0ff';x.beginPath();x.arc(toX(it.x),toY(it.z),3.5,0,TAU);x.fill();}
  if((env.cave||0)>.3){const I=ZONES[CAVE_LOOK[player.zone]?player.zone:'hollow'];x.fillStyle='#0c1e24';x.fillRect(0,0,9999,9999);x.fillStyle='#2a3a40';islPath(x,I,toX,toY,1);x.fill();for(const p of I.ponds||[]){x.fillStyle='#1f6a74';x.beginPath();x.arc(toX(p.x),toY(p.z),p.r*S,0,TAU);x.fill();}}}
 
@@ -272,7 +295,7 @@ function openRodPath(){openPanel('Rod path','Every rod, island by island',()=>{p
   for(const id of ids){const r=RODM[id],s=rodState(r),need=rodNeed(r),isN=nx&&nx.id===id;
    h+=`<div class="rpRow ${s}${isN?' next':''}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}${isN?'<em>Next</em>':''}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':need?`<span class="tag lock">${esc(need)}</span>`:`<span class="tag buy">${fmt(r.price)}c</span>`}${s==='eq'||s==='own'?'':`<button class="btn sm ghost" data-act="guide" data-id="${id}" title="Mark it on your compass">Find</button>`}</div></div>`;}
   h+='</div>';}
- const qr=RODS.filter(r=>r.req&&(r.req.quest||r.req.relic||r.req.secret||r.req.bounties||r.req.dex||r.req.derby));if(qr.length){h+=`<div class="rpIsl"><h4><i style="--c:#ffd76e"></i>Quests, relics and secrets</h4>`+qr.map(r=>{const s=rodState(r);return `<div class="rpRow ${s}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':`<span class="tag lock">${esc(rodLocked(r)||'')}</span>`}</div></div>`;}).join('')+'</div>';}
+ const qr=RODS.filter(r=>r.req&&(r.req.quest||r.req.relic||r.req.secret||r.req.bounties||r.req.dex||r.req.derby));if(qr.length){h+=`<div class="rpIsl"><h4><i style="--c:#ffd76e"></i>Quests, sea glass and secrets</h4>`+qr.map(r=>{const s=rodState(r);return `<div class="rpRow ${s}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':`<span class="tag lock">${esc(rodLocked(r)||'')}</span>`}</div></div>`;}).join('')+'</div>';}
  body(h);bindPanel({guide:id=>{setRodGuide(id);closePanel();},nrtog:()=>{state.settings.nextRod=state.settings.nextRod===false;NR.key='';save();rerender();}});});}
 function guideBeam(){const g=new THREE.CylinderGeometry(.16,.3,60,12,1,true);g.translate(0,30,0);
  const m=new THREE.Mesh(g,new THREE.ShaderMaterial({uniforms:{uT:{value:0},uA:{value:1}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
@@ -294,7 +317,7 @@ function guideTick(){const pin=document.getElementById('guidePin');if(!pin)retur
 
 /* ================= LOST PAGES: twelve torn journal pages hidden around the isles ================= */
 const PAGES_N=12,PAGES={built:false,list:[]};
-const PAGE_TXT=['Day one. The ferryman says the isles move when no one is looking. I laughed. I have stopped laughing.','The keeper of the lighthouse leaves a lamp lit on foggy nights, "for the one that swims up the beam."','Moss grows thickest where the old altar hums. Sister Fen says the relics sing back to it.','Under the atoll the coral rings like a bell at dawn. Something large answers.','Frostmere ice is clear as glass. I saw a shape below it longer than my boat.','The cherry blossoms on Petalshore only fall when the stars do. The koi there watch the sky.','Amberglen\'s farmers fish at harvest moon. They throw the first catch back, always.','The volcano breathes at night. The fish near the vents have eyes like coals.','In the dunes I found a ship\'s wheel, a hundred miles from any sea that could have carried it.','The crystals of Glimmerholt keep the light of every lamp that ever shone on them.','Where the tide wells open, the water goes down forever. I have heard a king sing there.','My rod is driftwood, like the first one. It has caught everything worth catching. Leave it where it can be found.'];
+const PAGE_TXT=['Day one. The ferryman says the isles move when no one is looking. I laughed. I have stopped laughing.','The keeper of the lighthouse leaves a lamp lit on foggy nights, "for the one that swims up the beam."','Moss grows thickest where the old altar hums. Sister Fen says the sea glass sings back to it.','Under the atoll the coral rings like a bell at dawn. Something large answers.','Frostmere ice is clear as glass. I saw a shape below it longer than my boat.','The cherry blossoms on Petalshore only fall when the stars do. The koi there watch the sky.','Amberglen\'s farmers fish at harvest moon. They throw the first catch back, always.','The volcano breathes at night. The fish near the vents have eyes like coals.','In the dunes I found a ship\'s wheel, a hundred miles from any sea that could have carried it.','The crystals of Glimmerholt keep the light of every lamp that ever shone on them.','Where the tide wells open, the water goes down forever. I have heard a king sing there.','My rod is driftwood, like the first one. It has caught everything worth catching. Leave it where it can be found.'];
 const PAGE_ISL=['cove','cove','moss','atoll','frost','petal','amber','ember','dune','glim','moss','cove'];
 function pageMesh(){const g=new THREE.Group(),pm=new THREE.MeshStandardMaterial({color:'#efe2c0',roughness:.85}),rm=new THREE.MeshStandardMaterial({color:'#a83a2a',roughness:.6});
  const roll=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.55,10),pm);roll.rotation.z=Math.PI/2;roll.position.y=.12;g.add(roll);const flap=new THREE.Mesh(new THREE.BoxGeometry(.5,.012,.32),pm);flap.position.set(0,.03,.16);flap.rotation.x=-.12;g.add(flap);
@@ -324,7 +347,7 @@ function makeBounties(){const day=todayKey();if(state.bounty.day===day&&state.bo
  {const k=pickI(),need=8+Math.floor(r()*8);L.push({t:'count',zone:k,need,n:0,coins:Math.round(pay*need*3.2),txt:`Catch ${need} fish around ${ZONES[k].n}`,where:ZONES[k].n});}
  {const roll=r();if(roll<.4){const k=pickI(),pool=SPECIES.filter(s=>s.zone===k&&s.r<=3&&s.maxW>=1);const sp=pool[Math.floor(r()*pool.length)]||SPM.pebble_perch,w=Math.round(sp.maxW*.62*10)/10;L.push({t:'heavy',sp:sp.id,w,need:1,n:0,coins:Math.round(pay*90),crate:1,txt:`Land a ${sp.name} over ${fmtW(w)} kg`,where:ZONES[sp.zone].n});}
   else if(roll<.75){L.push({t:'rare',need:2,n:0,coins:Math.round(pay*80),crate:1,txt:'Catch 2 Rare-or-better fish',where:'Anywhere'});}
-  else{L.push({t:'mut',need:1,n:0,coins:Math.round(pay*85),crate:1,txt:'Catch a fish with a mutation',where:'Anywhere'});}}
+  else{L.push({t:'mut',need:1,n:0,coins:Math.round(pay*85),crate:1,txt:'Catch a fish with a variant',where:'Anywhere'});}}
  state.bounty={day,list:L,all:false};save();}
 function bountyCatch(c,zone){if(!c||c.relic||!state.bounty)return;makeBounties();let ch=false;
  for(const b of state.bounty.list){if(b.n>=b.need)continue;let hit=false;const isl=c.sp&&(c.sp.zone.startsWith('pond_')?c.sp.zone.slice(5):c.sp.zone);
@@ -332,11 +355,11 @@ function bountyCatch(c,zone){if(!c||c.relic||!state.bounty)return;makeBounties()
   if(hit){b.n++;ch=true;if(b.n>=b.need)setTimeout(()=>toast(`Bounty done: ${b.txt}. Claim it at any Bounty Board.`,'gold'),900);}}
  if(ch)save();}
 function openBounties(){makeBounties();openPanel('Bounty Board','New bounties every day · the same for everyone',()=>{panelCtx.kind='bounty';const B=state.bounty;
- body(`<div class="muted">Finish all three for a bonus Tide Relic. Rewards grow as you unlock new islands.</div><div class="list">${B.list.map((b,i)=>{const done=b.n>=b.need;return `<div class="card ${b.claimed?'eq':''}"><div class="row"><div class="grow"><h3>${esc(b.txt)}</h3><div class="muted">${esc(b.where)} · reward ${fmt(b.coins)}c${b.crate?' + a Mystery Crate':''}</div><div class="bbar"><i style="width:${Math.min(100,b.n/b.need*100)}%"></i><span>${Math.min(b.n,b.need)} / ${b.need}</span></div></div>${b.claimed?'<span class="pill" style="--c:#9be07a">Claimed</span>':`<button class="btn sm" data-act="claim" data-id="${i}" ${done?'':'disabled'}>Claim</button>`}</div></div>`;}).join('')}</div>
+ body(`<div class="muted">Finish all three for a bonus Sea Glass. Rewards grow as you unlock new islands.</div><div class="list">${B.list.map((b,i)=>{const done=b.n>=b.need;return `<div class="card ${b.claimed?'eq':''}"><div class="row"><div class="grow"><h3>${esc(b.txt)}</h3><div class="muted">${esc(b.where)} · reward ${fmt(b.coins)}c${b.crate?' + a Mystery Crate':''}</div><div class="bbar"><i style="width:${Math.min(100,b.n/b.need*100)}%"></i><span>${Math.min(b.n,b.need)} / ${b.need}</span></div></div>${b.claimed?'<span class="pill" style="--c:#9be07a">Claimed</span>':`<button class="btn sm" data-act="claim" data-id="${i}" ${done?'':'disabled'}>Claim</button>`}</div></div>`;}).join('')}</div>
   <div class="card"><div class="row"><div class="grow"><h3>Fishing Derby</h3><div class="muted">Three minutes against four rival anglers: land the heaviest fish. Prizes for the top three, a Mystery Crate for the winner. Derby wins: ${state.derbyWins||0}.</div></div><button class="btn sm" data-act="derby" ${DERBY.on?'disabled':''}>${DERBY.on?'Running':'Start'}</button></div></div>
-  <div class="card"><div class="row"><div class="grow"><h3>Daily bonus</h3><div class="muted">${B.all?'Claimed today. Come back tomorrow for new bounties.':'Claim all three bounties for a Tide Relic.'}</div></div>${B.all?'<span class="pill" style="--c:#5fd6ff">Relic claimed</span>':''}</div></div>`);
+  <div class="card"><div class="row"><div class="grow"><h3>Daily bonus</h3><div class="muted">${B.all?'Claimed today. Come back tomorrow for new bounties.':'Claim all three bounties for some Sea Glass.'}</div></div>${B.all?'<span class="pill" style="--c:#5fd6ff">Sea glass claimed</span>':''}</div></div>`);
  bindPanel({derby:()=>startDerby(),claim:v=>{const b=state.bounty.list[+v];if(!b||b.claimed||b.n<b.need)return;b.claimed=true;state.bountiesDone=(state.bountiesDone||0)+1;checkEarnedRods();state.coins+=b.coins;state.earned+=b.coins;AU.coin();coinBurst(8);if(b.crate)grantCrate('a bounty');
-  if(!state.bounty.all&&state.bounty.list.every(q=>q.claimed)){state.bounty.all=true;state.relics++;toast('All bounties done! +1 Tide Relic','gold');}save();updateHUD();rerender();}});});}
+  if(!state.bounty.all&&state.bounty.list.every(q=>q.claimed)){state.bounty.all=true;state.relics++;toast('All bounties done! +1 Sea Glass','gold');}save();updateHUD();rerender();}});});}
 function buildBoards(){BOARD.built=true;const b=new Builder();
  for(const k of ISL){const sp=world.spawn[k];if(!sp)continue;let spot=null;for(const off of[[-4.5,1.5],[4.5,1.5],[-5.5,-2],[5.5,-2],[-3.5,4]]){const sx=Math.cos(sp.yaw),sz=-Math.sin(sp.yaw),fx=Math.sin(sp.yaw),fz=Math.cos(sp.yaw);const x=sp.x+sx*off[0]+fx*off[1],z=sp.z+sz*off[0]+fz*off[1],y=groundH(x,z);
    if(y<.4||world.colliders.some(c=>Math.hypot(c.x-x,c.z-z)<c.r+1.1))continue;spot={x,y,z};break;}if(!spot)continue;const ry=sp.yaw+Math.PI,{x,y,z}=spot,c=Math.cos(ry),s=Math.sin(ry);
@@ -394,7 +417,7 @@ function dropPot(){if(state.pots.length>=3){toast('You already have three pots o
  toast(`Crab pot dropped. Come back in ${Math.round(POTS.FILL/60000)} minutes to haul it (${state.pots.length}/3 out).`);}
 function haulPot(it){const d=it.d;if(!potReady(d)){const left=Math.ceil((POTS.FILL-(Date.now()-d.t0))/1000);toast(`Still filling: ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} to go.`);return;}
  const zb=Math.max(ZONE_BASE[ISL.includes(d.zone)?d.zone:'sea']||14,bountyPay()*.6),n=2+Math.floor(Math.random()*4),coins=Math.round(zb*n*rand(9,16));state.coins+=coins;state.earned+=coins;let extra='';
- if(Math.random()<.08){state.relics++;extra=' and a Tide Relic';}else if(Math.random()<.04){grantCrate('a lucky crab pot');}
+ if(Math.random()<.08){state.relics++;extra=' and some Sea Glass';}else if(Math.random()<.04){grantCrate('a lucky crab pot');}
  state.pots.splice(state.pots.indexOf(d),1);scene.remove(it.g);POTS.list.splice(POTS.list.indexOf(it),1);AU.coin();coinBurst(6);splash(it.g.position.clone(),12,4);save();updateHUD();
  toast(`Hauled ${n} crabs and a lobster or two: +${fmt(coins)}c${extra}.`,'gold');}
 function potPrompt(){if(!POTS.built)return null;const p=player.mode==='boat'?boat.pos:player.pos;let best=null,bd=5.5;for(const it of POTS.list){const dd=Math.hypot(it.d.x-p.x,it.d.z-p.z);if(dd<bd){bd=dd;best=it;}}

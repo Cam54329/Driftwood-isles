@@ -1,5 +1,5 @@
 'use strict';
-/* Driftwood Isles — big world events: Leviathan Passage, Starfall, Aurora Tide and The Great Swell.
+/* Driftwood Isles — big world events: Whalesong Migration, Starfall, Glowtide and The Great Swell.
    The schedule lives in di-game (bigSchedule / tickEvents); this file builds and animates what you see. */
 const BIG={active:null,whales:[],meteors:[],shards:[],aurora:null,auroraK:0,bio:0,meteorT:0,shardT:3,sprayT:1,center:new THREE.Vector3(),spouts:[]};
 

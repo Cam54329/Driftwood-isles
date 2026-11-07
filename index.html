@@ -3,12 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#16222c">
-<title>Driftwood Isles</title>
-<meta name="description" content="Driftwood Isles: a cozy multiplayer fishing game.">
+<meta name="theme-color" content="#0b2c34">
+<title>Driftwood Isles · a cozy multiplayer fishing game</title>
+<meta name="description" content="Sail between hand-made islands, catch hundreds of fish, chase storm twisters to secret places and fish with friends. Free to play in your browser.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Driftwood Isles">
+<meta property="og:title" content="Driftwood Isles">
+<meta property="og:description" content="Sail between hand-made islands, catch hundreds of fish, chase storm twisters to secret places and fish with friends. Free to play in your browser.">
+<meta property="og:url" content="https://driftwood-isles-alpha.vercel.app/">
+<meta property="og:image" content="https://driftwood-isles-alpha.vercel.app/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Josefin+Sans:wght@300;400;600;700&family=Nunito:wght@600;700;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&family=Josefin+Sans:wght@300;400;600;700&family=Nunito:wght@600;700;800;900&display=swap">
 <style>
 /* Layout: full-bleed 3D world. Game HUD in the corners (minimap top-left, compass top-centre, buttons top-right,
    level + coins bottom-right, numbered hotbar bottom-centre). Panels are flat dark slabs with solid action buttons.
@@ -663,6 +674,101 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
 .skinDot{display:inline-block;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--a) 55%,var(--b) 56%);box-shadow:0 0 0 2px rgba(255,255,255,.3)}
 .page .pageTxt{font:italic 600 16px/1.6 'Fraunces',Georgia,serif;color:#f4ead2;padding:6px 4px}
 @media (max-width:640px){#lvlTxt{font-size:16px}.coins{font-size:21px}.si,.si svg,#clockIco .si svg{width:18px;height:18px}.xpline{width:90px}}
+
+/* =================================================================================================
+   8.0 LAUNCH UI · "Driftwood Ledger": our own look. Sea-glass teal panels, brass trim, cream ink, serif
+   headings. The map wears a brass level ring (top left) beside a ledger card; rod and bait are brass
+   medallions; the menus are logbook tabs on the right edge. Overrides everything above.
+   ================================================================================================= */
+:root{--ink:#fbf4e6;--ink2:#e2d8c6;--ink3:#9fb3b0;--panel:rgba(9,32,38,.82);--panel2:rgba(10,36,43,.95);--slot:rgba(8,26,31,.7);
+ --line:rgba(231,190,112,.22);--line2:rgba(231,190,112,.45);--gold:#e7b75a;--gold2:#f3cf85;--brass:#d6a148;--brass2:#f0cd84;--teal:#36b3a2;--teal2:#79e0cf;
+ --title:'Nunito',system-ui,sans-serif;--menu:'Fraunces',Georgia,serif;--serif:'Fraunces',Georgia,serif;
+ --edge:inset 0 0 0 1px rgba(231,190,112,.32),inset 0 1px 0 rgba(255,255,255,.07);--soft:0 14px 34px -14px rgba(0,0,0,.62);--sh:var(--soft)}
+kbd{background:rgba(231,190,112,.2);color:var(--brass2);font:800 11.5px var(--hud)}
+/* map, level ring and ledger */
+#tl{flex-direction:column;align-items:flex-start;gap:10px}
+.navcl{display:flex;align-items:flex-start;gap:12px}
+.xpring{position:relative;flex:none;width:180px;height:180px;border-radius:50%;padding:7px;pointer-events:auto;background:conic-gradient(var(--brass2) calc(var(--xp,0)*1%),rgba(255,255,255,.14) 0);box-shadow:0 0 0 1px rgba(0,0,0,.35),var(--soft)}
+.xpring .mm{width:166px;height:166px;box-shadow:0 0 0 3px #0b2c34,inset 0 0 0 1px rgba(231,190,112,.4);cursor:pointer}
+.xpring .mm .n{color:var(--brass2)}
+#lvlNum{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);min-width:40px;height:28px;padding:0 10px;border-radius:14px;background:linear-gradient(#f4d593,#c99238);color:#2b1c06;font:900 15px/28px var(--hud);text-align:center;box-shadow:0 0 0 2px #0b2c34,0 3px 8px rgba(0,0,0,.45)}
+.ledger{display:flex;flex-direction:column;gap:6px;min-width:192px;margin-top:12px;padding:11px 15px 12px;border-radius:16px 16px 16px 4px;background:var(--panel);box-shadow:var(--edge),var(--soft);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:auto}
+#mmZone{position:static;width:auto;max-width:230px;margin:0;padding:0;background:none;box-shadow:none;transform:none;font:700 17px/1.15 var(--serif);color:var(--ink);text-shadow:none;text-align:left;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#wallet{display:flex;flex-direction:column;align-items:stretch;gap:5px;margin:0}
+.coins{position:relative;display:flex;align-items:center;gap:8px;font:800 25px/1 var(--hud);font-style:normal;color:#ffe3a3;letter-spacing:.3px;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+.coins .cur{display:none}
+.coinI{flex:none;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6d2,#f1c45e 45%,#b17c1d);box-shadow:inset 0 0 0 2px rgba(120,78,8,.35),0 1px 2px rgba(0,0,0,.4)}
+.cpop{right:auto;left:30px;font:800 17px/1 var(--hud);font-style:normal}
+.lvrow{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+#lvlTxt{font:800 11px/1.2 var(--hud);letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);text-shadow:none}
+.xpline{width:100%;height:5px;margin:0;border-radius:3px;background:rgba(255,255,255,.12);box-shadow:none}
+.xpline i{background:linear-gradient(90deg,#c99238,#f4d593)}
+#relicTxt{display:none}
+#stIcons{display:flex;align-items:center;gap:8px;margin-top:2px;padding-top:7px;border-top:1px solid var(--line);color:var(--ink2);filter:none}
+#stIcons #clockTxt{display:inline;font:800 12px var(--hud);color:var(--ink2)}#stIcons #wxTxt{display:inline;font:700 11px var(--hud);color:var(--ink3)}
+.si,.si svg,#clockIco .si svg{width:18px;height:18px}.si.well{color:#c9d6e2}.si.relic{color:var(--teal2)}
+#br{display:none!important}
+/* top right: round brass-ringed buttons; the old Esc pill is gone (Esc still opens the menu) */
+#escTab,.desk #escTab{display:none!important}
+#tr,.desk #tr{display:flex;gap:8px}
+.ib{width:44px;height:44px;border-radius:50%;background:var(--panel);box-shadow:0 0 0 1.5px rgba(231,190,112,.5),var(--soft);color:var(--brass2);backdrop-filter:blur(8px)}
+.ib:hover{background:rgba(16,48,56,.92);color:#fff}.ib svg{width:21px;height:21px}
+#nrWrap,.desk #nrWrap{top:calc(66px + env(safe-area-inset-top,0px))}
+#derbyWrap,.desk #derbyWrap{top:calc(172px + env(safe-area-inset-top,0px))}
+#nextRod{background:var(--panel);border-radius:16px 4px 16px 16px;box-shadow:var(--edge),var(--soft)}
+#nextRod small{color:var(--brass2);letter-spacing:.12em}#nextRod b{font:700 15px/1.15 var(--serif)}#nextRod:hover{background:var(--panel2)}
+#compassStrip span{color:var(--ink)}#compassStrip span.c{color:var(--brass2)}#compassStrip span.t{color:var(--ink3)}
+/* rod and bait: brass medallions */
+#hotbar{gap:16px;align-items:flex-end}
+#hotbar .hs{width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 50% 30%,rgba(26,70,80,.97),rgba(8,28,34,.97));box-shadow:0 0 0 2px rgba(231,190,112,.62),0 0 0 6px rgba(6,20,24,.32),var(--soft);backdrop-filter:none;padding-top:4px}
+#hotbar .hs svg{width:28px;height:28px;margin-bottom:2px;color:var(--brass2)}
+#hotbar .hs b{max-width:68px;font:800 11px/1.1 var(--hud);color:var(--ink);text-shadow:none}
+#hotbar .hs small{max-width:68px;font:700 9.5px/1.1 var(--hud);color:var(--teal2);text-shadow:none}
+#hotbar .hs .k{top:-9px;left:50%;transform:translateX(-50%);padding:0 7px;border-radius:9px;background:linear-gradient(#f4d593,#c99238);color:#2b1c06;font:900 10.5px/17px var(--hud);text-shadow:none}
+#hotbar .hs .q{top:auto;bottom:-7px;right:50%;transform:translateX(50%);padding:0 6px;border-radius:8px;background:#0b2c34;color:var(--gold2);box-shadow:inset 0 0 0 1px rgba(231,190,112,.5);font:800 10px/15px var(--hud);text-shadow:none}
+#hotbar .hs:hover{filter:brightness(1.15)}#hotbar .hs.crate{box-shadow:0 0 0 2px var(--teal2),0 0 0 6px rgba(6,20,24,.32),var(--soft)}
+/* menus: logbook tabs on the right edge that slide out on hover */
+#tabs{position:fixed;z-index:10;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;pointer-events:none}
+#tabs .hs{pointer-events:auto;position:relative;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;width:176px;height:48px;padding:0 14px;border:0;border-radius:16px 0 0 16px;background:var(--panel);box-shadow:var(--edge),var(--soft);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--ink);transform:translateX(112px);transition:transform .22s cubic-bezier(.2,.9,.3,1),background .2s;cursor:pointer;text-align:left}
+#tabs .hs:hover,#tabs .hs:focus-visible{transform:translateX(0);background:var(--panel2);outline:none}
+#tabs .hs svg{flex:none;width:22px;height:22px;margin:0;color:var(--brass2);filter:none}
+#tabs .hs .k{position:static;order:-1;flex:none;width:18px;height:18px;border-radius:5px;background:rgba(231,190,112,.18);color:var(--brass2);font:900 10.5px/18px var(--hud);text-align:center;text-shadow:none}
+#tabs .hs b{display:block;width:auto;max-width:none;font:800 13px/1.1 var(--hud);color:var(--ink);text-shadow:none}
+#tabs .hs small{display:block;width:auto;max-width:64px;margin-left:auto;font:700 10.5px/1 var(--hud);color:var(--teal2);text-shadow:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tabs .hs .q{position:absolute;top:5px;left:30px;color:var(--gold2);font:900 10px var(--hud);text-shadow:none}
+body:not(.desk) #tabs{right:auto;left:calc(8px + env(safe-area-inset-left,0px))}
+body:not(.desk) #tabs .hs{width:44px;height:44px;padding:0;justify-content:center;border-radius:50%;transform:none}
+body:not(.desk) #tabs .hs b,body:not(.desk) #tabs .hs small,body:not(.desk) #tabs .hs .k{display:none}
+/* panels, cards and buttons */
+#panel{border-radius:20px;background:var(--panel2);box-shadow:var(--edge),0 28px 70px -24px rgba(0,0,0,.75)}
+#pTitle{font:700 24px/1.15 var(--serif);color:var(--ink);letter-spacing:.01em}#pSub{color:var(--brass2)}
+.card{background:rgba(255,255,255,.045);border:0;box-shadow:inset 0 0 0 1px var(--line);border-radius:12px}
+.btn{border-radius:10px;font:800 14px var(--hud);letter-spacing:.01em;background:linear-gradient(#f2cf86,#c99238);color:#2b1c06;box-shadow:0 2px 0 rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.4);text-shadow:none}
+.btn.mint{background:linear-gradient(#5fcfbd,#2a9888);color:#fff}.btn.sky{background:linear-gradient(#5aa6d8,#2f74a8);color:#fff}
+.btn.rose{background:linear-gradient(#e47a6c,#b6493c);color:#fff}.btn.lav{background:linear-gradient(#a58ad8,#6f55a8);color:#fff}
+.btn.ghost{background:rgba(255,255,255,.08);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.sm{font-size:13px}.btn.lg{font-size:16px}
+.toast{border-radius:12px;background:var(--panel);box-shadow:var(--edge),var(--soft);font:700 13.5px/1.35 var(--hud)}
+.toast.gold{color:var(--gold2);box-shadow:inset 0 0 0 1.5px rgba(231,190,112,.7),var(--soft)}
+#eventBan{border-radius:999px;background:var(--panel);box-shadow:var(--edge),var(--soft);font:700 15px/1.2 var(--serif)}
+#zoneBan{font:700 clamp(40px,6vw,64px)/1 var(--serif);letter-spacing:.01em;text-transform:none}
+#prompt{border-radius:999px;background:var(--panel);box-shadow:var(--edge),var(--soft);font:800 14px var(--hud)}
+#prompt kbd{background:linear-gradient(#f2cf86,#c99238);color:#2b1c06}
+#power{border-radius:14px;background:var(--panel);box-shadow:var(--edge),var(--soft)}
+#reel{border-radius:18px;background:var(--panel2);box-shadow:var(--edge),var(--soft)}
+#chatLog{background:rgba(9,32,38,.5);border-radius:14px}
+#chatIn{border-radius:999px;background:rgba(9,32,38,.78);box-shadow:var(--edge);color:var(--ink)}
+#chatSend{background:linear-gradient(#f2cf86,#c99238);color:#2b1c06}
+#photoBar{border-radius:16px;background:var(--panel);box-shadow:var(--edge),var(--soft)}
+/* loading screen and main menu */
+#loading .ld h1{font:700 clamp(40px,6vw,64px)/1 var(--serif);letter-spacing:.01em}
+#loading .bar{background:rgba(255,255,255,.14)}#loading .bar i{background:linear-gradient(90deg,#c99238,#f4d593)}
+.mm-title h1{font:700 clamp(50px,6.6vw,88px)/.95 var(--serif);letter-spacing:.005em}
+.mm-title p{font:600 clamp(13px,1.2vw,16px) var(--hud);letter-spacing:.34em;color:var(--brass2)}
+.mm-nav button{font:700 clamp(19px,1.8vw,24px)/1.3 var(--serif)}
+.mm-nav button:hover,.mm-nav button:focus-visible,.mm-nav button.sel{color:var(--brass2)}
+@media (max-width:640px){.xpring{width:120px;height:120px;padding:5px}.xpring .mm{width:110px;height:110px}.ledger{min-width:150px;padding:8px 11px}.coins{font-size:19px}#mmZone{font-size:14px;max-width:150px}
+ #hotbar .hs{width:64px;height:64px}#hotbar .hs small{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -671,8 +777,22 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
 <div id="loading"><div class="ld"><h1>Driftwood Isles</h1><div class="bar"><i id="ldFill"></i></div><small id="ldMsg">Loading the islands…</small></div></div>
 
 <div class="hud" id="tl">
-  <div class="mm" id="mmBtn" title="Map (M)"><canvas id="minimap" width="336" height="336"></canvas><span class="n">N</span></div>
-  <span id="mmZone">Pebble Cove</span>
+  <div class="navcl">
+    <div class="xpring" id="xpRing" title="Level progress">
+      <div class="mm" id="mmBtn" title="Map (M)"><canvas id="minimap" width="336" height="336"></canvas><span class="n">N</span></div>
+      <span id="lvlNum">1</span>
+    </div>
+    <div class="ledger">
+      <span id="mmZone">Pebble Cove</span>
+      <div id="wallet">
+        <div class="coins"><i class="coinI" aria-hidden="true"></i><span id="coinTxt">0</span></div>
+        <div class="lvrow"><span id="lvlTxt">Level 1</span><span id="relicTxt"></span></div>
+        <div class="xpline"><i id="xpFill"></i></div>
+        <span id="xpTxt" hidden></span>
+      </div>
+      <div class="clock" id="stIcons"><span id="stExtra"></span><span id="clockIco"></span><span id="clockTxt">06:00</span><small id="wxTxt">Clear</small></div>
+    </div>
+  </div>
   <div id="buffBar"></div>
 </div>
 <div class="hud" id="tc">
@@ -690,15 +810,7 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
 </div>
 <div class="hud" id="derbyWrap"><div id="derbyHud" hidden></div></div>
 <div class="hud" id="nrWrap"><button id="nextRod" type="button" hidden aria-label="Next rod"></button></div>
-<div class="hud" id="br">
-  <div class="clock" id="stIcons"><span id="stExtra"></span><span id="clockIco"></span><span id="clockTxt">06:00</span><small id="wxTxt">Clear</small></div>
-  <div id="wallet">
-   <div id="lvlTxt">Level 1</div>
-   <div class="xpline"><i id="xpFill"></i></div>
-   <div class="coins"><span id="coinTxt">0</span><span class="cur">c</span></div>
-   <span id="relicTxt"></span><span id="lvlNum" hidden></span><span id="xpTxt" hidden></span>
-  </div>
-</div>
+<div class="hud" id="br"></div>
 <div class="hud" id="bottom">
   <div id="power" hidden><div class="pl"><span>Cast power</span><span id="powTxt">0%</span></div><div class="pb"><i id="powFill"></i></div></div>
   <div id="prompt" hidden></div>
@@ -706,13 +818,15 @@ input[type=range]::-webkit-slider-thumb{width:20px;height:20px;margin-top:-6px;b
   <div id="hotbar">
     <button class="hs" id="hbRod" data-k="1"><span class="k">1</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 20 19 5"/><path d="M19 5v9"/><circle cx="19" cy="15.5" r="1.4"/><circle cx="7" cy="17" r="2.2"/></svg><b id="hbRodN">Rod</b><small id="hbRodS"></small></button>
     <button class="hs" id="hbBait" data-k="2"><span class="k">2</span><span class="q" id="hbBaitQ"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v7a4 4 0 1 1-4 4"/><circle cx="12" cy="3" r="1"/></svg><b id="hbBaitN">Bait</b><small id="hbBaitS"></small></button>
-    <button class="hs" id="bagBtn" data-k="3"><span class="k">3</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8.5h13l-1 11.5h-11z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/></svg><b>Backpack</b><small id="hbBagS">0/20</small></button>
-    <button class="hs" id="dexBtn" data-k="4"><span class="k">4</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5z"/><path d="M12 6.5v13"/></svg><b>Bestiary</b><small id="hbDexS">0</small></button>
+  </div>
+</div>
+<div class="hud" id="tabs">
+    <button class="hs" id="bagBtn" data-k="3"><span class="k">3</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 8.5h13l-1 11.5h-11z"/><path d="M9 8.5V7a3 3 0 0 1 6 0v1.5"/></svg><b>Creel</b><small id="hbBagS">0/20</small></button>
+    <button class="hs" id="dexBtn" data-k="4"><span class="k">4</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5z"/><path d="M12 6.5v13"/></svg><b>Journal</b><small id="hbDexS">0</small></button>
     <button class="hs" id="questBtn" data-k="5"><span class="k">5</span><span class="q" id="hbQuestQ"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg><b>Quests</b><small id="hbQuestS">None</small></button>
     <button class="hs" id="emoteBtn" data-k="6"><span class="k">6</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 14.5c1 1.4 2.1 2 3.5 2s2.5-.6 3.5-2"/><path d="M9 9.5h.01M15 9.5h.01" stroke-width="3"/></svg><b>Emotes</b><small>Wave · dance</small></button>
     <button class="hs" id="statBtn" data-k="7"><span class="k">7</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 20V11M10 20V5M15 20v-7M20 20V8"/></svg><b>Stats</b><small>Buffs</small></button>
     <button class="hs" id="mapBtn" data-k="8"><span class="k">8</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13M15 6.5v13"/></svg><b>Map</b><small id="hbMapS">Isles</small></button>
-  </div>
 </div>
 <div class="hud" id="ctrls">
   <div class="col">

@@ -474,7 +474,7 @@ function woodSignTex(text){const c=document.createElement('canvas');c.width=512;
  x.strokeStyle='rgba(0,0,0,.25)';x.lineWidth=2;for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,i*32+((i*13)%7));x.lineTo(512,i*32-((i*7)%5));x.stroke();}x.strokeStyle='#3a2414';x.lineWidth=10;x.strokeRect(5,5,502,118);
  x.font='700 58px Fraunces, Georgia, serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='rgba(0,0,0,.35)';x.fillText(text,258,70);x.fillStyle='#f3e2b8';x.fillText(text,256,66);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;}
 function woodSign(text,w,h){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:woodSignTex(text),roughness:.85}));m.castShadow=true;return m;}
-const STALL_SIGN={merchant:'Fish Market',rods:'Tackle & Rods',appraiser:'Appraiser',buffs:'Apothecary'};
+const STALL_SIGN={merchant:'Fish Market',rods:'Tackle & Rods',appraiser:'Weighmaster',buffs:'Apothecary'};
 function marketStall(sb,gl,x,y,z,ry,role,col){const W=4.6,D=2.6,P=new THREE.Matrix4().compose(V(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,ry,0)),V(1,1,1)),c=Math.cos(ry),s=Math.sin(ry);
  const wp=(lx,lz)=>({x:x+lx*c+lz*s,z:z-lx*s+lz*c});const A=(geo,color,lx,ly,lz,sx,sy,sz,rx=0,rry=0,rz=0)=>sb.add(geo,color,lx,ly,lz,sx,sy,sz,rx,rry,rz,P);
  sb.M(TL.wood);A(G.box,'#7a5a3a',0,.08,0,W+.5,.16,D+.6);for(let i=0;i<7;i++)A(G.box,i%2?'#86643f':'#72532f',-W/2-.1+(i+.5)*(W+.2)/7,.17,0,(W+.2)/7-.04,.03,D+.5);
@@ -659,7 +659,7 @@ function buildWorld(){LEAFK=TT().leaf;
    for(let i=0;i<4;i++){const a=i/4*TAU+.4;sb.add(G.box,'#76767e',I.x+Math.cos(a)*2.5,ay+1.5,I.z+Math.sin(a)*2.5,.6,3,.6,0,a);lv.add(G.oct,'#c8a8ff',I.x+Math.cos(a)*2.5,ay+3.3,I.z+Math.sin(a)*2.5,.3,.45,.3);}sb.M(0);
    const cr=new THREE.Mesh(new THREE.OctahedronGeometry(.9,0),new THREE.MeshStandardMaterial({color:'#c4a0ff',emissive:'#8a4aff',emissiveIntensity:2.2,flatShading:true,roughness:.2}));cr.scale.y=1.5;cr.position.set(I.x,ay+3.2,I.z);scene.add(cr);world.altarCrystal=cr;world.altarY=ay+3.2;
    halo(I.x,ay+3.2,I.z,7,0xc8a8ff).userData.always=true;world.colliders.push({x:I.x,z:I.z,r:2.6});reserved.push({x:I.x,z:I.z,r:7});
-   world.inter.push({x:I.x,z:I.z,r:4.8,label:'Use the Tide Altar',kind:'Use',act:()=>openAltar()});}
+   world.inter.push({x:I.x,z:I.z,r:4.8,label:'Use the Runestone',kind:'Use',act:()=>openAltar()});}
   if(I.volcano){world.colliders.push({x:I.x,z:I.z,r:I.R*.3});const cy=groundH(I.x,I.z);lv.add(G.cyl12,'#ff6a1a',I.x,cy+.6,I.z,I.R*.07,.2,I.R*.07);world.volcano={x:I.x,y:cy+3,z:I.z};}
   for(const p of I.ponds){reserved.push({x:p.x,z:p.z,r:p.r*1.7});const N=key==='frost'?0:22;fb.M(TL.leaf);fb.sw={a:.6,b:0,h:2};for(let i=0;i<N;i++){const a=i/N*TAU+r()*.2,d=p.r*(1.05+r()*.25),x=p.x+Math.cos(a)*d,z=p.z+Math.sin(a)*d,y=groundH(x,z);if(y<0)continue;for(let k=0;k<3;k++)fb.add(G.cyl,key==='ember'?'#6a5a40':'#6f7f48',x+(k-1)*.2,y+.6+k*.12,z,.03,1.2+k*.3,.03);}fb.sw=null;
    if(key==='petal'){sb.M(TL.wood);const bx=p.x,bz=p.z,ba=r()*TAU,bl=p.r*2.3;for(let u=-bl/2;u<=bl/2;u+=.45){const hy=p.y+.35+Math.cos(u/bl*Math.PI)*1.1;sb.add(G.box,'#b8402e',bx+Math.cos(ba)*u,hy,bz+Math.sin(ba)*u,.42,.1,1.6,0,-ba,0);}
@@ -736,7 +736,7 @@ function buildWorld(){LEAFK=TT().leaf;
    for(let i=0;i<6;i++){const a=r()*TAU,d=I.R*(.25+r()*.5),x=I.x+Math.cos(a)*d,z=I.z+Math.sin(a)*d;floatRock(sb,gl,x,groundH(x,z)+9+r()*7,z,.8+r()*.8,r);}
    {const cy=groundH(I.x,I.z);gemCluster(sb,gl,I.x,cy-.4,I.z,3.2,'#b08aff',r);halo(I.x,cy+4,I.z,9,0xb8a0ff).userData.always=true;world.colliders.push({x:I.x,z:I.z,r:3});reserved.push({x:I.x,z:I.z,r:8});}}
   if(I.cave){/* the caves under the sea, all linked by tunnels: the Drowned Hollow (teal), the Kelp Cathedral (green and gold),
-     the Sunken Ruins (moonlit blue) and the Sunless Deep (violet and ember). A smooth domed ceiling speckled with glowworms,
+     the Sunken Ruins (moonlit blue) and the Lightless Trench (violet and ember). A smooth domed ceiling speckled with glowworms,
      shafts of light through cracks, glowing moss and crystals that light the room */
    const CV={hollow:{gems:['#3ae8d0','#5aa8ff','#8a6aff','#3affa0'],caps:['#2ab8a8','#3a6ad8','#7a4ad8'],hc:0x5affe0,moss:['#0c3a32','#0e3240','#123a28'],dome:'#3a4e56',emis:'#061a1e',stal:'#46585e',worm:'#9afff0',shaft:'#c8fff4',rk:'#4e626a',rm:'#2f8a7a'},
     abyss:{gems:['#b06aff','#ff4ad8','#7a5aff','#ff6a3a'],caps:['#8a2a6a','#4a2a8a','#a83a3a'],hc:0xc070ff,moss:['#3a0e30','#2a1040','#401010'],dome:'#3a2a36',emis:'#120610',stal:'#3a2a34',worm:'#d8a0ff',shaft:'#ffb0ff',rk:'#4a3644',rm:'#6a2a7a'},
@@ -784,9 +784,9 @@ function buildWorld(){LEAFK=TT().leaf;
     const tg=tagSprite(null,label.replace(/^(Swim back to|Swim back up to|Back to|Tunnel to|Passage to|Descend to) /,''),kind,col);tg.position.set(ex,ey+3.9,ez);tg.scale.multiplyScalar(.8);scene.add(tg);(world.caveTags=world.caveTags||[]).push({tg,x:ex,z:ez});
     for(const s of[-1,1]){const px=ex+Math.cos(ring.rotation.y)*s*2.1,pz=ez-Math.sin(ring.rotation.y)*s*2.1;world.colliders.push({x:px,z:pz,r:.3});}return{x:ex,z:ez};};
    const go=k=>()=>{if(typeof goCave==='function')goCave(k);};
-   if(key==='hollow'){ringA(.12,0,'Swim back to the surface','Surface',()=>{if(typeof surfaceFromHollow==='function')surfaceFromHollow();},'#7ae8ff');ringA(.88,0,'Descend to the Sunless Deep','Descend',()=>{if(typeof tryDescend==='function')tryDescend();},'#c070ff');ringA(.55,1.9,'Tunnel to the Kelp Cathedral','Tunnel',go('kelp'),'#c8f05a');}
+   if(key==='hollow'){ringA(.12,0,'Swim back to the surface','Surface',()=>{if(typeof surfaceFromHollow==='function')surfaceFromHollow();},'#7ae8ff');ringA(.88,0,'Descend to the Lightless Trench','Descend',()=>{if(typeof tryDescend==='function')tryDescend();},'#c070ff');ringA(.55,1.9,'Tunnel to the Kelp Cathedral','Tunnel',go('kelp'),'#c8f05a');}
    else if(key==='kelp'){ringA(.12,0,'Back to the Drowned Hollow','Tunnel',go('hollow'),'#7ae8ff');ringA(.7,-1.7,'Tunnel to the Sunken Ruins','Tunnel',()=>{if(typeof tryRuins==='function')tryRuins();},'#9ab8ff');}
-   else if(key==='ruins'){ringA(.12,0,'Back to the Kelp Cathedral','Tunnel',go('kelp'),'#c8f05a');ringA(.7,1.7,'Passage to the Sunless Deep','Passage',()=>{if(typeof tryRuinsDeep==='function')tryRuinsDeep();},'#c070ff');}
+   else if(key==='ruins'){ringA(.12,0,'Back to the Kelp Cathedral','Tunnel',go('kelp'),'#c8f05a');ringA(.7,1.7,'Passage to the Lightless Trench','Passage',()=>{if(typeof tryRuinsDeep==='function')tryRuinsDeep();},'#c070ff');}
    else{ringA(.12,0,'Swim back up to the Drowned Hollow','Up',()=>{if(typeof toHollow==='function')toHollow();},'#7ae8ff');ringA(.7,-1.7,'Passage to the Sunken Ruins','Passage',go('ruins'),'#9ab8ff');}}
   if(key==='petal'){place(28,.1,.66,(x,y,z)=>{const s=.85+r()*.5;blossomTree(sb,fb,x,y,z,s,r);world.colliders.push({x,z,r:.5*s});});
    place(8,.2,.6,(x,y,z)=>{const s=.9+r()*.3;pine(sb,fb,x,y,z,s,false,r);world.colliders.push({x,z,r:.6*s});});

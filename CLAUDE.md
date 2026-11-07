@@ -1,7 +1,7 @@
 # Driftwood Isles: project guide for Claude
 
-Driftwood Isles is a 3D multiplayer fishing game by Cam (GitHub: Cam54329). It's grindy and has original
-content. Roblox "Fisch" is fine as inspiration, but never copy its names, assets or art. Cam plays on a
+Driftwood Isles is a 3D multiplayer fishing game by Cam (GitHub: Cam54329). It's grindy and everything in it is
+original: never imitate another game's names, UI layout, art, terms or signature mechanics. Cam plays on a
 **Mac in Google Chrome**, so optimise for that.
 
 ## Where it lives
@@ -42,7 +42,7 @@ content. Roblox "Fisch" is fine as inspiration, but never copy its names, assets
 - Don't put model names or identifiers in commits.
 - Cam's workflow: **do one phase, redeploy, give the main domain link, then stop so Cam can test.**
 
-## Status and plan (last release: 7.0)
+## Status and plan (last release: 8.0)
 
 - Phase 1, performance (5.2): done.
 - Phase 2, graphics (6.0): done.
@@ -57,6 +57,16 @@ content. Roblox "Fisch" is fine as inspiration, but never copy its names, assets
   - Contact shading is baked into terrain colours (`aoSpot` / `applyContactAO`).
   - Grass is one InstancedMesh per island, coloured from the ground and culled by distance (`GRASSU.uGF`, tier `gf`).
   - NPCs use `makeAngler(npcLook(n))`.
+- 8.0 Launch Edition: done.
+  - Original "Driftwood Ledger" UI: the map has a brass XP ring (`#xpRing`, `--xp`) beside a ledger card; rod and bait
+    are brass medallions; the menus are logbook tabs in `#tabs` on the right edge. Theme tokens are in the last CSS block.
+  - Storm fronts with twisters replace the old whirlpools (di-extra: `activeWells`, `updateWells`, `twisterLift`).
+    Internal ids still say `well`.
+  - Display-only renames (save keys unchanged):
+    - Sea Glass (`state.relics`), Runes / Runestone (`ench`), Variants (`MUTS`).
+    - Journal, Creel, Weighmaster (role `appraiser`).
+    - Rarities Fabled / Starborn / Hidden.
+  - `cleanText` masks bad words for every name and chat line.
 - Phase 3, features: next.
   - Fishing quests and daily challenges.
   - Aquarium / trophy room.

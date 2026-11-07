@@ -76,7 +76,7 @@ for a group of friends. Each player sends a small update about five times a seco
 
 ## Owner tools: the dev bar and clearing chat for everyone
 
-The dev bar (coins, levels, unlocks, teleport, time, weather, events, Tide Wells) and **Clear chat for everyone**
+The dev bar (coins, levels, unlocks, teleport, time, weather, events, storm fronts) and **Clear chat for everyone**
 only unlock for the server owner. Your Firebase database checks a secret owner code that only you know. The code
 is never stored in this repository, so it stays secret even though the repository is public.
 
@@ -84,7 +84,7 @@ One-time setup:
 
 1. Paste the latest `database.rules.json` into **Realtime Database → Rules** and click **Publish**.
 2. Open **Realtime Database → Data**. Hover the top line (the database name), click **+**, and add:
-   - Key: `config`, then click **+** on `config` and add Key: `devCode`, Value: a secret word of your choice (for example `kraken-2041`).
+   - Key: `config`, then click **+** on `config` and add Key: `devCode`, Value: a secret word of your choice (for example `driftwood-2041`).
    - Click **Add**.
 3. In the game, open **Settings → Developer**, type the same code and press **Unlock**.
 
