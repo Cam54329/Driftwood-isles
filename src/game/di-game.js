@@ -159,6 +159,7 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  /* the water shader shapes shorelines for the five nearest islands only */
  {const ws=LANDS.map(k=>{const I=ZONES[k];return[Math.hypot(cp.x-I.x,cp.z-I.z)-I.R,I];}).sort((a,b)=>a[0]-b[0]);for(let i=0;i<WATER_NI;i++){const I=ws[i][1];waterU.uIsl.value[i].set(I.x,I.z,I.R,I.p1);waterU.uIsl2.value[i].set(I.p2,0);waterU.uSand.value[i].set(I.sand);}}
  /* skip whole islands that are lost in the fog, and caves unless you are inside them */
+ {const gf=GRASSU.uGF.value;for(const m of grassMeshes.concat(flowerMeshes)){const I=m.userData.I;if(!I)continue;const on=m.userData.on!==false&&Math.hypot(cp.x-I.x,cp.z-I.z)-I.R*1.05<gf;if(m.visible!==on)m.visible=on;}}
  {const ff=scene.fog.far+70;for(const g of world.islGroups){const d=Math.hypot(cp.x-g.I.x,cp.z-g.I.z),on=g.I.cave?d<g.I.R*2.4:d-g.I.R*1.6<ff;if(g.grp.visible!==on)g.grp.visible=on;}}
  if(world.haloPts){const u=world.haloPts.material.uniforms;u.uNight.value=nightK;u.uCave.value=0;u.uScale.value=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));}
  if(boat&&boat.g.userData.halo)boat.g.userData.halo.material.opacity=nightK*.55;
@@ -520,7 +521,7 @@ function updateBoat(dt){const T=WIND.uTime.value,p=boat.pos;if(boat.g.rotation.o
  const fx=Math.sin(boat.yaw),fz=Math.cos(boat.yaw);const pitch=(waveH(p.x+fx*2,p.z+fz*2,T)-waveH(p.x-fx*2,p.z-fz*2,T))/4;const roll=(waveH(p.x+fz,p.z-fx,T)-waveH(p.x-fz,p.z+fx,T))/2;
  boat.g.rotation.x=-pitch-boat.speed*.004;boat.g.rotation.z=roll;}
 function updateNPCs(dt){for(const n of world.npcs){const d=Math.hypot(player.pos.x-n.x,player.pos.z-n.z);const R=n.rig.root,cd=camera.position.distanceTo(R.position);if(cd>170){R.visible=false;continue;}R.visible=true;
- if(n.imp===undefined){n.imp=bakeMeshes(n.rig.body)||null;if(n.imp){n.imp.visible=false;n.rig.body.parent.add(n.imp);n.imp.position.copy(n.rig.body.position);n.imp.quaternion.copy(n.rig.body.quaternion);n.imp.scale.copy(n.rig.body.scale);}}
+ if(n.imp===undefined){n.imp=bakeMeshes(n.rig.body)||null;if(n.imp){if(n.rig.angler)n.imp.material=CHAR_MAT_LP;n.imp.visible=false;n.rig.body.parent.add(n.imp);n.imp.position.copy(n.rig.body.position);n.imp.quaternion.copy(n.rig.body.quaternion);n.imp.scale.copy(n.rig.body.scale);}}
  {const far=cd>30&&!!n.imp;if(n.imp){n.rig.body.visible=!far;n.imp.visible=far;}if(far){n.label.visible=false;continue;}}
  const tgt=d<9?Math.atan2(player.pos.x-n.x,player.pos.z-n.z):n.face;R.rotation.y+=angDiff(R.rotation.y,tgt)*(1-Math.exp(-4*dt));
  if(d<6&&!n.waved){n.waved=true;n.waveT=0;}if(d>12)n.waved=false;if(n.waveT!=null){n.waveT+=dt;if(n.waveT>2.4)n.waveT=null;}

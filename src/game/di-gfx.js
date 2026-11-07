@@ -20,7 +20,7 @@ const sstep=(a,b,x)=>{const t=Math.min(Math.max((x-a)/(b-a),0),1);return t*t*(3-
 const TL={plain:0,sand:1,grass:2,rock:3,wood:4,bark:5,roof:6,siding:7,metal:8,snow:9,cloth:10,cobble:11,dirt:12,ice:13,paint:14,thatch:15,leaf:16};
 const TL_N=17;
 //            metres per tile, metalness, normal strength
-const TLP=[[2,0,1],[2.6,0,1.1],[2.2,0,1.2],[3.2,0,2.2],[1.7,0,1.6],[1.3,0,2.4],[2,0,2],[2.2,0,1.6],[1.4,.6,.5],[4,0,.8],[.55,0,1.1],[2.4,0,2.2],[2.8,0,1.6],[4,0,.5],[2,0,1],[1.4,0,2],[1.1,0,2.6]];
+const TLP=[[2,0,1],[2.6,0,1.1],[2.2,0,1.2],[3.2,0,2.2],[1.7,0,1.6],[1.3,0,2.4],[2,0,2],[2.2,0,1.6],[1.4,.6,.5],[4,0,.8],[.55,0,1.1],[2.4,0,2.2],[2.8,0,1.6],[4,0,.5],[2,0,1],[1.4,0,2],[.5,0,2.6]];
 const LAYER_GEN=[
  (u,v)=>{const n=fbmT(u,v,6,4,11);return [n*.3,.5*(.94+.12*n),.5*(.94+.12*n),.5*(.94+.12*n),.78-.1*n];},                           // plain
  (u,v,g)=>{const w=fbmT(u,v,3,3,12),rip=Math.sin((v*6+w*1.3+fbmT(u,v,4,2,14)*.4)*Math.PI*2)*.5+.5,n=fbmT(u,v,16,3,13);           // sand
@@ -104,7 +104,7 @@ uniform sampler2DArray uAlb;uniform sampler2DArray uNrm;uniform float uTexScale[
 mat3 dwTBN(vec3 eye,vec3 N,vec2 uv){vec3 q0=dFdx(eye),q1=dFdy(eye);vec2 s0=dFdx(uv),s1=dFdy(uv);vec3 q1p=cross(q1,N),q0p=cross(N,q0);vec3 T=q1p*s0.x+q0p*s1.x,B=q1p*s0.y+q0p*s1.y;float det=max(dot(T,T),dot(B,B));float sc=det==0.?0.:inversesqrt(det);return mat3(T*sc,B*sc,N);}
 `;
 /* world material: vertex colour tint × triplanar PBR layer chosen per vertex ("mat" attribute) */
-function makeWorldMat(o={}){const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:1,side:o.side||THREE.FrontSide,flatShading:true});
+function makeWorldMat(o={}){const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:1,side:o.side||THREE.FrontSide,flatShading:!o.smooth});
  m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,WU);
   sh.vertexShader=`attribute float mat;attribute vec3 tp;${o.sway?'attribute float sway;uniform float uTime;uniform float uWind;':''}
 flat varying float vMat;varying vec3 vTp;varying float vUpW;varying vec3 vWPw;
@@ -114,6 +114,7 @@ ${o.sway?'{vec3 wp=(modelMatrix*vec4(position,1.)).xyz;float ph=uTime*1.5+wp.x*.
   sh.fragmentShader=GLSL_TRI_PARS+GLSL_CLOUDSH+`uniform vec3 uSunDirW;uniform vec3 uSunColW;flat varying float vMat;varying vec3 vTp;varying float vUpW;varying vec3 vWPw;
 `+sh.fragmentShader.replace('#include <lights_fragment_begin>',LIGHTS_CSH).replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>
 float dwCSh=dwCloud(vWPw);
+${o.fade?'{float fcd=length(vWPw-cameraPosition);if(fcd<3.4){float fth=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))));if(fth>(fcd-1.3)/2.1)discard;}}':''}
 int dwL=int(vMat+.5);float dwS=uTexScale[dwL];vec3 dwP=vTp*dwS;
 vec3 dwTc=cross(dFdx(vTp),dFdy(vTp));float dwTl=length(dwTc);vec3 dwTn=dwTl>1e-10?dwTc/dwTl:vec3(0.,1.,0.);vec3 dwW=pow(abs(dwTn),vec3(4.));dwW/=(dwW.x+dwW.y+dwW.z+1e-5);
 vec4 dwAx=texture(uAlb,vec3(dwP.zy,float(dwL))),dwAy=texture(uAlb,vec3(dwP.xz,float(dwL))),dwAz=texture(uAlb,vec3(dwP.xy,float(dwL)));
@@ -132,7 +133,7 @@ diffuseColor.rgb*=mix(vec3(1.),dwA.rgb*2.*(.82+.36*dwMac),uDetail);diffuseColor.
 reflectedLight.indirectDiffuse*=dwB.a;reflectedLight.indirectSpecular*=mix(1.,dwB.a,.6);`)
   .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
 ${o.sway?'{vec3 vd=normalize(vWPw-cameraPosition);float tr=pow(max(dot(vd,uSunDirW),0.),5.);totalEmissiveRadiance+=diffuseColor.rgb*uSunColW*tr*.9;}':''}`);};
- m.customProgramCacheKey=()=>'dwWorld'+(o.sway?'S':'')+(o.side||0);return m;}
+ m.customProgramCacheKey=()=>'dwWorld'+(o.sway?'S':'')+(o.smooth?'M':'')+(o.fade?'F':'')+(o.side||0);return m;}
 
 /* terrain: smooth mesh, splat weights per vertex (sand, ground, rock, dirt) blended by height */
 function makeTerrainMat(groundL,snowy){const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:0,flatShading:true});

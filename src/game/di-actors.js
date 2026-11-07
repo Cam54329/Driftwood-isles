@@ -93,7 +93,7 @@ function makeChar(L){const root=new THREE.Group(),body=new THREE.Group();root.ad
 const CHAR_MAT_LP=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8,metalness:0,flatShading:true});
 const LPG=(()=>{const lat=(pts,seg)=>new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])),seg);
  return{ico:new THREE.IcosahedronGeometry(1,1),ico0:new THREE.IcosahedronGeometry(1,0),sph:new THREE.SphereGeometry(1,8,6),dome:new THREE.SphereGeometry(1,8,4,0,TAU,0,Math.PI/2),
-  cyl:new THREE.CylinderGeometry(1,1,1,8),cyl6:new THREE.CylinderGeometry(1,1,1,6),tap:new THREE.CylinderGeometry(.8,1,1,8),tapU:new THREE.CylinderGeometry(1,.82,1,8),box:new THREE.BoxGeometry(1,1,1),
+  cyl:new THREE.CylinderGeometry(1,1,1,8),cyl6:new THREE.CylinderGeometry(1,1,1,6),ring:new THREE.TorusGeometry(1,.16,4,10),tap:new THREE.CylinderGeometry(.8,1,1,8),tapU:new THREE.CylinderGeometry(1,.82,1,8),box:new THREE.BoxGeometry(1,1,1),
   torso:lat([[0,0],[.38,0],[.41,.14],[.45,.36],[.47,.56],[.46,.72],[.43,.84],[.32,.93],[.16,.98],[0,.99]],8),
   shorts:lat([[0,0],[.38,0],[.4,.1],[.385,.26],[.34,.3],[0,.31]],8)};})();
 const HAIRS=['#2a1e18','#4a3020','#6a4426','#9a6a3a','#c8a060','#8a8784'];
@@ -113,11 +113,16 @@ function makeAngler(L){const root=new THREE.Group(),body=new THREE.Group();root.
  for(const s of[-1,1])mk(LPG.box,SHD,spine,s*.08,.8,.21,.16,.025,.12,.75,s*.35,-s*.35);
  mk(LPG.box,SHD,spine,0,.45,.37,.065,.64,.02,.05,0,0);for(let i=0;i<4;i++)mk(LPG.box,smat('#ece6da'),spine,0,.7-i*.16,.384,.026,.026,.012);
  mk(LPG.box,SHD,spine,-.29,.52,.35,.13,.13,.02,.08,-.35,0);mk(LPG.box,SHD,spine,-.29,.59,.357,.14,.028,.026,.08,-.35,0);
+ const top=L.top||'suspenders';
+ if(top==='vest'){const VE=smat(mixc(shirt,'#3a2e24',.68)),VED=smat(mixc(shirt,'#241c16',.8));mk(LPG.torso,VE,spine,0,-.05,0,1.15,.88,.84);mk(LPG.box,SH,spine,0,.45,.392,.17,.64,.02,.05,0,0);mk(LPG.box,SHD,spine,0,.45,.402,.06,.64,.02,.05,0,0);
+  for(let i=0;i<3;i++)mk(LPG.box,smat('#ece6da'),spine,0,.66-i*.17,.41,.026,.026,.012);for(const s of[-1,1]){mk(LPG.box,VED,spine,s*.12,.45,.398,.03,.64,.02,.05,0,0);mk(LPG.box,VED,spine,s*.27,.2,.37,.14,.1,.03,.1,s*.3,0);mk(LPG.box,GOLD,spine,s*.13,.32,.405,.03,.03,.012);}}
+ else if(top==='apron'){const AP=smat(L.apron||'#e6dcc6'),APD=smat(dk(L.apron||'#e6dcc6',.8));mk(LPG.box,AP,spine,0,.3,.375,.52,.66,.025,.08,0,0);mk(LPG.box,APD,spine,0,.12,.395,.3,.16,.02,.08,0,0);for(const s of[-1,1])mk(LPG.box,APD,spine,s*.17,.8,.25,.05,.3,.02,-.6,0,0);mk(LPG.box,APD,spine,0,-.03,0,.82,.05,.62);
+  mk(LPG.box,AP,hips,0,-.36,.34,.64,.6,.025,.06,0,0);}
  /* suspenders: up the front, over the shoulders and crossed at the back, with brass clips */
- for(const s of[-1,1]){mk(LPG.box,ST,spine,s*.18,.25,.36,.08,.54,.025,.1,0,s*.04);mk(LPG.box,ST,spine,s*.195,.66,.32,.08,.38,.025,-.4,0,s*.02);
+ if(top==='suspenders')for(const s of[-1,1]){mk(LPG.box,ST,spine,s*.18,.25,.36,.08,.54,.025,.1,0,s*.04);mk(LPG.box,ST,spine,s*.195,.66,.32,.08,.38,.025,-.4,0,s*.02);
   mk(LPG.box,ST,spine,s*.2,.86,0,.08,.025,.5);mk(LPG.box,GOLD,spine,s*.175,.02,.335,.095,.075,.03);
   mk(LPG.box,ST,spine,s*.1,.56,-.345,.075,.62,.025,-.1,0,-s*.3);}
- mk(LPG.box,ST,spine,0,.12,-.325,.08,.3,.025,.06,0,0);
+ if(top==='suspenders')mk(LPG.box,ST,spine,0,.12,-.325,.08,.3,.025,.06,0,0);
  /* neck and head */
  const neck=new THREE.Group();neck.position.y=.94;spine.add(neck);mk(LPG.cyl6,SK,neck,0,.04,0,.12,.14,.12);
  const head=new THREE.Group();head.position.y=.06;head.scale.setScalar(.62);neck.add(head);
@@ -125,14 +130,19 @@ function makeAngler(L){const root=new THREE.Group(),body=new THREE.Group();root.
  mk(LPG.ico,SKD,head,0,.5,.56,.11,.13,.12);for(const s of[-1,1])mk(LPG.sph,SK,head,s*.56,.55,0,.08,.13,.07,0,s*.3,0);
  const eyes=[];for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*.2,.63,.49);head.add(e);mk(LPG.sph,EYE,e,0,0,0,.062,.08,.04);mk(LPG.sph,smat('#f4f0e8','eye'),e,s*-.012,.024,.03,.018,.018,.01);eyes.push(e);
   mk(LPG.box,HR,head,s*.21,.76,.5,.18,.05,.07,0,0,s*.14);}
- const bd=L.beard||'none';const BD=smat(hairC,'hair');
+ const bd=L.beard||'none';const BD=smat(L.beardC||hairC,'hair');
  if(bd==='full'){mk(LPG.ico,BD,head,0,.3,.2,.5,.38,.42);for(const s of[-1,1])mk(LPG.ico,BD,head,s*.33,.44,.2,.18,.25,.24);mk(LPG.ico,BD,head,0,.42,.55,.2,.07,.09);mk(LPG.ico,BD,head,0,.16,.32,.26,.16,.22);}
  else if(bd==='short'){mk(LPG.ico,BD,head,0,.34,.17,.48,.3,.42);mk(LPG.ico,BD,head,0,.42,.55,.19,.06,.08);mk(LPG.box,smat('#7a3a30','skin'),head,0,.35,.6,.1,.025,.02);}
  else if(bd==='stubble'){mk(LPG.ico,smat(mixc(skin,hairC,.45),'skin'),head,0,.39,.1,.49,.36,.47);mk(LPG.box,smat('#7a3a30','skin'),head,0,.36,.57,.11,.025,.02);}
  else mk(LPG.box,smat('#7a3a30','skin'),head,0,.36,.55,.12,.028,.02);
  /* hair below the hat */
- const hat=L.hatType||'bucket',bare=hat==='none';mk(LPG.ico,HR,head,0,.62,-.17,.58,.56,.48);for(const s of[-1,1])mk(LPG.box,HR,head,s*.52,.56,.1,.08,.22,.14);
- if(bare||hat==='bandana'||hat==='beret'){mk(LPG.dome,HR,head,0,.66,-.04,.6,.55,.6,-.28,0,0);if(bare){mk(LPG.ico0,HR,head,.12,1.1,.3,.22,.12,.2,.3,0,.3);mk(LPG.ico0,HR,head,-.14,1.08,.32,.2,.1,.18,.3,0,-.3);}}
+ if(L.glasses){const GM=smat('#26262a','metal');for(const s of[-1,1])mk(LPG.ring,GM,head,s*.2,.63,.55,.12,.12,.12);mk(LPG.box,GM,head,0,.64,.56,.1,.022,.022);for(const s of[-1,1])mk(LPG.box,GM,head,s*.33,.65,.36,.022,.022,.36);}
+ const hat=L.hatType||'bucket',bare=hat==='none',hs=(L.hs|0)%4;mk(LPG.ico,HR,head,0,.62,-.17,.58,.56,.48);for(const s of[-1,1])mk(LPG.box,HR,head,s*.52,.56,.1,.08,.22,.14);
+ if(bare||hat==='bandana'||hat==='beret'){mk(LPG.dome,HR,head,0,.66,-.04,.6,.55,.6,-.28,0,0);
+  if(bare&&hs===0){mk(LPG.ico0,HR,head,.12,1.1,.3,.22,.12,.2,.3,0,.3);mk(LPG.ico0,HR,head,-.14,1.08,.32,.2,.1,.18,.3,0,-.3);}
+  else if(hs===1){mk(LPG.ico,HR,head,0,.42,-.66,.15,.36,.14,.45,0,0);mk(LPG.cyl6,smat(dk(shirt,.7)),head,0,.68,-.6,.09,.06,.09,.45,0,0);}
+  else if(hs===2)mk(LPG.ico,HR,head,0,1.12,-.3,.25,.22,.25);
+  else if(hs===3){mk(LPG.box,HR,head,0,.32,-.36,.66,.72,.26);for(const s of[-1,1])mk(LPG.box,HR,head,s*.5,.36,-.05,.1,.5,.3);}}
  const hk=hat==='beanie'?'knit':hat==='sunhat'?'straw':'cloth',HC=smat(hatc,hk),HCD=smat(dk(hatc,.68),hk);
  if(hat==='bucket'){mk(LPG.tap,HC,head,0,.9,0,1.02,.1,1.02);mk(LPG.tap,HC,head,0,1.13,0,.63,.42,.63);mk(LPG.dome,HC,head,0,1.33,0,.5,.13,.5);mk(LPG.cyl,HCD,head,0,1.,0,.645,.09,.645);}
  else if(hat==='cap'){mk(LPG.dome,HC,head,0,.76,-.02,.65,.56,.65);mk(LPG.box,HC,head,0,.8,.6,.5,.04,.36,-.1,0,0);mk(LPG.cyl6,HCD,head,0,1.31,-.02,.07,.04,.07);}
@@ -147,13 +157,19 @@ function makeAngler(L){const root=new THREE.Group(),body=new THREE.Group();root.
   const el=new THREE.Group();el.position.y=-.44;sh.add(el);mk(LPG.ico0,SK,el,0,0,0,.12,.12,.12);mk(LPG.tapU,SK,el,0,-.17,0,.118,.32,.118);
   const hand=new THREE.Group();hand.position.y=-.38;el.add(hand);mk(LPG.ico,SK,hand,0,-.04,0,.12,.135,.1);mk(LPG.sph,SK,hand,-s*.085,0,.045,.048,.075,.048,0,0,s*.6);return{sh,el,hand};};
  /* legs: shorts, bare knees, knee socks with a stripe, work boots */
- const leg=s=>{const hp=new THREE.Group();hp.position.set(s*.19,0,0);hips.add(hp);mk(LPG.tap,PA,hp,0,-.2,0,.235,.42,.235);mk(LPG.cyl,PAD,hp,0,-.41,0,.237,.04,.237);mk(LPG.cyl,SK,hp,0,-.54,0,.13,.26,.13);
+ const long=L.legs==='long';
+ const leg=s=>{const hp=new THREE.Group();hp.position.set(s*.19,0,0);hips.add(hp);if(long){mk(LPG.tap,PA,hp,0,-.33,0,.235,.7,.235);const kn=new THREE.Group();kn.position.y=-.66;hp.add(kn);mk(LPG.ico0,PA,kn,0,0,.01,.15,.14,.15);mk(LPG.tap,PA,kn,0,-.24,0,.18,.48,.18);mk(LPG.cyl,PAD,kn,0,-.47,0,.19,.05,.19);mk(LPG.cyl,BO,kn,0,-.6,0,.155,.18,.155);mk(LPG.ico,BO,kn,0,-.7,.08,.165,.11,.25);mk(LPG.box,SOLE,kn,0,-.785,.07,.22,.04,.37);mk(LPG.box,BOD,kn,0,-.66,.2,.13,.04,.06);return{hp,kn};}mk(LPG.tap,PA,hp,0,-.2,0,.235,.42,.235);mk(LPG.cyl,PAD,hp,0,-.41,0,.237,.04,.237);mk(LPG.cyl,SK,hp,0,-.54,0,.13,.26,.13);
   const kn=new THREE.Group();kn.position.y=-.66;hp.add(kn);mk(LPG.ico0,SK,kn,0,0,.01,.135,.13,.135);mk(LPG.cyl,SK,kn,0,-.07,0,.12,.14,.12);
   mk(LPG.tapU,SO,kn,0,-.31,0,.138,.38,.138);mk(LPG.cyl,SOS,kn,0,-.15,0,.141,.035,.141);mk(LPG.cyl,SOS,kn,0,-.205,0,.139,.02,.139);
   mk(LPG.cyl,BO,kn,0,-.58,0,.155,.2,.155);mk(LPG.cyl,BOD,kn,0,-.485,0,.165,.04,.165);mk(LPG.ico,BO,kn,0,-.7,.08,.165,.11,.25);mk(LPG.box,SOLE,kn,0,-.785,.07,.22,.04,.37);mk(LPG.box,BOD,kn,0,-.66,.2,.13,.04,.06);return{hp,kn};};
  const blob=new THREE.Mesh(BLOBG,BLOBM);blob.rotation.x=-Math.PI/2;blob.position.y=.05;blob.renderOrder=1;root.add(blob);
  const aL=arm(-1),aR=arm(1),lL=leg(-1),lR=leg(1);mergeRigGroups(vis,CHAR_MAT_LP);
  return{root,body,hips,spine,neck,head,eyes,blob,aL,aR,lL,lR,angler:true};}
+/* NPCs in the same hand-made style: their colours, hat, beard and glasses carry over; job decides the outfit */
+function npcLook(n){const L=n.look||{},h=hashStr(n.id||n.name||'x'),h2=hashStr((n.name||'y')+'!');
+ const top={merchant:'apron',shipwright:'apron',buffs:'apron',appraiser:'vest',casino:'vest',sage:'vest',altar:'vest'}[n.role]||'suspenders';
+ return{skin:L.skin,shirt:L.shirt,pants:L.pants,hat:L.hat,hatType:L.hatType,beard:L.beard?(h<.55?'full':'short'):(h2<.2?'stubble':'none'),beardC:L.beard||null,glasses:!!L.glasses,
+  legs:(n.role==='harbor'||n.role==='rods')&&h2<.6?'shorts':'long',top,apron:n.role==='shipwright'?'#6a4a32':n.role==='buffs'?'#cfe0d0':'#e6dcc6',hs:Math.floor(h2*4)};}
 function disposeRig(rig){if(!rig)return;rig.root.parent&&rig.root.parent.remove(rig.root);}
 
 class CharAnim{constructor(rig){this.r=rig;this.t=Math.random()*10;this.ph=0;this.blink=rand(1,4);this.blinkT=0;this.lookT=rand(2,5);this.look=0;this.c=null;this.lastStep=0;this.onStep=null;}

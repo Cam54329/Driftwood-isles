@@ -42,7 +42,7 @@ content. Roblox "Fisch" is fine as inspiration, but never copy its names, assets
 - Don't put model names or identifiers in commits.
 - Cam's workflow: **do one phase, redeploy, give the main domain link, then stop so Cam can test.**
 
-## Status and plan (last release: 6.0)
+## Status and plan (last release: 7.0)
 
 - Phase 1, performance (5.2): done.
 - Phase 2, graphics (6.0): done.
@@ -50,6 +50,13 @@ content. Roblox "Fisch" is fine as inspiration, but never copy its names, assets
   - Sky: lit clouds and cloud shadows, Milky Way, shooting stars.
   - Ocean: clear shallows with caustics, shore foam and a boat wake.
   - Spray particles, and focus blur in photo mode.
+- 7.0 Remaster: done.
+  - Foliage rebuilt: `canopy` / `roundTree` / `palm` / `pine` / `bush` in di-world. Foliage uses the smooth,
+    near-camera-fading world material `worldMatS`. `Builder.cn` gives soft canopy normals.
+  - Rocks are plane-cut (`cutRockGeo`), and cacti are ribbed.
+  - Contact shading is baked into terrain colours (`aoSpot` / `applyContactAO`).
+  - Grass is one InstancedMesh per island, coloured from the ground and culled by distance (`GRASSU.uGF`, tier `gf`).
+  - NPCs use `makeAngler(npcLook(n))`.
 - Phase 3, features: next.
   - Fishing quests and daily challenges.
   - Aquarium / trophy room.
