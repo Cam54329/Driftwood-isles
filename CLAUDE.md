@@ -42,7 +42,7 @@ original: never imitate another game's names, UI layout, art, terms or signature
 - Don't put model names or identifiers in commits.
 - Cam's workflow: **do one phase, redeploy, give the main domain link, then stop so Cam can test.**
 
-## Status and plan (last release: 8.0)
+## Status and plan (last release: 9.0)
 
 - Phase 1, performance (5.2): done.
 - Phase 2, graphics (6.0): done.
@@ -67,6 +67,13 @@ original: never imitate another game's names, UI layout, art, terms or signature
     - Journal, Creel, Weighmaster (role `appraiser`).
     - Rarities Fabled / Starborn / Hidden.
   - `cleanText` masks bad words for every name and chat line.
+- 9.0 Complete Edition: done.
+  - Legend's Path (di-extra: `LEGEND`, `openLegend`, `legendGoals`, `isleMarks`) sells the endgame trio:
+    - Isleheart Rod (`isleheart`, `req.legend`, deco `heart`).
+    - Starwake Clipper (`starwake`, model type `clipper`, glowing wake via `waterU.uWakeG`).
+    - Storm Petrel (`petrel`, built on the seaplane model, extra props in `userData.props`).
+  - Owning all three runs `startFinale`: fireworks (`FW`), the title Heart of the Isles and the `#finale` ending card.
+  - `state.playT` counts time at sea.
 - Phase 3, features: next.
   - Fishing quests and daily challenges.
   - Aquarium / trophy room.

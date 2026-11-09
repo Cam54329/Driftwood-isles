@@ -273,7 +273,7 @@ function openRodView(r){openPanel(r.n,rodState(r)==='buy'?fmt(r.price)+' coins':
 /* ================= ROD PATH: which rod to aim for next, and where it is sold ================= */
 const ROD_HOME={};for(const k in ROD_RACKS)for(const id of ROD_RACKS[k])ROD_HOME[id]=k;
 const NR={key:'',t:0,guide:null,beam:null,afford:null};
-const rodWhere=id=>{const h=ROD_HOME[id];return !h?'':ZONES[h].n;};
+const rodWhere=id=>{if(RODM[id]&&RODM[id].req&&RODM[id].req.legend)return "the Legend's Path";const h=ROD_HOME[id];return !h?'':ZONES[h].n;};
 function rodNeed(r){const l=rodLocked(r);if(l)return l;const h=ROD_HOME[r.id];if(h&&ISL.includes(h)&&!state.unlocked.includes(h))return 'Sold on '+ZONES[h].n+': buy its chart first';if(h&&!ISL.includes(h)&&!state.tips['cave_'+h]&&h!=='hollow')return 'Sold in '+ZONES[h].n;return null;}
 function rodPathList(){const out=[];for(const k of ISL.concat(['hollow','kelp','ruins']))for(const id of(ROD_RACKS[k]||[]).filter(i=>RODM[i]).sort((a,b)=>RODM[a].price-RODM[b].price))out.push(RODM[id]);return out;}
 function nextRodPick(){let best=0;for(const id of state.rods){const r=RODM[id];if(r&&r.luck>best)best=r.luck;}
@@ -287,7 +287,7 @@ function nextRodTick(dt){NR.t-=dt;if(NR.t>0)return;NR.t=.4;const el=document.get
   el.innerHTML=`<span class="nrI">${rodIcon(r)}</span><small>${ready?'Ready to buy':'Next rod'}</small><b>${esc(r.n)}</b><em>${esc(need||'Tackle & Rods · '+where)}</em><span class="nrBar"><i style="width:${(pct*100).toFixed(1)}%"></i><span>${need?'Locked':ready?'Go get it · '+fmt(r.price)+'c':fmt(state.coins)+' / '+fmt(r.price)+'c'}</span></span>`;}
  if(NR.afford===null)NR.afford=ready?r.id:'';else if(ready&&NR.afford!==r.id){NR.afford=r.id;toast(`You can afford the ${r.n}! It's on the rod rack at ${where}.`,'gold');AU.ui&&AU.ui();}else if(!ready)NR.afford='';}
 function openRodPath(){openPanel('Rod path','Every rod, island by island',()=>{panelCtx.kind='rodpath';const nx=nextRodPick(),all=rodPathList();const own=all.filter(r=>state.rods.includes(r.id)).length;
- let h=`<div class="rpTop"><div><b>${own} / ${all.length}</b><small>rods owned</small></div><div><b>+${RODM[state.rod].luck}%</b><small>luck now</small></div><div class="grow"></div><button class="btn sm ${state.settings.nextRod===false?'sky':'ghost'}" data-act="nrtog">${state.settings.nextRod===false?'Show tracker':'Hide tracker'}</button></div>`;
+ let h=`<div class="rpTop"><div><b>${own} / ${all.length}</b><small>rods owned</small></div><div><b>+${RODM[state.rod].luck}%</b><small>luck now</small></div><div class="grow"></div><button class="btn sm" data-act="legend">Legend's Path</button><button class="btn sm ${state.settings.nextRod===false?'sky':'ghost'}" data-act="nrtog">${state.settings.nextRod===false?'Show tracker':'Hide tracker'}</button></div>`;
  if(nx){const need=rodNeed(nx);h+=`<div class="card eq rpNext"><div class="row"><span class="nrI big">${rodIcon(nx)}</span><div class="grow"><small class="kick">Aim for next</small><h3>${esc(nx.n)}</h3><div class="muted">${esc(need||(state.coins>=nx.price?'You can afford it now':'Need '+fmt(nx.price-state.coins)+' more coins'))} · sold at ${esc(rodWhere(nx.id))}</div></div><button class="btn" data-act="guide" data-id="${nx.id}">Show me the way</button></div></div>`;}
  else h+=`<div class="card eq"><h3>Every rod on the racks is yours</h3><div class="muted">Quest rods are listed at the bottom.</div></div>`;
  for(const k of ISL.concat(['hollow','kelp','ruins'])){const ids=(ROD_RACKS[k]||[]).filter(i=>RODM[i]).sort((a,b)=>RODM[a].price-RODM[b].price);if(!ids.length)continue;const open=!ISL.includes(k)||state.unlocked.includes(k);
@@ -296,7 +296,7 @@ function openRodPath(){openPanel('Rod path','Every rod, island by island',()=>{p
    h+=`<div class="rpRow ${s}${isN?' next':''}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}${isN?'<em>Next</em>':''}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':need?`<span class="tag lock">${esc(need)}</span>`:`<span class="tag buy">${fmt(r.price)}c</span>`}${s==='eq'||s==='own'?'':`<button class="btn sm ghost" data-act="guide" data-id="${id}" title="Mark it on your compass">Find</button>`}</div></div>`;}
   h+='</div>';}
  const qr=RODS.filter(r=>r.req&&(r.req.quest||r.req.relic||r.req.secret||r.req.bounties||r.req.dex||r.req.derby));if(qr.length){h+=`<div class="rpIsl"><h4><i style="--c:#ffd76e"></i>Quests, sea glass and secrets</h4>`+qr.map(r=>{const s=rodState(r);return `<div class="rpRow ${s}"><span class="nrI">${rodIcon(r)}</span><div class="grow"><b>${esc(r.n)}</b><small>+${r.luck}% luck${r.perk?' · '+esc(r.perk.d):''}</small></div><div class="rpR">${s==='eq'?'<span class="tag ok">Equipped</span>':s==='own'?'<span class="tag own">Owned</span>':`<span class="tag lock">${esc(rodLocked(r)||'')}</span>`}</div></div>`;}).join('')+'</div>';}
- body(h);bindPanel({guide:id=>{setRodGuide(id);closePanel();},nrtog:()=>{state.settings.nextRod=state.settings.nextRod===false;NR.key='';save();rerender();}});});}
+ body(h);bindPanel({guide:id=>{setRodGuide(id);closePanel();},legend:()=>openLegend(),nrtog:()=>{state.settings.nextRod=state.settings.nextRod===false;NR.key='';save();rerender();}});});}
 function guideBeam(){const g=new THREE.CylinderGeometry(.16,.3,60,12,1,true);g.translate(0,30,0);
  const m=new THREE.Mesh(g,new THREE.ShaderMaterial({uniforms:{uT:{value:0},uA:{value:1}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
   vertexShader:'varying float vY;void main(){vY=uv.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
@@ -427,6 +427,77 @@ function updatePots(){if(!POTS.built){if(world.spawn.cove&&Array.isArray(state.p
  for(const it of POTS.list){const d=it.d;it.g.position.set(d.x,waveH(d.x,d.z,T)-.05,d.z);it.g.rotation.z=Math.sin(T*1.7+d.x)*.08;it.g.userData.flag.material.color.set(potReady(d)?'#4cbb5a':'#f07a2a');}}
 /* ================= per-frame ================= */
 let updT=0;
-function updateExtra(dt){updateWells(dt);updateLittleEvents(dt);updateCasino();updateRodRacks(dt);nextRodTick(dt);guideTick();updatePages();updateBoards();updateLeaps(dt);updateDerby(dt);updatePots();
+/* ================= LEGEND'S PATH =================
+   The last climb: three legendary pieces, each behind real milestones. Own all three and the isles throw you a festival. */
+const LEGEND=[
+ {id:'isleheart',kind:'rod',price:5000000,glass:40,blurb:'Forged from a little of every island: the finest rod on the isles.',goals:[['lvl',45],['marks',9]]},
+ {id:'starwake',kind:'boat',price:3500000,blurb:'A clipper whose sails catch the starlight, with a wake that glows behind it.',goals:[['lvl',40],['boat','galleon']]},
+ {id:'petrel',kind:'boat',price:2800000,blurb:'A three-engine flying boat, far faster than anything else in the sky.',goals:[['lvl',42],['plane',1],['caves',4]]},
+];
+function isleMarks(){return ISL.filter(k=>SPECIES.some(s=>s.zone===k&&s.r>=3&&state.dex[s.id]&&state.dex[s.id].n));}
+const CAVE_TIPS=[['hollow','The Drowned Hollow'],['abyss','The Lightless Trench'],['cave_kelp','The Kelp Cathedral'],['cave_ruins','The Sunken Ruins']];
+function legendGoals(L){return L.goals.map(([t,v])=>{
+ if(t==='lvl')return{ok:state.level>=v,txt:`Reach level ${v}`,prog:`${Math.min(state.level,v)}/${v}`};
+ if(t==='marks'){const m=isleMarks().length;return{ok:m>=v,txt:'Catch a Legendary or rarer fish on every island',prog:`${m}/${v}`};}
+ if(t==='boat'){const ok=state.boats.includes(v);return{ok,txt:`Own the ${BOATM[v].n}`,prog:ok?'Done':'Not yet'};}
+ if(t==='plane'){const ok=BOATS.some(b=>b.plane&&!b.legend&&state.boats.includes(b.id));return{ok,txt:'Own a seaplane',prog:ok?'Done':'Not yet'};}
+ if(t==='caves'){const c=CAVE_TIPS.filter(([k])=>state.tips[k]).length;return{ok:c>=v,txt:'Find all four hidden caves',prog:`${c}/${v}`};}
+ return{ok:false,txt:'',prog:''};});}
+const legendOwned=L=>L.kind==='rod'?state.rods.includes(L.id):state.boats.includes(L.id);
+const legendName=L=>L.kind==='rod'?RODM[L.id].n:BOATM[L.id].n;
+const legendDone=()=>LEGEND.every(legendOwned);
+function openLegend(){openPanel("Legend's Path",'Three legendary pieces for the angler who has done it all',()=>{const marks=isleMarks();
+ let h=`<div class="card lgHead"><div class="muted">Each piece unlocks when you meet its goals. Own all three to become the <b>Heart of the Isles</b>.</div>
+  <div class="lgMarks">${ISL.map(k=>`<span class="lgMark ${marks.includes(k)?'on':''}" title="${esc(ZONES[k].n)}">${esc(ZONES[k].n.replace(/^The /,'').slice(0,1))}</span>`).join('')}</div>
+  <div class="muted">Island marks: a Legendary or rarer fish caught on every island (${marks.length}/9)</div></div>`;
+ for(const L of LEGEND){const own=legendOwned(L),gs=legendGoals(L),ready=gs.every(g=>g.ok),afford=state.coins>=L.price&&(!L.glass||state.relics>=L.glass);
+  const stats=L.kind==='rod'?(()=>{const r=RODM[L.id];return `Luck +${r.luck}% · reel ×${r.reel} · control +${Math.round(r.ctrl*100)}% · ${r.perk.d}`;})():BOATM[L.id].fx.d;
+  h+=`<div class="card lg ${own?'eq':''}"><div class="row"><div class="grow"><h3>${esc(legendName(L))}</h3><div class="muted">${esc(L.blurb)}</div><div class="muted lgStats">${esc(stats)}</div></div>
+   ${own?'<span class="pill" style="--c:#7ff0e0">Yours</span>':`<button class="btn sm" data-act="lgbuy" data-id="${L.id}" ${ready&&afford?'':'disabled'}>${fmt(L.price)}c${L.glass?` + ${L.glass} sea glass`:''}</button>`}</div>
+   <div class="lgGoals">${gs.map(g=>`<div class="lgGoal ${g.ok?'ok':''}"><i></i><span>${esc(g.txt)}</span><b>${esc(g.prog)}</b></div>`).join('')}</div></div>`;}
+ if(legendDone())h+=`<div class="card"><div class="row"><div class="grow muted">You are the Heart of the Isles.</div><button class="btn mint sm" data-act="lgfin">Replay the festival</button></div></div>`;
+ body(h);
+ bindPanel({lgbuy:id=>{const L=LEGEND.find(x=>x.id===id);if(!L||legendOwned(L)||!legendGoals(L).every(g=>g.ok))return;if(state.coins<L.price||(L.glass&&state.relics<L.glass))return;
+   state.coins-=L.price;if(L.glass)state.relics-=L.glass;
+   if(L.kind==='rod'){state.rods.push(L.id);state.rod=L.id;equipRodModel();}else{state.boats.push(L.id);state.boat=L.id;rebuildBoat();}
+   AU.enchant();AU.level();coinBurst(10);toast(`The ${legendName(L)} is yours!`,'gold');save();updateHUD();rerender();
+   if(legendDone()&&!state.tips.finale)setTimeout(()=>{closePanel();startFinale();},900);},
+  lgfin:()=>{closePanel();startFinale(true);}});});}
+
+/* ================= THE FESTIVAL =================
+   Fireworks over the sea wherever you are, a new title, and an ending card with your life on the isles. */
+const FW={N:1600,i:0,on:0,t:0,next:0,shells:[],pts:null};
+function buildFireworks(){const N=FW.N,g=new THREE.BufferGeometry();FW.pos=new Float32Array(N*3).fill(-999);FW.vel=new Float32Array(N*3);FW.col=new Float32Array(N*3);FW.al=new Float32Array(N);FW.life=new Float32Array(N);FW.max=new Float32Array(N).fill(1);
+ g.setAttribute('position',new THREE.BufferAttribute(FW.pos,3).setUsage(THREE.DynamicDrawUsage));g.setAttribute('fcol',new THREE.BufferAttribute(FW.col,3).setUsage(THREE.DynamicDrawUsage));g.setAttribute('al',new THREE.BufferAttribute(FW.al,1).setUsage(THREE.DynamicDrawUsage));
+ const m=new THREE.ShaderMaterial({uniforms:{uPR:{value:renderer.getPixelRatio()}},transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+  vertexShader:'attribute vec3 fcol;attribute float al;uniform float uPR;varying vec3 vC;varying float vA;void main(){vC=fcol;vA=al;vec4 mv=modelViewMatrix*vec4(position,1.);gl_PointSize=min(uPR*7.*(110./max(-mv.z,1.)),uPR*22.);gl_Position=projectionMatrix*mv;}',
+  fragmentShader:'varying vec3 vC;varying float vA;void main(){float d=length(gl_PointCoord-.5);float a=smoothstep(.5,0.,d)*vA;if(a<.01)discard;gl_FragColor=vec4(vC*a,a);'+OUT_CHUNKS+'}'});
+ FW.pts=new THREE.Points(g,m);FW.pts.frustumCulled=false;FW.pts.renderOrder=5;FW.pts.userData.noAO=true;scene.add(FW.pts);reflHide.push(FW.pts);}
+function fwBurst(x,y,z){const n=GFX.tier==='low'?70:150,h=Math.random(),c1=new THREE.Color().setHSL(h,1,.56),c2=new THREE.Color().setHSL((h+.13)%1,1,.64),ring=Math.random()<.35;
+ for(let k=0;k<n;k++){const i=FW.i;FW.i=(FW.i+1)%FW.N;const u=ring?(Math.random()-.5)*.15:Math.random()*2-1,a=Math.random()*TAU,r=Math.sqrt(1-u*u),sp=ring?13:8+Math.random()*6;
+  FW.pos[i*3]=x;FW.pos[i*3+1]=y;FW.pos[i*3+2]=z;FW.vel[i*3]=Math.cos(a)*r*sp;FW.vel[i*3+1]=u*sp;FW.vel[i*3+2]=Math.sin(a)*r*sp;const c=k%3?c1:c2;FW.col[i*3]=c.r*1.9;FW.col[i*3+1]=c.g*1.9;FW.col[i*3+2]=c.b*1.9;FW.life[i]=FW.max[i]=1.5+Math.random()*.9;}
+ const d=camera.position.distanceTo(new THREE.Vector3(x,y,z));AU.thunder(Math.max(220,d*5));}
+function updateFireworks(dt){if(!FW.pts)return;const P=FW.pos,V=FW.vel,A=FW.al,L=FW.life;let live=FW.on>0;
+ if(FW.on>0){FW.on-=dt;FW.next-=dt;if(FW.next<=0&&FW.on>1.5){FW.next=.25+Math.random()*.55;const f=new THREE.Vector3();camera.getWorldDirection(f);f.y=0;f.normalize();const side=new THREE.Vector3(-f.z,0,f.x),c=player.pos,d=45+Math.random()*45;
+   FW.shells.push({x:c.x+f.x*d+side.x*(Math.random()-.5)*70,y:waveH(c.x,c.z,WIND.uTime.value)+1,z:c.z+f.z*d+side.z*(Math.random()-.5)*70,vy:24+Math.random()*8,i:-1});}}
+ for(let s=FW.shells.length-1;s>=0;s--){const sh=FW.shells[s];if(sh.i<0){sh.i=FW.i;FW.i=(FW.i+1)%FW.N;}sh.vy-=14*dt;sh.y+=sh.vy*dt;const i=sh.i;P[i*3]=sh.x;P[i*3+1]=sh.y;P[i*3+2]=sh.z;V[i*3]=V[i*3+1]=V[i*3+2]=0;FW.col[i*3]=3;FW.col[i*3+1]=2.5;FW.col[i*3+2]=1.6;L[i]=1;FW.max[i]=1;
+  if(sh.vy<3){A[i]=0;L[i]=0;fwBurst(sh.x,sh.y,sh.z);FW.shells.splice(s,1);}live=true;}
+ for(let i=0;i<FW.N;i++){if(L[i]<=0){if(A[i])A[i]=0;continue;}live=true;L[i]-=dt;const dr=1-dt*1.2;V[i*3]*=dr;V[i*3+2]*=dr;V[i*3+1]=V[i*3+1]*dr-6*dt;P[i*3]+=V[i*3]*dt;P[i*3+1]+=V[i*3+1]*dt;P[i*3+2]+=V[i*3+2]*dt;const k=L[i]/FW.max[i];A[i]=L[i]>0?Math.min(1,k*1.6)*(.75+.25*Math.sin(i*1.7+L[i]*30)):0;}
+ if(live){const ga=FW.pts.geometry.attributes;ga.position.needsUpdate=true;ga.fcol.needsUpdate=true;ga.al.needsUpdate=true;FW.pts.material.uniforms.uPR.value=renderer.getPixelRatio();}}
+function startFinale(replay){if(!FW.pts)buildFireworks();FW.on=26;FW.next=0;AU.level();setTimeout(()=>AU.cheer&&AU.cheer(),600);
+ if(!replay){state.tips.finale=1;if(typeof grantTitle==='function')grantTitle('Heart of the Isles');state.title='Heart of the Isles';if(typeof rebuildPlayerTag==='function')rebuildPlayerTag();save();}
+ setTimeout(showEnding,replay?2500:3500);}
+function fmtPlay(t){t=Math.round(t||0);const h=Math.floor(t/3600),m=Math.floor(t%3600/60);return h?`${h} h ${m} m`:`${m} m`;}
+function showEnding(){const el=document.getElementById('finale');if(!el)return;const dex=SPECIES.filter(s=>state.dex[s.id]&&state.dex[s.id].n),caught=dex.reduce((a,s)=>a+(state.dex[s.id].n||0),0);
+ let big=null;for(const s of dex){const b=state.dex[s.id].best||0;if(!big||b>big.w)big={w:b,n:s.name};}
+ const rows=[['Level',state.level],['Coins earned',fmt(Math.round(state.earned||0))],['Fish caught',caught.toLocaleString('en-US')],['Species found',`${dex.length} of ${SPECIES.length}`],['Biggest catch',big?`${fmtW(big.w)} kg ${big.n}`:'–'],['Time at sea',fmtPlay(state.playT)],['Titles earned',(state.titles||[]).length]];
+ el.innerHTML=`<div class="fin"><div class="finKick">The isles remember you</div><h1>Heart of the Isles</h1><p>You mastered the Driftwood Isles: every island, the deepest caves, the finest rod, the fastest plane and the legend's ship. The festival is for you.</p>
+  <div class="finStats">${rows.map(r=>`<div><b>${esc(String(r[1]))}</b><span>${esc(r[0])}</span></div>`).join('')}</div>
+  <div class="finBtns"><button class="btn lg" id="finKeep">Keep fishing</button><button class="btn ghost lg" id="finCred">Credits</button></div><small>New title: Heart of the Isles</small></div>`;
+ el.hidden=false;requestAnimationFrame(()=>el.classList.add('on'));
+ const close=()=>{el.classList.remove('on');setTimeout(()=>{el.hidden=true;},450);};
+ el.querySelector('#finKeep').onclick=()=>{AU.ui();close();};el.querySelector('#finCred').onclick=()=>{AU.ui();close();setTimeout(()=>openCredits(),300);};}
+
+function updateExtra(dt){updateWells(dt);updateFireworks(dt);if(!MENU.on)state.playT=(state.playT||0)+dt;updateLittleEvents(dt);updateCasino();updateRodRacks(dt);nextRodTick(dt);guideTick();updatePages();updateBoards();updateLeaps(dt);updateDerby(dt);updatePots();
  /* show what's new once after each update */
  if(!MENU.on&&!JOIN.on&&state.tips.joined&&state.tips.intro&&state.seenVer!==GAME_VER&&!panelCtx){if(!updT)updT=performance.now();if(performance.now()-updT>2500){state.seenVer=GAME_VER;save();openUpdates();}}if(Net.uid)noteRiders();}

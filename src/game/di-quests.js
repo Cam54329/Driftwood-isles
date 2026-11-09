@@ -110,7 +110,7 @@ const QUESTS=[
 ];
 const QM={};QUESTS.forEach(q=>QM[q.id]=q);
 const LEVEL_TITLES=[[1,'Novice Angler'],[10,'Seasoned Angler'],[25,'Master Angler'],[50,'Legend of the Isles']];
-const TITLE_COL={'Derby Champion':'#ffd76e','Pagekeeper':'#f0d890','Ruin Diver':'#9ab8ff','Kelp Wanderer':'#c8f05a','Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Developer':'#ffcf5a','Abyss Diver':'#c890ff','Cartographer':'#8af0ff','Tidesinger':'#e8e8ff','Desert Hunter':'#f0c060','Starsmith':'#c8a8ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
+const TITLE_COL={'Heart of the Isles':'#7ff0e0','Derby Champion':'#ffd76e','Pagekeeper':'#f0d890','Ruin Diver':'#9ab8ff','Kelp Wanderer':'#c8f05a','Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Developer':'#ffcf5a','Abyss Diver':'#c890ff','Cartographer':'#8af0ff','Tidesinger':'#e8e8ff','Desert Hunter':'#f0c060','Starsmith':'#c8a8ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
 const ALL_TITLES=Object.keys(TITLE_COL);
 
 /* ---------- dialogue lines (extra flavour beyond the quests) ---------- */
@@ -162,8 +162,8 @@ function showStory(q){const s=qState().a[q.id]!=null?q.offer:q.done;STORYQ.push(
 function nextStory(){const o=STORYQ.shift();if(!o){storyOn=false;return;}storyOn=true;const el=document.createElement('div');el.className='story';el.innerHTML=`<b>${esc(o.who)}</b><span>${esc(o.s)}</span>`;document.body.appendChild(el);
  let done=false;const end=()=>{if(done)return;done=true;el.classList.add('out');setTimeout(()=>{el.remove();nextStory();},450);};setTimeout(end,Math.max(5000,o.s.length*55));el.onclick=end;}
 function catchQuestInfo(){const a=activeQuests().filter(q=>q.goal.t==='catch');if(!a.length)return '';const q=a[0],v=qState().a[q.id];return `<div class="cc-q">${esc(q.n)} · ${Math.min(v,q.goal.n)}/${q.goal.n}</div>`;}
-function grantTitle(t){if(!state.titles.includes(t)){state.titles.push(t);toast(`New title unlocked: ${t}`,'gold');}}
-function checkLevelTitles(){for(const[l,t]of LEVEL_TITLES)if(state.level>=l)grantTitle(t);}
+function grantTitle(t){if(!state.titles.includes(t)){state.titles.push(t);toast(`New title unlocked: ${t}`,'gold');const lv=LEVEL_TITLES.map(x=>x[1]);if(lv.includes(t)&&(!state.title||lv.includes(state.title))&&lv.indexOf(t)>lv.indexOf(state.title)){state.title=t;if(typeof rebuildPlayerTag==='function')rebuildPlayerTag();}}}
+function checkLevelTitles(){for(const[l,t]of LEVEL_TITLES)if(state.level>=l)grantTitle(t);const lv=LEVEL_TITLES.map(x=>x[1]);if(!state.title||lv.includes(state.title)){const best=lv.filter(t=>state.titles.includes(t)).pop();if(best&&best!==state.title){state.title=best;if(typeof rebuildPlayerTag==='function')rebuildPlayerTag();}}}
 
 /* ---------- NPC dialogue + quest card (rendered into every NPC panel) ---------- */
 const NPCM={};

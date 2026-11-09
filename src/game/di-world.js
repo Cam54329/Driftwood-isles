@@ -234,7 +234,7 @@ function updateWake(dt,x,z,spd){const A=WAKE.arr,now=WIND.uTime.value;if(spd<2.2
 const waterU={uT:WIND.uTime,uAmp:{value:1},uNorm:{value:waterTex},uRefl:{value:null},uTexMat:{value:GFX.texMat},uSky:{value:null},
  uSunDir:{value:new THREE.Vector3(.3,1,.2)},uSunCol:{value:new THREE.Color(1,1,1)},uAmb:{value:new THREE.Color(.5,.6,.7)},uDeep:{value:new THREE.Color('#06283a')},uShal:{value:new THREE.Color('#1c7c80')},uScatter:{value:new THREE.Color('#2fb6a0')},
  uFogC:{value:new THREE.Color()},uFogN:{value:80},uFogF:{value:380},uFoamK:{value:0},uSpark:{value:1},
- uIsl:{value:LANDS.slice(0,WATER_NI).map(k=>new THREE.Vector4(ZONES[k].x,ZONES[k].z,ZONES[k].R,ZONES[k].p1))},uIsl2:{value:LANDS.slice(0,WATER_NI).map(k=>new THREE.Vector2(ZONES[k].p2,0))},uSand:{value:LANDS.slice(0,WATER_NI).map(k=>new THREE.Color(ZONES[k].sand))},uRip:{value:RIP.arr},uWake:{value:WAKE.arr},uRain:{value:0},uBio:{value:0},uCave:{value:0}};
+ uIsl:{value:LANDS.slice(0,WATER_NI).map(k=>new THREE.Vector4(ZONES[k].x,ZONES[k].z,ZONES[k].R,ZONES[k].p1))},uIsl2:{value:LANDS.slice(0,WATER_NI).map(k=>new THREE.Vector2(ZONES[k].p2,0))},uSand:{value:LANDS.slice(0,WATER_NI).map(k=>new THREE.Color(ZONES[k].sand))},uRip:{value:RIP.arr},uWake:{value:WAKE.arr},uWakeG:{value:new THREE.Color(0,0,0)},uRain:{value:0},uBio:{value:0},uCave:{value:0}};
 const GLSL_SHORE=`float shoreDamp(vec2 p){float d=1.;for(int i=0;i<${WATER_NI};i++){vec2 o=p-uIsl[i].xy;float th=atan(o.y,o.x);float R=uIsl[i].z*(1.+.09*sin(3.*th+uIsl[i].w)+.05*sin(5.*th+uIsl2[i].x));d=min(d,mix(.28,1.,smoothstep(.92,1.75,length(o)/R)));}return d;}`;
 const waterMat=new THREE.ShaderMaterial({uniforms:waterU,fog:false,transparent:true,depthWrite:true,
  vertexShader:`uniform float uT;uniform float uAmp;uniform vec4 uIsl[${WATER_NI}];uniform vec2 uIsl2[${WATER_NI}];varying vec3 vW;varying float vDamp;varying float vH;
@@ -243,7 +243,7 @@ const waterMat=new THREE.ShaderMaterial({uniforms:waterU,fog:false,transparent:t
   void main(){vec4 w=modelMatrix*vec4(position,1.);float dm=shoreDamp(w.xz);vDamp=dm;float h=wvH(w.xz,uT)*uAmp*dm;vH=h;w.y+=h;vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
  fragmentShader:`uniform float uT;uniform float uAmp;uniform sampler2D uNorm;uniform sampler2D uRefl;uniform mat4 uTexMat;uniform samplerCube uSky;uniform vec3 uSunDir;uniform vec3 uSunCol;uniform vec3 uAmb;
   uniform vec3 uDeep;uniform vec3 uShal;uniform vec3 uScatter;uniform vec3 uFogC;uniform float uFogN;uniform float uFogF;uniform float uFoamK;uniform float uSpark;
-  uniform vec4 uIsl[${WATER_NI}];uniform vec2 uIsl2[${WATER_NI}];uniform vec3 uSand[${WATER_NI}];uniform vec4 uRip[8];uniform vec4 uWake[16];uniform float uRain;uniform float uBio;uniform float uCave;varying vec3 vW;varying float vDamp;varying float vH;
+  uniform vec4 uIsl[${WATER_NI}];uniform vec2 uIsl2[${WATER_NI}];uniform vec3 uSand[${WATER_NI}];uniform vec4 uRip[8];uniform vec4 uWake[16];uniform vec3 uWakeG;uniform float uRain;uniform float uBio;uniform float uCave;varying vec3 vW;varying float vDamp;varying float vH;
   ${GLSL_WAVES}
   float hsh(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
   void main(){vec2 p=vW.xz;float t=uT;float dist=length(cameraPosition-vW);float near=1.-smoothstep(25.,200.,dist);float A=uAmp*vDamp;
@@ -279,7 +279,7 @@ const waterMat=new THREE.ShaderMaterial({uniforms:waterU,fog:false,transparent:t
      float wv=.6+ag*(.55+a.w*.08);float edge=exp(-pow((dd-wv)*2.2,2.))*.85;float core=exp(-dd*dd*1.5)*clamp(1.-ag/1.3,0.,1.)*.8;wk=max(wk,(edge+core)*clamp(1.-ag/5.5,0.,1.)*clamp(a.w/7.,.3,1.));}}
    float caps=smoothstep(.55,.95,crest)*uFoamK*smoothstep(.4,.7,nz);
    float foam=clamp((fl+bands*.6+foamR+caps+wk*smoothstep(.32,.78,f2*.75+nz*.55))*smoothstep(.15,.55,f2+.25),0.,1.);
-   col=mix(col,(uAmb+uSunCol*max(uSunDir.y,0.)*.55)*.9,foam*.9);
+   col=mix(col,(uAmb+uSunCol*max(uSunDir.y,0.)*.55)*.9,foam*.9);col+=uWakeG*wk*(.6+.4*sin(p.x*1.7+p.y*1.3-t*4.))*smoothstep(.15,.6,f2+.3);
    if(uBio>.001){float sp=smoothstep(.9,1.,texture2D(uNorm,p*.83+vec2(t*.06,-t*.05)).b)*smoothstep(.7,1.,texture2D(uNorm,p*.41-vec2(t*.03,t*.02)).b);col+=vec3(.12,1.,.78)*uBio*(foam*1.5+sp*3.5*near+foamR*2.5+crest*.08);}
    float fogK=smoothstep(uFogN,uFogF*1.15,dist)*.92;col=mix(col,uFogC,fogK);
    /* clear shallows: the real seabed shows through, fading to opaque with depth, at grazing angles and under foam */

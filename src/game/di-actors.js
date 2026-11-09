@@ -235,6 +235,7 @@ function buildRod(def,ench){const g=new THREE.Group();const add=(geo,mat,y)=>{co
   else if(def.deco==='crystal'){const m=add(new THREE.OctahedronGeometry(.13,0),gc('#c88aff'),-.38);m.scale.y=2;for(let i=0;i<3;i++){const s=add(new THREE.OctahedronGeometry(.05,0),gc('#e8c8ff'),.5+L*(.3+i*.2));s.position.x=.06;bendL.push(s);}}
   else if(def.deco==='compass'){const d=add(new THREE.CylinderGeometry(.12,.12,.03,20),pbr('#d8b060','metal'),.62);d.rotation.z=Math.PI/2;d.position.x=-.1;const n=add(new THREE.BoxGeometry(.01,.16,.02),gc('#ff5a4a'),.62);n.position.x=-.12;}
   else if(def.deco==='moon'){const m=add(new THREE.TorusGeometry(.09,.025,6,18,Math.PI*1.3),gc('#e8e8ff'),y0+.12);m.rotation.z=.8;bendL.push(m);}
+  else if(def.deco==='heart'){['#7ad86a','#5ac8a8','#a8d8ff','#ff8a5a','#5ad8e8','#e8a040','#ffb0d0','#f0c060','#b08aff'].forEach((c,i)=>{const s=add(new THREE.OctahedronGeometry(.042,0),gc(c),.5+L*(.1+i*.1));s.position.x=.068*Math.cos(i*2.1);s.position.z=.068*Math.sin(i*2.1);bendL.push(s);});const h=add(new THREE.OctahedronGeometry(.15,0),gc('#ffe6a0'),-.42);h.scale.y=1.6;const r2=add(new THREE.TorusGeometry(.16,.012,4,28),gc('#7ff0e0'),.66);r2.rotation.x=Math.PI/2.2;const r3=add(new THREE.TorusGeometry(.12,.01,4,24),gc('#ffe6a0'),.66);r3.rotation.y=Math.PI/2;}
   else if(def.deco==='stars'){for(let i=0;i<4;i++){const s=add(new THREE.OctahedronGeometry(.045,0),gc('#fff0a8'),.5+L*(.2+i*.22));s.position.x=.07*Math.cos(i*1.7);s.position.z=.07*Math.sin(i*1.7);bendL.push(s);}const r2=add(new THREE.TorusGeometry(.15,.008,4,24),gc('#fff0a8'),.66);r2.rotation.x=Math.PI/2.4;}}
  let e3=null;if(ench){e3=new THREE.Mesh(new THREE.IcosahedronGeometry(.13,0),new THREE.MeshBasicMaterial({color:new THREE.Color(ENCH3D[ench]).multiplyScalar(2.6),transparent:true,opacity:.9}));e3.position.y=.5+L*.6;g.add(e3);bendL.push(e3);}
  g.rotation.x=Math.PI/2;g.scale.setScalar(1.15);g.userData.ench=e3;return{g,tip,crank,bendU,bendL,len:L};}
@@ -386,7 +387,7 @@ function bakeMeshes(root,skip){root.updateMatrixWorld(true);const inv=new THREE.
 function makeBoat(accent,type,up,skin){const BT=BOATM[type]||BOATS[0],SK=skin&&skin!=='classic'&&PAINTM[skin],M=SK?Object.assign({},BT.m,{hull:SK.hull,stripe:SK.stripe,bottom:SK.bottom}):BT.m,b=new Builder(),N=16,st=[];b.M(TL.paint);const L=M.L,W=M.W,H=M.H,D=M.D,z0=-L*.45;
  const white=new THREE.Color(M.hull),acc=new THREE.Color(M.stripe||accent||'#8a4a3a'),bot=new THREE.Color(M.bottom||'#4a3a32'),wood=new THREE.Color('#6e5a46');
  for(let i=0;i<=N;i++){const t=i/N,z=z0+t*L;const bowK=clamp((t-.55)/.45,0,1);const w=W*Math.sqrt(Math.max(0,1-bowK*bowK))*(t<.1?.88+t*1.2:1);const top=H+bowK*bowK*H*.5,bt=D-bowK*bowK*D*1.4;st.push({z,w,top,bt,chY:lerp(bt,top,.45)});}
- const T=M.type,V=THREE.Vector3,hulls=T==='catamaran'?[[-W*1.25,.5],[W*1.25,.5]]:T==='pontoon'?[[-W*1.05,.34],[W*1.05,.34]]:T==='seaplane'?[[-W*1.8,.45],[W*1.8,.45]]:[[0,1]];
+ const TY=M.type,T=TY==='petrel'?'seaplane':TY,V=THREE.Vector3,hulls=T==='catamaran'?[[-W*1.25,.5],[W*1.25,.5]]:T==='pontoon'?[[-W*1.05,.34],[W*1.05,.34]]:T==='seaplane'?[[-W*1.8,.45],[W*1.8,.45]]:[[0,1]];
  for(const[ox,wk]of hulls){b.M(TL.paint);
   const P=(s,k,i)=>{const S=st[i];if(k===0)return new V(ox+s*S.w*wk,S.top,S.z);if(k===1)return new V(ox+s*S.w*.9*wk,S.chY,S.z);return new V(ox,S.bt,S.z);};
   for(let i=0;i<N;i++)for(const s of[-1,1])for(let k=0;k<2;k++){const a=P(s,k,i),bb=P(s,k+1,i),c=P(s,k,i+1),d=P(s,k+1,i+1);const col=k===0?white:bot;if(s>0){b.tri(a,c,bb,col);b.tri(bb,c,d,col);}else{b.tri(a,bb,c,col);b.tri(bb,d,c,col);}}
@@ -451,6 +452,18 @@ function makeBoat(accent,type,up,skin){const BT=BOATM[type]||BOATS[0],SK=skin&&s
   b.M(TL.paint);const cz=z0+L*.52,cw=W*1.5,cl=L*.5,ch=1.9;b.add(G.box,'#f4ead8',0,fl+ch/2,cz,cw,ch,cl);b.M(TL.wood);for(const s of[-1,1])b.add(G.box,M.stripe,s*cw*.27,fl+ch+.32,cz,cw*.58,.08,cl+.5,0,0,s*.55);b.add(G.box,'#6a4a30',0,fl+ch+.55,cz,.12,.12,cl+.5);
   b.add(G.box,'#7a5634',0,fl+.75,cz-cl/2-.01,.7,1.5,.06);b.M(TL.metal);b.add(G.cyl12,'#3a3a40',cw*.3,fl+ch+.9,cz+cl*.25,.13,1,.13);b.M(TL.paint);for(const s of[-1,1])for(const zz of[-.25,.2]){b.add(G.box,'#ffe2a0',s*(cw/2+.01),fl+ch*.6,cz+cl*zz,.04,.55,.6);b.add(G.box,'#3a8a3a',s*(cw/2+.08),fl+ch*.32,cz+cl*zz,.14,.12,.62);}
   b.M(TL.wood);for(const s of[-1,1])b.add(G.box,'#9a7a52',s*W*.95,fl+.45,z0+L*.5,.05,.05,L*.9);motor(0);}
+ if(T==='clipper'){/* the Starwake Clipper: a raised aft deckhouse with lit windows, two raked masts with tall
+    fore-and-aft sails, a jib to a long bowsprit, gold rails and a star at the bow */
+  b.M(TL.wood);const dz=z0+L*.16;b.add(G.box,'#22324e',0,H+.75,dz,W*1.6,1.5,L*.2);b.add(G.box,'#e8c46a',0,H+1.52,dz,W*1.66,.1,L*.21);
+  for(const s of[-1,1])b.add(G.box,M.stripe,s*W*.98,H+.12,z0+L*.5,.07,.12,L*.88);b.seg(G.cyl,'#3a2a1c',new V(0,H+.5,z0+L*.94),new V(0,H+1.3,z0+L*1.24),.09);
+  const masts=[[.42,12.5],[.68,10.5]];for(const[mz,mh]of masts){const zz=z0+L*mz;b.M(TL.wood);b.seg(G.cyl,'#2e2218',new V(0,H,zz),new V(0,H+mh,zz-.6),.13);
+   b.seg(G.cyl,'#2e2218',new V(0,H+1.5,zz),new V(0,H+1.75,zz-L*.24),.06);b.M(TL.cloth);const sc=new THREE.Color('#f4efe2'),sc2=new THREE.Color('#ece4d0');
+   const a=new V(0,H+1.75,zz-.05),bb=new V(0,H+mh-.5,zz-.55),c=new V(0,H+1.9,zz-L*.24),d=new V(0,H+mh*.62,zz-L*.2),mm=a.clone().add(bb).add(c).add(d).multiplyScalar(.25).add(new V(.75,0,0));b.tri(a,bb,mm,sc);b.tri(bb,d,mm,sc2);b.tri(d,c,mm,sc);b.tri(c,a,mm,sc2);}
+  {const fz=z0+L*.68,top=new V(0,H+10,fz-.5),tip=new V(0,H+1.3,z0+L*1.24),foot=new V(0,H+1.5,fz+.3),mm=top.clone().add(tip).add(foot).multiplyScalar(1/3).add(new V(-.55,0,0)),jc=new THREE.Color('#efe8d8'),jc2=new THREE.Color('#e6dcc8');b.M(TL.cloth);b.tri(top,tip,mm,jc);b.tri(tip,foot,mm,jc2);b.tri(foot,top,mm,jc);}}
+ if(TY==='petrel'){/* the Storm Petrel: winglets, two wing engines on top of the seaplane's nose engine, a taller split tail */
+  const fy=H+1.35;b.M(TL.paint);for(const sx of[-1,1]){b.add(G.box,M.stripe,sx*W*5.25,fy+1.22,z0+L*.6,.09,.62,1.2,0,0,sx*.35);
+   b.add(G.cyl12,M.hull,sx*W*2.7,fy+.72,z0+L*.62,.3,1.9,.3,Math.PI/2,0,0);b.add(G.cyl12,M.stripe,sx*W*2.7,fy+.72,z0+L*.62-.55,.31,.3,.31,Math.PI/2,0,0);b.add(G.cone,M.hull,sx*W*2.7,fy+.72,z0+L*.62+1.15,.3,.5,.3,Math.PI/2,0,0);}
+  b.add(G.box,M.stripe,0,fy+1.45,z0+.1,.08,1.8,1.1,-.3,0,0);b.add(G.box,M.hull,0,fy+.36,z0+.25,3.4,.08,.8);for(const sx of[-1,1])b.add(G.box,M.stripe,sx*1.7,fy+.7,z0+.2,.07,.8,.7,-.2,0,0);}
  if(T==='galleon'){/* three masts with square sails, a raised stern castle with lit windows and a long bowsprit */
   b.M(TL.wood);const cz=z0+L*.1;b.add(G.box,'#4a2e1c',0,H+.9,cz,W*1.9,1.8,L*.18);b.add(G.box,'#3a2416',0,H+1.85,cz,W*2,.14,L*.2);b.M(TL.paint);for(let i=0;i<4;i++)b.add(G.box,'#ffd890',(i-1.5)*W*.42,H+1,cz-L*.09-.01,.3,.42,.04);
   b.M(TL.wood);b.seg(G.cyl,'#5a3a24',new V(0,H+.6,z0+L*.95),new V(0,H+1.6,z0+L*1.18),.1);for(const s of[-1,1])b.add(G.box,M.stripe,s*W*.98,H+.1,z0+L*.5,.06,.1,L*.86);
@@ -487,15 +500,25 @@ function makeBoat(accent,type,up,skin){const BT=BOATM[type]||BOATS[0],SK=skin&&s
  else if(T==='kayak'){}
  else if(T==='glass')seats.push([-W*.75,z0+L*.38],[W*.75,z0+L*.38],[-W*.75,z0+L*.62]);
  else if(T==='house')seats.push([-W*.6,z0+L*.12],[W*.6,z0+L*.12],[-W*.6,z0+L*.86],[W*.6,z0+L*.86],[0,z0+L*.9]);
+ else if(T==='clipper')seats.push([-W*.55,z0+L*.36],[W*.55,z0+L*.36],[-W*.55,z0+L*.56],[W*.55,z0+L*.56],[-W*.5,z0+L*.78],[W*.5,z0+L*.78],[0,z0+L*.86]);
  else if(T==='galleon')seats.push([-W*.6,z0+L*.42],[W*.6,z0+L*.42],[-W*.6,z0+L*.64],[W*.6,z0+L*.64],[-W*.5,z0+L*.86],[W*.5,z0+L*.86],[0,z0+L*.22]);
  else if(T==='seiner')seats.push([-W*.7,z0+L*.25],[W*.7,z0+L*.25],[-W*.7,z0+L*.7],[W*.7,z0+L*.7],[0,z0+L*.85]);
  else seats.push([0,z0+L*.62]);
  if(T==='seaplane'){const prop=new THREE.Group();const pm=new THREE.MeshStandardMaterial({color:'#2a2a2e',roughness:.4,metalness:.6});for(let i=0;i<3;i++){const bl=new THREE.Mesh(new THREE.BoxGeometry(.12,1.5,.05),pm);bl.position.y=.7;const arm=new THREE.Group();arm.rotation.z=i/3*TAU;arm.add(bl);prop.add(arm);}
   const sp=new THREE.Mesh(new THREE.ConeGeometry(.2,.4,10),new THREE.MeshStandardMaterial({color:M.stripe,roughness:.4}));sp.rotation.x=Math.PI/2;sp.position.z=.1;prop.add(sp);prop.position.set(0,H+1.35,z0+L*.9+.75);g.add(prop);g.userData.prop=prop;
-  seats.length=0;seats.push([0,z0+L*.7],[0,z0+L*.5],[-.3,z0+L*.36],[.3,z0+L*.36]);}
+  seats.length=0;seats.push([0,z0+L*.7],[0,z0+L*.5],[-.3,z0+L*.36],[.3,z0+L*.36]);
+  if(TY==='petrel'){const props=[];for(const sx of[-1,1]){const p2=new THREE.Group();for(let i=0;i<3;i++){const bl=new THREE.Mesh(new THREE.BoxGeometry(.1,1.1,.04),pm);bl.position.y=.5;const arm=new THREE.Group();arm.rotation.z=i/3*TAU;arm.add(bl);p2.add(arm);}
+    p2.position.set(sx*W*2.7,H+1.35+.72,z0+L*.62+1.48);g.add(p2);props.push(p2);}g.userData.props=props;}}
+ {const glow=(geo,c,x,y,z,sx=1,sy=1,sz=1)=>{const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:new THREE.Color(c)}));m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.userData.noAO=true;g.add(m);return m;};
+  if(TY==='petrel'){const fy=H+1.35,bx=new THREE.BoxGeometry(1,1,1);for(const sx of[-1,1])glow(new THREE.CircleGeometry(.24,14),new THREE.Color(.5,2.6,2.6),sx*W*2.7,fy+.72,z0+L*.62-.96).rotation.y=Math.PI;
+   glow(bx,new THREE.Color(3,.4,.3),-W*5.3,H+1.35+.95,z0+L*.6,.12,.12,.12);glow(bx,new THREE.Color(.3,3,.5),W*5.3,H+1.35+.95,z0+L*.6,.12,.12,.12);}
+  if(T==='clipper'){const bx=new THREE.BoxGeometry(1,1,1),edge=new THREE.Color(.6,2.4,2.2),gold=new THREE.Color(3.2,2.5,1.2);for(const[mz,mh]of[[.42,12.5],[.68,10.5]]){const zz=z0+L*mz;
+    const e1=glow(bx,edge,0,H+1.75+(mh-2.25)/2,zz-.3,.05,mh-2.3,.05);e1.rotation.x=-Math.atan2(.5,mh-2.25);const e2=glow(bx,edge,0,H+1.85,zz-L*.12,.05,.05,L*.24);}
+   for(let i=0;i<4;i++)glow(bx,gold,(i-1.5)*W*.36,H+.95,z0+L*.06-.01,.26,.34,.04);const star=glow(new THREE.OctahedronGeometry(.32,0),new THREE.Color(3.4,3,1.6),0,H+1.45,z0+L*1.25);g.userData.star=star;
+   for(const s of[-1,1])glow(bx,gold,s*W*.7,H+1.9,z0+L*.08,.16,.22,.16);}}
  let radar=null;if(us>=3&&mb){radar=new THREE.Group();const rm=new THREE.MeshStandardMaterial({color:'#2a2e34',roughness:.45,metalness:.5});const bar=new THREE.Mesh(new THREE.BoxGeometry(1.15,.08,.16),rm);bar.position.y=.1;radar.add(bar);const pin=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.14,8),rm);radar.add(pin);
   const sl=new THREE.Mesh(new THREE.BoxGeometry(.12,.08,.12),new THREE.MeshBasicMaterial({color:new THREE.Color(.6,2.6,2.4)}));sl.position.set(.5,.16,0);radar.add(sl);radar.position.set(mb[0],radarY,mb[2]);g.add(radar);}
- g.userData={halo:hl,lamp:lt,len:L*.5,seat:seats[0][1],seatY:seatTop-.53,seats,prop:g.userData.prop,radar};scene.add(g);return g;}
+ g.userData={halo:hl,lamp:lt,len:L*.5,seat:seats[0][1],seatY:seatTop-.53,seats,prop:g.userData.prop,props:g.userData.props,star:g.userData.star,radar};scene.add(g);return g;}
 
 /* chat bubble */
 function bubbleSprite(text){const c=document.createElement('canvas');c.width=512;c.height=192;const x=c.getContext('2d');x.font='700 30px Manrope, sans-serif';
