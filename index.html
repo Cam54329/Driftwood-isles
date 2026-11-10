@@ -792,6 +792,10 @@ body:not(.desk) #tabs .hs b,body:not(.desk) #tabs .hs small,body:not(.desk) #tab
 .finStats b{display:block;font:800 18px/1.2 var(--hud);color:var(--ink)}.finStats span{font:700 11px var(--hud);letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
 .finBtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}.fin small{font:700 12px var(--hud);color:var(--teal2)}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+/* 9.1 smoother frames: no live blur behind HUD over the 3D view (Chrome re-blurs the moving game under each panel every frame) */
+:root{--panel:rgba(9,32,38,.88)}
+#eventBan,.ib,#prompt,.hs,#emoteMenu,.toast,.story,#catchCard,#reel,#panelWrap,#panel,#join,#devBar,#nextRod,#derbyHud,.ledger,#tabs .hs{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+#panelWrap{background:rgba(6,14,18,.5)}
 </style>
 </head>
 <body>

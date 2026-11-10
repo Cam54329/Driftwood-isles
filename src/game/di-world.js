@@ -6,21 +6,21 @@ try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'hig
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;
 renderer.shadowMap.type=THREE.PCFShadowMap;renderer.shadowMap.autoUpdate=false;renderer.shadowMap.enabled=false;
 const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xcfe8f5,80,380);
-const camera=new THREE.PerspectiveCamera(55,1,.3,1600);
+const camera=new THREE.PerspectiveCamera(58,1,.3,1600);
 const hemi=new THREE.HemisphereLight(0xeaf6ff,0x6a8a5a,.4);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff2dc,3);sun.shadow.bias=-.0003;sun.shadow.normalBias=.045;sun.shadow.radius=2.5;scene.add(sun);scene.add(sun.target);
 /* which GPU is this? Chrome on a Mac reports e.g. "ANGLE (Apple, ANGLE Metal Renderer: Apple M2, ...)" or "Intel(R) Iris(TM) Plus Graphics" */
 function detectGPU(){try{const gl=renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');return String((ext&&gl.getParameter(ext.UNMASKED_RENDERER_WEBGL))||gl.getParameter(gl.RENDERER)||'');}catch(e){return '';}}
 function gpuTier(r){const s=(r||'').toLowerCase();
- if(/apple m\d+ (pro|max|ultra)|rtx|radeon rx [5-9]\d{3}|geforce gtx 1[06-9]|geforce rtx/.test(s))return 'ultra';
+ if(/rtx [2-9]\d{3}|radeon rx [6-9]\d{3}/.test(s))return 'ultra';
  if(/apple m\d|apple gpu|radeon pro|radeon rx|geforce|nvidia/.test(s))return 'high';
  if(/iris|intel.*\bxe\b|uhd graphics (6[3-9]\d|7\d\d)|arc/.test(s))return 'medium';
  if(/intel|hd graphics|uhd|mali|adreno|powervr|swiftshader|llvmpipe|software/.test(s))return 'low';return isMobile?'medium':'high';}
 const TIERS={
- ultra:{pr:2,shadow:4096,ext:58,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.7,fxaa:false,wr:112,ws:160,grass:96000,flowers:7200,gf:125,srad:3,rain:2800,ff:520,birds:24,far:900,lamps:4,cloud:6,env:1,tex:512,leaf:1},
- high:{pr:1.5,shadow:2048,ext:48,post:true,msaa:0,ao:false,bloom:true,refl:true,rs:.42,fxaa:true,wr:96,ws:128,grass:54000,flowers:4200,gf:92,srad:2.6,rain:2000,ff:360,birds:18,far:780,lamps:3,cloud:5,env:1.5,tex:256,leaf:1},
- medium:{pr:1.25,shadow:1536,ext:42,post:true,msaa:0,ao:false,bloom:true,refl:false,fxaa:true,wr:72,ws:96,grass:26000,flowers:2000,gf:66,srad:2.2,rain:1200,ff:220,birds:12,far:600,lamps:2,cloud:4,env:3,tex:256,leaf:.8},
- low:{pr:1,shadow:0,ext:0,post:false,msaa:0,ao:false,bloom:false,refl:false,fxaa:false,wr:52,ws:64,grass:6500,flowers:520,gf:42,srad:1.5,rain:600,ff:120,birds:6,far:420,lamps:0,cloud:3,env:6,tex:256,leaf:.6}};
+ ultra:{pr:1.75,shadow:4096,ext:58,post:true,msaa:4,ao:true,bloom:true,refl:true,rs:.7,fxaa:false,wr:112,ws:160,grass:96000,flowers:7200,gf:125,srad:3,rain:2800,ff:520,birds:24,far:900,lamps:4,cloud:6,env:2,tex:512,leaf:1},
+ high:{pr:1.3,shadow:2048,ext:48,post:true,msaa:0,ao:false,bloom:true,refl:true,rs:.42,fxaa:true,wr:96,ws:128,grass:54000,flowers:4200,gf:92,srad:2.6,rain:2000,ff:360,birds:18,far:780,lamps:3,cloud:5,env:3,tex:256,leaf:1},
+ medium:{pr:1.1,shadow:1536,ext:42,post:true,msaa:0,ao:false,bloom:true,refl:false,fxaa:true,wr:72,ws:96,grass:26000,flowers:2000,gf:66,srad:2.2,rain:1200,ff:220,birds:12,far:600,lamps:2,cloud:4,env:5,tex:256,leaf:.8},
+ low:{pr:1,shadow:0,ext:0,post:false,msaa:0,ao:false,bloom:false,refl:false,fxaa:false,wr:52,ws:64,grass:6500,flowers:520,gf:42,srad:1.5,rain:600,ff:120,birds:6,far:420,lamps:0,cloud:3,env:8,tex:256,leaf:.6}};
 const GFX={tier:'high',composer:null,bloom:null,grade:null,fxaa:null,ao:null,refl:null,reflCam:new THREE.PerspectiveCamera(),texMat:new THREE.Matrix4(),hdr:false,lamps:[]};
 const TT=()=>TIERS[GFX.tier]||TIERS.high;
 // GTAO should ignore sky, water, sprites and alpha-tested foliage (it renders its own normal pass)
@@ -157,7 +157,7 @@ class Builder{constructor(){this.p=[];this.n=[];this.c=[];this.s=[];this.m=[];th
    const det=e<.09,k=(Math.floor(cx/cell)*4096+Math.floor(cz/cell))*2+(det?1:0);let L=cells.get(k);if(!L){L={det,t:[]};cells.set(k,L);}L.t.push(t);}
   const out=[];for(const L of cells.values()){const b=new Builder(),n=L.t.length;b.p=new Array(n*9);b.n=new Array(n*9);b.c=new Array(n*9);b.t=new Array(n*9);b.m=new Array(n*3);b.s=new Array(n*3);
    let i=0;for(const t of L.t){for(let j=0;j<9;j++){b.p[i*9+j]=this.p[t*9+j];b.n[i*9+j]=this.n[t*9+j];b.c[i*9+j]=this.c[t*9+j];b.t[i*9+j]=this.t[t*9+j];}for(let j=0;j<3;j++){b.m[i*3+j]=this.m[t*3+j];b.s[i*3+j]=this.s[t*3+j]||0;}i++;}
-   const m=b.mesh(mat,sway);if(L.det){m.userData.lod=1;world.lodMeshes.push(m);}out.push(m);}return out;}
+   const m=b.mesh(mat,sway);if(L.det){m.userData.lod=1;world.lodMeshes.push(m);}else{m.userData.far=1;world.farMeshes.push(m);}out.push(m);}return out;}
  mesh(mat,sway){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(this.p,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(this.n,3));g.setAttribute('color',new THREE.Float32BufferAttribute(this.c,3));
   g.setAttribute('mat',new THREE.Float32BufferAttribute(this.m,1));g.setAttribute('tp',new THREE.Float32BufferAttribute(this.t,3));if(sway)g.setAttribute('sway',new THREE.Float32BufferAttribute(this.s,1));g.computeBoundingSphere();return new THREE.Mesh(g,mat);}}
 const worldMat=makeWorldMat(),worldMatS=makeWorldMat({sway:true,smooth:true,fade:true}),worldMatDS=makeWorldMat({side:THREE.DoubleSide});
@@ -182,7 +182,7 @@ function profile(I,f,x,z){let h;
  if(I.ponds)for(const p of I.ponds){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r*1.6){const fl=Math.max(p.y-1.1,.85);h=Math.min(h,lerp(fl,h,smooth(p.r*.75,p.r*1.6,d)));}}
  return h;}
 function terrainH(I,x,z){const dx=x-I.x,dz=z-I.z,d2=dx*dx+dz*dz,Rm=I.R*1.42;if(d2>Rm*Rm)return -60;const d=Math.sqrt(d2),th=Math.atan2(dz,dx);return profile(I,d/islandR(I,th),x,z);}
-const world={aoSpots:[],lodMeshes:[],islGroups:[],shops:{},caveRings:[],floors:[],ponds:[],docks:[],colliders:[],inter:[],npcs:[],floaters:[],seaRocks:[],reserved:{},spawn:{},boatDock:{},halos:[],chimneys:[],puddles:[],smoke:[],altarCrystal:null,lamps:[]};
+const world={aoSpots:[],lodMeshes:[],farMeshes:[],islGroups:[],shops:{},caveRings:[],floors:[],ponds:[],docks:[],colliders:[],inter:[],npcs:[],floaters:[],seaRocks:[],reserved:{},spawn:{},boatDock:{},halos:[],chimneys:[],puddles:[],smoke:[],altarCrystal:null,lamps:[]};
 function dockH(x,z){for(const d of world.docks){const dx=x-d.x,dz=z-d.z;const u=dx*d.cx+dz*d.sz,v=-dx*d.sz+dz*d.cx;if(u>=-1&&u<=d.len&&Math.abs(v)<=d.w/2)return d.h;}return -60;}
 function onDock(x,z){return dockH(x,z)>-1;}
 function pondAt(x,z){for(const p of world.ponds)if(Math.hypot(x-p.x,z-p.z)<p.r*1.02)return p;return null;}
@@ -880,7 +880,7 @@ function buildGrass(){const bg=new THREE.BufferGeometry(),P=[],C=[],Nn=[];
    const n=2+(r()*4|0);for(let j=0;j<n&&fi<FN;j++){const x=cx+(r()-.5)*1.2,z=cz+(r()-.5)*1.2,g=valid(k,x,z);if(g==null)continue;const sc=.8+r()*.6;M.compose(Vv.set(x,g-.02,z),Q.setFromAxisAngle(_up,r()*TAU),S.set(sc,sc,sc));fm.setMatrixAt(fi,M);fm.setColorAt(fi,col.set(r()<.8?fc:pick(pal)));fi++;}}
   const grp=(world.islGroups.find(q=>q.key===k)||{}).grp||scene;
   for(const [m,c] of [[gm,gi],[fm,fi]]){if(!m)continue;m.count=c;m.userData.max=c;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;m.computeBoundingSphere();m.frustumCulled=true;m.receiveShadow=true;m.userData.noAO=true;grp.add(m);}
-  gm.userData.I=I;if(fm)fm.userData.I=I;grassMeshes.push(gm);if(fm)flowerMeshes.push(fm);}}
+  gm.userData.I=I;if(fm)fm.userData.I=I;grassMeshes.push(gm);if(fm)flowerMeshes.push(fm);reflHide.push(gm);if(fm)reflHide.push(fm);}}
 
 /* clouds now live in the sky shader; the array stays for older callers */
 const clouds=[];

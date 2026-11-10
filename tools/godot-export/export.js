@@ -6,7 +6,7 @@ await p.goto('http://localhost:4173/?debug');await p.waitForFunction(()=>window.
 await p.evaluate(()=>{const b64=u8=>{let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);};window.__b64=b64;
  window.__collect=key=>{const D=window.__DI,T=D.THREE,g=D.world.islGroups.find(x=>x.key===key).grp;g.visible=true;g.updateMatrixWorld(true);const P=[],C=[],v=new T.Vector3(),m4=new T.Matrix4(),im=new T.Matrix4(),col=new T.Color(),ic=new T.Color();
   g.traverse(o=>{if(!o.isMesh)return;const mat=Array.isArray(o.material)?o.material[0]:o.material;if(!mat||mat.transparent||mat.isShaderMaterial||mat.isMeshBasicMaterial)return;if(o.isInstancedMesh&&o.count>4000)return;
-   let q=o;while(q&&q!==g){if(!q.visible&&!q.userData.lod)return;q=q.parent;}const geo=o.geometry,pos=geo.attributes.position;if(!pos)return;const idx=geo.index,ca=geo.attributes.color,useC=ca&&mat.vertexColors,base=mat.color||new T.Color(1,1,1);
+   let q=o;while(q&&q!==g){if(!q.visible&&!q.userData.lod&&!q.userData.far)return;q=q.parent;}const geo=o.geometry,pos=geo.attributes.position;if(!pos)return;const idx=geo.index,ca=geo.attributes.color,useC=ca&&mat.vertexColors,base=mat.color||new T.Color(1,1,1);
    const n=idx?idx.count:pos.count,insts=o.isInstancedMesh?o.count:1;
    for(let k=0;k<insts;k++){m4.copy(o.matrixWorld);let hasIC=false;if(o.isInstancedMesh){o.getMatrixAt(k,im);m4.multiply(im);if(o.instanceColor){o.getColorAt(k,ic);hasIC=true;}}
     for(let i=0;i<n;i++){const j=idx?idx.getX(i):i;v.fromBufferAttribute(pos,j).applyMatrix4(m4);P.push(v.x,v.y,v.z);if(useC)col.fromBufferAttribute(ca,j);else col.setRGB(1,1,1);col.multiply(base);if(hasIC)col.multiply(ic);

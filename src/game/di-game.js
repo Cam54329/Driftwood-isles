@@ -20,7 +20,7 @@ const puffs=[];function spawnPuff(x,y,z,col){let p=puffs.find(q=>q.t>=q.d);if(!p
 
 /* ---------- input ---------- */
 const keys={},input={x:0,y:0,rot:0},joy={x:0,y:0,id:null};
-const cam={yaw:0,pitch:.44,dist:12,tdist:12,target:new V3(),goal:null,manualT:9,fov:55};
+const cam={yaw:0,pitch:.24,dist:12,tdist:12,target:new V3(),goal:null,manualT:9,fov:55};
 const ptrs=new Map();let pinch=null,camBtn=0;
 const typing=()=>{const a=document.activeElement;return a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA');};
 function uiBlocked(){return !$('#panelWrap').hidden||!$('#joinWrap').hidden||PAUSE.on||MENU.on;}
@@ -49,7 +49,7 @@ canvas.addEventListener('pointerdown',e=>{AU.init();canvas.focus({preventScroll:
 canvas.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
  if(p.mode==='pinch'&&pinch&&ptrs.size===2){const a=[...ptrs.values()];const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);cam.tdist=clamp(pinch.dist*pinch.d/Math.max(d,1),4,PHOTO.on?60:32);return;}
  if(p.mode==='pending'&&Math.hypot(p.x-p.sx,p.y-p.sy)>6)p.mode='drag';
- if(p.mode==='drag'){cam.yaw-=dx*.0058*(state.settings.sens??1);cam.pitch=clamp(cam.pitch+dy*.0048*(state.settings.sens??1)*(state.settings.invY?-1:1),.04,1.35);cam.goal=null;cam.manualT=0;}});
+ if(p.mode==='drag'){cam.yaw-=dx*.0058*(state.settings.sens??1);cam.pitch=clamp(cam.pitch+dy*.0048*(state.settings.sens??1)*(state.settings.invY?-1:1),-.6,1.35);cam.goal=null;cam.manualT=0;}});
 const endPtr=e=>{const p=ptrs.get(e.pointerId);if(!p)return;if(p.mode==='charge')castUp();else if(p.mode==='pending'&&e.type==='pointerup'&&F.st==='waiting'&&!uiBlocked())fishPress(true);ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;};
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
 canvas.addEventListener('wheel',e=>{e.preventDefault();cam.tdist=clamp(cam.tdist*(1+e.deltaY*.0011),4,PHOTO.on?60:32);},{passive:false});
@@ -155,7 +155,9 @@ function updateEnv(dt){if(!PHOTO.on||!PHOTO.timeSet)env.t=(env.t+dt/(env.dayLen*
  skyU.uMoon.value.copy(md);skyU.uMoonK.value=mo;skyU.uStarK.value=starU.uA.value;updateMeteors(dt,starU.uA.value);if(sy<-.03)skyU.uCloudSun.value.copy(EC.moon).multiplyScalar(.2*mo+.01);skyU.uCloudAmb.value.multiplyScalar(lerp(1,.42,nightK));
  glowMat.color.setScalar(lerp(.85,2.6,nightK));
  /* distance LOD for the small details in each tile */
- GFX.lodT=(GFX.lodT||0)-dt;if(GFX.lodT<=0){GFX.lodT=.3;const ld=GFX.tier==='ultra'?110:GFX.tier==='high'?80:GFX.tier==='medium'?60:40;for(const m of world.lodMeshes){const bs=m.geometry.boundingSphere,on=Math.hypot(bs.center.x-cp.x,bs.center.z-cp.z)-bs.radius<ld;if(m.visible!==on)m.visible=on;}}
+ GFX.lodT=(GFX.lodT||0)-dt;if(GFX.lodT<=0){GFX.lodT=.3;const ld=GFX.tier==='ultra'?110:GFX.tier==='high'?80:GFX.tier==='medium'?60:40;for(const m of world.lodMeshes){const bs=m.geometry.boundingSphere,on=Math.hypot(bs.center.x-cp.x,bs.center.z-cp.z)-bs.radius<ld;if(m.visible!==on)m.visible=on;}
+  /* trees and props deep in the haze (over ~80% fogged) are skipped: about half the triangles in a wide view */
+  const fd=Math.max(150,scene.fog.far*(GFX.tier==='ultra'?.82:.75));for(const m of world.farMeshes){const bs=m.geometry.boundingSphere,on=Math.hypot(bs.center.x-cp.x,bs.center.z-cp.z)-bs.radius<fd;if(m.visible!==on)m.visible=on;}}
  /* the water shader shapes shorelines for the five nearest islands only */
  {const ws=LANDS.map(k=>{const I=ZONES[k];return[Math.hypot(cp.x-I.x,cp.z-I.z)-I.R,I];}).sort((a,b)=>a[0]-b[0]);for(let i=0;i<WATER_NI;i++){const I=ws[i][1];waterU.uIsl.value[i].set(I.x,I.z,I.R,I.p1);waterU.uIsl2.value[i].set(I.p2,0);waterU.uSand.value[i].set(I.sand);}}
  /* skip whole islands that are lost in the fog, and caves unless you are inside them */
@@ -532,12 +534,12 @@ function updateCamera(dt){const tgt=_camT.copy(player.mode==='boat'?boat.pos:pla
  if((F.st==='reeling'||F.st==='bite')&&!PHOTO.on){want*=.78;tgt.lerp(_v.copy(bobber.position).setY(tgt.y-.5),.3);}if(F.st==='charging')want*=1.06;if(F.st==='casting'&&!PHOTO.on)tgt.lerp(_v.copy(bobber.position).setY(tgt.y),.22);if(F.st==='caught'||player.emote==='show')want*=.8;
  const k=state.settings.chill?8:13;cam.target.x=damp(cam.target.x,tgt.x,k,dt);cam.target.y=damp(cam.target.y,tgt.y,k,dt);cam.target.z=damp(cam.target.z,tgt.z,k,dt);cam.dist=damp(cam.dist,want,5,dt);
  if(player.mode==='boat'&&Math.abs(boat.speed)>3&&ptrs.size===0&&cam.manualT>2.5&&!PHOTO.on)cam.yaw+=angDiff(cam.yaw,boat.yaw+Math.PI)*(1-Math.exp(-1.1*dt));
- if(ptrs.size===0&&cam.manualT>2.5&&!PHOTO.on&&F.st==='idle'){const mv=player.mode==='boat'?Math.abs(boat.speed)>3:player.mode==='walk'&&Math.hypot(input.x,input.y)>.1;if(mv){const tp=player.mode==='boat'?(boat.alt>3?.42:.54):.52;cam.pitch+=(tp-cam.pitch)*(1-Math.exp(-1.3*dt));}}
- const cp=Math.cos(cam.pitch);camera.position.set(cam.target.x+Math.sin(cam.yaw)*cp*cam.dist,cam.target.y+Math.sin(cam.pitch)*cam.dist,cam.target.z+Math.cos(cam.yaw)*cp*cam.dist);
+ if(ptrs.size===0&&cam.manualT>2.5&&!PHOTO.on&&F.st==='idle'){const mv=player.mode==='boat'?Math.abs(boat.speed)>3:player.mode==='walk'&&Math.hypot(input.x,input.y)>.1;if(mv){const fl=player.mode==='boat'&&boat.alt>3,lo=fl?.16:.06,hi=fl?.62:.5,tp=clamp(cam.pitch,lo,hi);cam.pitch+=(tp-cam.pitch)*(1-Math.exp(-1.1*dt));}}
+ const lu=clamp(-cam.pitch/.6,0,1),pe=Math.max(cam.pitch,-.14),de=cam.dist*(1-lu*.45),cp=Math.cos(pe);camera.position.set(cam.target.x+Math.sin(cam.yaw)*cp*de,cam.target.y+Math.sin(pe)*de,cam.target.z+Math.cos(cam.yaw)*cp*de);
  const minY=Math.max(groundH(camera.position.x,camera.position.z)+.8,waveH(camera.position.x,camera.position.z,WIND.uTime.value)+.8);if(camera.position.y<minY)camera.position.y=minY;
  {const cpx=camera.position.x,cpz=camera.position.z;let blk=0;eachColNear(cpx,cpz,4,c=>{const dx=c.x-cpx,dz=c.z-cpz;if(dx>4||dx<-4||dz>4||dz<-4)return;const d=Math.hypot(dx,dz),rr=Math.max(c.r*3.2,1.4);if(d<rr&&c.r>=.35&&c.r<3)blk=Math.max(blk,1-d/rr);});cam.occ=damp(cam.occ||0,blk,6,dt);
   if(cam.occ>.02&&!PHOTO.on){const k=1-cam.occ*.55;camera.position.lerp(cam.target,1-k);}}
- camera.lookAt(cam.target);cam.shake=Math.max(0,(cam.shake||0)-dt*1.6);if(cam.shake>0&&!PHOTO.on&&!state.settings.noShake){const s=cam.shake*cam.shake*.6,tt=performance.now()/1000;camera.rotateX(Math.sin(tt*47)*s*.1);camera.rotateY(Math.sin(tt*39+1)*s*.1);}cam.punch=Math.max(0,(cam.punch||0)-dt*2.2);const fov=55+(player.mode==='boat'?clamp(Math.abs(boat.speed)/19,0,1)*6:0)-(cam.punch||0)*7;if(Math.abs(fov-camera.fov)>.01){camera.fov=cam.punch>0?damp(camera.fov,fov,14,dt):damp(camera.fov,fov,2,dt);camera.updateProjectionMatrix();}
+ camera.lookAt(cam.target);if(lu>0)camera.rotateX(lu*.36);cam.shake=Math.max(0,(cam.shake||0)-dt*1.6);if(cam.shake>0&&!PHOTO.on&&!state.settings.noShake){const s=cam.shake*cam.shake*.6,tt=performance.now()/1000;camera.rotateX(Math.sin(tt*47)*s*.1);camera.rotateY(Math.sin(tt*39+1)*s*.1);}cam.punch=Math.max(0,(cam.punch||0)-dt*2.2);const fov=58+(player.mode==='boat'?clamp(Math.abs(boat.speed)/19,0,1)*6:0)-(cam.punch||0)*7;if(Math.abs(fov-camera.fov)>.01){camera.fov=cam.punch>0?damp(camera.fov,fov,14,dt):damp(camera.fov,fov,2,dt);camera.updateProjectionMatrix();}
  if(player.mode==='boat')camera.rotateZ(boat.g.rotation.z*.25);}
 
 /* fish shadows drifting just under the surface around you (they scatter from a splashing float) */

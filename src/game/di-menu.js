@@ -16,7 +16,7 @@ function openMenu(){MENU.on=true;MENU.t=0;MENU.sel=0;closePanel();document.body.
  renderMenu();$('#menuFoot').textContent='Version 3.0 · '+(isTouch?'tap to choose':'↑ ↓ and Enter, or click');}
 function closeMenu(go){MENU.on=false;const m=$('#menu');m.classList.add('fade');setTimeout(()=>{m.hidden=true;},450);document.body.classList.remove('menu');
  if(F.st==='waiting'){F.st='retract';F.t=0;F.retFrom.copy(bobber.position);}env.t=.32;if(state.settings.weather==='auto'||!state.settings.weather){env.wTimer=rand(60,150);}else setWeather(state.settings.weather,true);
- const sp=world.spawn[state.last]||world.spawn.cove;player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;placeBoatAt(state.last||'cove');cam.yaw=player.face+Math.PI;cam.target.copy(player.pos).add(new V3(0,2,0));cam.dist=cam.tdist=12;cam.pitch=.34;
+ const sp=world.spawn[state.last]||world.spawn.cove;player.pos.set(sp.x,groundH(sp.x,sp.z),sp.z);player.face=sp.yaw;placeBoatAt(state.last||'cove');cam.yaw=player.face+Math.PI;cam.target.copy(player.pos).add(new V3(0,2,0));cam.dist=cam.tdist=12;cam.pitch=.24;
  if(go)go();}
 function menuCamera(dt){MENU.t+=dt;const d=MENU.dock;if(!d)return;const D=new V3(d.cx,0,d.sz),P=new V3(-d.sz,0,d.cx);const E=new V3(d.x+d.cx*(d.len-1.4),d.h,d.z+d.sz*(d.len-1.4));const wide=innerWidth>760,s=Math.sin(MENU.t*.07);
  const pos=E.clone().addScaledVector(D,wide?-7.5:-9).addScaledVector(P,wide?-4.2+s*.6:-2.2).add(new V3(0,wide?1.2:2.2,0));const look=E.clone().addScaledVector(D,14).addScaledVector(P,wide?9:2).add(new V3(0,wide?6.5:3.6,0));

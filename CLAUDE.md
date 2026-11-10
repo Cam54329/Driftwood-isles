@@ -42,7 +42,7 @@ original: never imitate another game's names, UI layout, art, terms or signature
 - Don't put model names or identifiers in commits.
 - Cam's workflow: **do one phase, redeploy, give the main domain link, then stop so Cam can test.**
 
-## Status and plan (last release: 9.0)
+## Status and plan (last release: 9.1)
 
 - Phase 1, performance (5.2): done.
 - Phase 2, graphics (6.0): done.
@@ -74,6 +74,10 @@ original: never imitate another game's names, UI layout, art, terms or signature
     - Storm Petrel (`petrel`, built on the seaplane model, extra props in `userData.props`).
   - Owning all three runs `startFinale`: fireworks (`FW`), the title Heart of the Isles and the `#finale` ending card.
   - `state.playT` counts time at sea.
+- 9.1: lower camera (default pitch .24, fov 58); drag up past eye level to look up (pitch down to -.6: the camera dips, slides in
+  and tilts up); while moving the pitch only eases back into a band. Perf: no HUD backdrop blur, lower tier pixel ratios,
+  Pro/Max Macs auto-start on High (`gpuV` forces one re-detect), grass skipped in the water reflection, and
+  `world.farMeshes` (non-detail chunks, `userData.far`) hidden beyond ~75% of fog distance.
 - Phase 3, features: next.
   - Fishing quests and daily challenges.
   - Aquarium / trophy room.
