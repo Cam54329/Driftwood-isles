@@ -37,7 +37,7 @@ addEventListener('keydown',e=>{const k=e.code;if(typing()){if(k==='Escape')docum
  if(k==='Enter'){openChat();e.preventDefault();return;}
  if(k==='Space')doJump();if(k==='KeyE')doInteract();if(k==='KeyF')castDown();if(k==='KeyB')openBag();if(k==='KeyG')openDex();if(k==='KeyL')openLeaderboard();if(k==='KeyK')openStats();if(k==='KeyO')openOnline();if(k==='KeyP')togglePhoto(true);if(k==='KeyM')openMap();if(k==='KeyQ')openQuests();
  if(k==='Comma')snapCam(1);if(k==='Period')snapCam(-1);
- const dg=/^Digit([1-8])$/.exec(k);if(dg){const n=+dg[1];if(!$('#emoteMenu').hidden&&n<=4)playEmote(['wave','dance','cheer','show'][n-1]);else hotbarKey(n);}});
+ const dg=/^Digit([1-9])$/.exec(k);if(dg){const n=+dg[1];if(!$('#emoteMenu').hidden&&n<=4)playEmote(['wave','dance','cheer','show'][n-1]);else hotbarKey(n);}});
 addEventListener('keyup',e=>{const k=e.code;keys[k]=false;if(F.st==='reeling'&&(k==='Space'||k==='KeyF'||k==='Enter'))fishPress(false);else if(k==='KeyF')castUp();});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;if(F.st==='reeling')reelHold(false);if(F.st==='charging')castUp();camBtn=0;});
 function snapCam(dir){cam.goal=(cam.goal==null?cam.yaw:cam.goal)+dir*Math.PI/4;cam.manualT=0;}
@@ -242,6 +242,8 @@ function isNotable(r,mut){return r>=3||(mut&&['golden','prismatic','shadow'].inc
    When the float dives, strike. Then fight the fish on a classic reel: hold to wind in, ease off when the tension needle
    climbs into the red (or the line snaps), and pull against the fish's runs to tire it out. */
 const F={st:'idle',t:0,power:0,dir:new V3(),from:new V3(),to:new V3(),flight:.8,arc:4,wait:0,nibT:0,nib:0,twT:0,twK:0,ripT:0,catch:null,reel:null,held:null,retFrom:new V3(),flyFrom:new V3(),zone:'cove',lastCatch:null,hookWin:1};
+/* lifetime fishing-skill counters (strikes, streaks, fight grades, reads, bows) used by challenges and milestones */
+function CS(){const s=state;if(!s.cst||typeof s.cst!=='object')s.cst={};const c=s.cst;for(const k of CST_KEYS)if(!Number.isFinite(c[k]))c[k]=0;return c;}
 const SC={idle:'i',charging:'c',casting:'t',waiting:'w',bite:'b',reeling:'r',caught:'k',retract:'x'};
 function canStartCast(){return F.st==='idle'&&!uiBlocked()&&!PHOTO.on&&!(player.mode==='boat'&&(Math.abs(boat.speed)>1.5||boat.alt>.3))&&!(player.mode==='ride'&&((hostOf(RIDE&&RIDE.uid)||{}).spd||0)>1.5);}
 function castDown(){if(uiBlocked()||PHOTO.on)return;hideEmotes();if(F.st==='caught'){finishCatch();return;}if(F.st==='bite'){setHook();return;}if(F.st==='reeling'){reelHold(true);return;}if(F.st==='waiting'){cancelFishing();return;}
@@ -260,7 +262,9 @@ function useBait(){if(!state.baitOn)return;state.bait[state.baitOn]=(state.bait[
 function buzz(p){try{if(isTouch&&navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 const RE={};const re=id=>RE[id]||(RE[id]=document.getElementById(id));
 function fishTip(html,cls){const el=re('fishTip');if(!html){if(!el.hidden)el.hidden=true;return;}if(el.dataset.h!==html){el.innerHTML=html;el.dataset.h=html;}const c=cls||'';if(el.className!==c)el.className=c;if(el.hidden)el.hidden=false;}
-function twitch(){if(F.st!=='waiting'||F.twT>0)return;F.twT=.8;F.twK=1;F.twN=(F.twN||0)+1;const ch=state.settings.chill;
+function earlyStrike(){F.tap=0;F.tapAfter=0;F.taps=Math.max(0,F.taps-1);F.wait+=rand(2,3.4);F.nibT=rand(2,3);F.spookT=2.2;F.twT=.8;floatTip(F.streak>0?'Too early! Streak lost':'Too early!');F.streak=0;
+ fishTip('<b>Too early!</b> That was only a test bite. Strike when the float goes right under','nib');AU.twitch();splash(bobber.position,6,2.6);addRipple(F.to.x,F.to.z,.9);strikeFx('late');}
+function twitch(){if(F.st!=='waiting')return;if((F.tap>0||F.tapAfter>0)&&!state.settings.chill){earlyStrike();return;}if(F.twT>0)return;F.twT=.8;F.twK=1;F.twN=(F.twN||0)+1;const ch=state.settings.chill;
  if(F.twN>4&&!ch){F.wait+=rand(1.5,3);F.twN=2;fishTip('<b>Easy!</b> Too much twitching scares the fish off','nib');F.spookT=1.6;}
  else{F.wait-=(ch?1.3:1)*stats().shake;if(F.nib>0){if(ch||Math.random()<.65)F.wait=Math.min(F.wait,rand(.2,.6));else{F.wait+=rand(1,2.5);F.nib=0;F.spookT=1.2;}}}
  AU.twitch();splash(bobber.position,4,2);addRipple(bobber.position.x,bobber.position.z,.6);}
@@ -277,11 +281,13 @@ function strikeFx(kind){let el=document.getElementById('strikeFx');if(!el){el=do
 function startBite(){F.catch=rollCatch(F.zone);F.st='bite';F.t=0;F.ripT=0;const S=stats(),c=F.catch,rr=c.relic?3:c.r;F.hookWin=state.settings.chill?1.4+S.ctrl*1.2+S.hook:Math.max(.42,(.62+S.ctrl*1.1+S.hook)*(1-.045*rr));
  F.biteA=Math.random()*TAU;F.biteFrom=F.to.clone();biteShadow(true);AU.bite();AU.splash(.7);splash(bobber.position,22,5.5);addRipple(bobber.position.x,bobber.position.z,1.6);fishTip(null);strikeFx('bite');cam.punch=Math.max(cam.punch||0,.35);
  const h=re('hook');h.style.setProperty('--hw',F.hookWin.toFixed(2)+'s');h.innerHTML=`<div class="hk-perfect"></div><div class="hk-ring"></div><div class="hk-core">STRIKE!<small>${isTouch?'Tap anywhere':'Click or Space'}</small></div>`;h.hidden=false;re('reelCatch').hidden=false;buzz(25);camShake(.12);}
-function setHook(){if(F.st!=='bite')return;const q=F.t/F.hookWin,grade=q<.3?2:q<.65?1:0;re('hook').hidden=true;biteShadow(false);F.biteFrom=null;
+function setHook(){if(F.st!=='bite')return;const q=F.t/F.hookWin,grade=q<.3?2:q<.65?1:0,rt=F.t;re('hook').hidden=true;biteShadow(false);F.biteFrom=null;
+ F.streak=grade===2?(F.streak||0)+1:0;if(grade===2){const C=CS();C.perfect++;C.bestStreak=Math.max(C.bestStreak,F.streak);}
  /* the strike: a beat of slow motion, a punch-in and a flash, scaled by how clean it was */
  if(grade>0&&!state.settings.chill){HIT.t=grade===2?.24:.13;HIT.k=grade===2?.22:.4;}cam.punch=grade===2?1:grade===1?.6:.25;strikeFx(grade===2?'perfect':grade===1?'good':'late');
- floatTip(grade===2?'Perfect strike!':grade===1?'Good strike':'Late strike! The hook is barely set');startFight(grade===2,grade);}
-function missBite(){biteShadow(false);F.biteFrom=null;re('hook').hidden=true;re('reelCatch').hidden=true;exclaim.visible=false;F.st='retract';F.t=0;F.retFrom.copy(bobber.position);AU.escape();toast(F.catch&&F.catch.relic?'Too slow… something shiny slipped away.':'Too slow! The fish stole the bait.');}
+ floatTip(grade===2?`Perfect strike! ${rt.toFixed(2)}s${F.streak>1?' · streak ×'+F.streak:''}`:grade===1?`Good strike · ${rt.toFixed(2)}s`:'Late strike! The hook is barely set');if(grade===2&&F.streak>1)AU.bell(1046.5+Math.min(F.streak,10)*62,.45,.06,.2);
+ startFight(grade===2,grade);F.reel.rt=rt;F.reel.streak=F.streak;chalEvent('strike',{grade,streak:F.streak});}
+function missBite(){if(F.streak>1)setTimeout(()=>floatTip('Streak lost'),300);F.streak=0;biteShadow(false);F.biteFrom=null;re('hook').hidden=true;re('reelCatch').hidden=true;exclaim.visible=false;F.st='retract';F.t=0;F.retFrom.copy(bobber.position);AU.escape();toast(F.catch&&F.catch.relic?'Too slow… something shiny slipped away.':'Too slow! The fish stole the bait.');}
 function fightBase(){return player.mode==='boat'?boat.pos:player.pos;}
 function startFight(perfect,grade){if(grade===undefined)grade=perfect?2:1;const c=F.catch,R=RAR[c.r],S=stats(),ch=state.settings.chill;const wN=c.relic?.4:clamp((c.w-c.sp.minW)/(c.sp.maxW-c.sp.minW||1),0,1.5);
  const base=fightBase(),d=clamp(Math.hypot(F.to.x-base.x,F.to.z-base.z),4,30),str=(.35+R.spd*2.6+wN*.35)*(ch?1:1.12);
@@ -290,6 +296,8 @@ function startFight(perfect,grade){if(grade===undefined)grade=perfect?2:1;const 
   hold:false,steer:0,touchSteer:0,t:0,click:0,drag:0,yank:1,jumpT:(c.r>=2&&!c.relic)?rand(1.5,3.5):1e9,jump:-1,ja:0,jx:0,jz:0,fishM:null,known:false,hot:0,pull:0};
  {const sh=c.relic?'fish':c.sp.shape,Rf=F.reel;Rf.style=sh==='eel'?'eel':sh==='shark'?'shark':sh==='ray'?'ray':sh==='long'?'long':sh==='flat'?'flat':'fish';if(Rf.style==='long'&&Rf.jumpT<1e8)Rf.jumpT=rand(1,2.2);if(Rf.style==='shark'){Rf.runBase*=1.5;Rf.restBase*=.8;}
   const rd=RODM[state.rod],cap=6+rd.luck*1.7+(S.res||0)*40;Rf.heavy=c.relic||ch?0:Math.max(0,c.w/cap-1);if(Rf.heavy>0){const h=Math.min(1.5,Rf.heavy);Rf.riseK/=1+h*.45;Rf.snapT/=1+h*.35;Rf.str*=1+h*.2;}}
+ {const Rf=F.reel,rr=c.relic?3:c.r,w=clamp(.2+S.ctrl*.3-rr*.014-(Rf.heavy>0?.04:0)+(ch?.1:0),.13,.36);Rf.zLo=.6-w/2;Rf.zHi=Math.min(.82,.6+w/2);Rf.warnT=ch?.9:clamp(.62-.035*rr,.34,.62);
+  Object.assign(Rf,{grade,zt:0,ht:0,heldAt:-9,runs:0,reads:0,jumps:0,bows:0,maxD:0,slackMax:0,runK:1,warn:false});re('rfZone').setAttribute('d',gaugeArc(Rf.zLo,Rf.zHi,73));}
  F.st='reeling';F.t=0;exclaim.visible=false;re('reel').hidden=false;re('reelCatch').hidden=false;
  re('reelRar').innerHTML=c.relic?'<span class="pill" style="--c:#c6f4ff">Relic</span>':rarPill(c.r);re('reelName').textContent=c.relic?'Something glimmers…':'???';
  re('reel').style.setProperty('--rc',c.relic?'#9eeaff':RAR[c.r].c);re('reel').classList.toggle('big',c.r>=3||!!c.relic);
@@ -302,27 +310,30 @@ function endFightUI(){re('reel').hidden=true;re('reelCatch').hidden=true;re('hoo
 function updateReel(dt){const R=F.reel,T=WIND.uTime.value;R.t+=dt;R.yank=Math.max(0,R.yank-dt*4);
  const ks=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0);R.steer=clamp(ks+R.touchSteer+joy.x,-1,1);
  // the fish rests, then makes runs to one side; a tired fish runs less and pulls softer
- if(R.run>0){R.run-=dt;if(R.run<=0)R.rest=R.restBase*rand(.7,1.4)*(1+(1-R.stam)*1.2);}
- else{R.rest-=dt;if(R.rest<=0){R.run=R.runBase*rand(.7,1.3)*(.45+R.stam*.55);R.runDir=Math.abs(R.ang)>.45?-Math.sign(R.ang):Math.random()<.5?-1:1;splash(bobber.position,8,3.5);AU.splash(.35);AU.run();camShake(.1);if(R.jumpT<=0&&R.jump<0)startJump();}}
- const running=R.run>0,pull=R.str*(running?1:.2)*(.3+.7*R.stam);R.pull=pull;
+ if(R.hold)R.heldAt=R.t;
+ if(R.run>0){R.run-=dt;if(R.run<=0){R.rest=R.restBase*rand(.7,1.4)*(1+(1-R.stam)*1.2);R.runK=1;}}
+ else{R.rest-=dt;if(!R.warn&&R.rest>0&&R.rest<=R.warnT){R.warn=true;AU.creak(.35);camShake(.07);splash(bobber.position,5,2.6);addRipple(bobber.position.x,bobber.position.z,.8);}
+  if(R.rest<=0){R.warn=false;R.runs++;const read=!R.hold&&R.t-R.heldAt<R.warnT+1.2;R.runK=read?.78:1;if(read){R.reads++;R.stam=Math.max(0,R.stam-.035);CS().reads++;floatTip('Good read!');chalEvent('read');}R.run=R.runBase*rand(.7,1.3)*(.45+R.stam*.55);R.runDir=Math.abs(R.ang)>.45?-Math.sign(R.ang):Math.random()<.5?-1:1;splash(bobber.position,8,3.5);AU.splash(.35);AU.run();camShake(.1);if(R.jumpT<=0&&R.jump<0)startJump();}}
+ const running=R.run>0,pull=R.str*(running?R.runK:.2)*(.3+.7*R.stam);R.pull=pull;
  /* eels zigzag mid-run; rays dive, so pulling sideways does nothing and reeling into a dive strains the line */
  if(running&&R.style==='eel'){R.zz=(R.zz||rand(.5,.9))-dt;if(R.zz<=0){R.zz=rand(.42,.8);R.runDir*=-1;}}
  const dive=running&&R.style==='ray';const counter=running&&!dive&&R.steer*R.runDir<-.3,along=running&&!dive&&R.steer*R.runDir>.3;
- let tgt=R.hold?.2+pull*.72:pull*.24;if(counter)tgt*=.68-R.ctrl;if(along)tgt*=1.15;if(dive&&R.hold)tgt*=1.28;if(!running&&R.style==='flat'&&R.hold)tgt+=.08;if(R.heavy>0)tgt*=1+Math.min(.3,R.heavy*.2);
+ let tgt=R.hold?(running?.2+pull*.72:Math.max(.58,.4+pull*.5)):pull*.24;if(counter)tgt*=.68-R.ctrl;if(along)tgt*=1.15;if(dive&&R.hold)tgt*=1.28;if(!running&&R.style==='flat'&&R.hold)tgt+=.08;if(R.heavy>0)tgt*=1+Math.min(.3,R.heavy*.2);
  R.tens+=(tgt-R.tens)*(1-Math.exp(-(R.hold?3.8/R.riseK:3.4)*dt));
  /* head-shakes: a running fish jerks the line, spiking the tension without warning */
  if(running){R.jerk-=dt;if(R.jerk<=0){R.jerk=rand(.7,1.8);const k=rand(.12,.28)*Math.min(1.2,pull)*(state.settings.chill?.5:1);R.tens+=k;if(k>.12){camShake(.12);AU.creak(R.tens);splash(bobber.position,6,3.5);}}}
- const before=R.dist,wind=R.reelSpd*clamp(1-pull*.6,.1,1)*(!running&&R.style==='flat'?.65:1);
+ const inZ=R.hold&&R.tens>=R.zLo&&R.tens<=R.zHi;if(R.hold)R.ht+=dt;if(inZ)R.zt+=dt;
+ const before=R.dist,wind=R.reelSpd*clamp(1-pull*.6,.1,1)*(!running&&R.style==='flat'?.65:1)*(inZ?1.15:1);
  if(R.hold)R.dist-=wind*dt;else R.dist+=(running?pull*1.25:.08)*dt;
  let slip=0;if(R.tens>.86){slip=(R.tens-.86)*7*pull;R.dist+=slip*dt;}
  if(R.tens>.98)R.danger+=dt;else R.danger=Math.max(0,R.danger-dt*1.5);
  /* a slack line during a run lets the fish throw the hook */
  R.loose=Math.max(0,(R.loose||0)-dt);if(running&&!R.hold&&R.tens<.12&&!state.settings.chill){R.slack+=dt;if(R.slack>(R.loose>0?.55:1.1)&&Math.random()<dt*(R.loose>0?1.3:.55)){loseFish('The line went slack and the fish shook the hook. Keep a little tension on it.');return;}}else R.slack=Math.max(0,R.slack-dt*2);
- const work=R.tens>.28?(R.tens<.9?1.5:.9):.3;R.stam=Math.max(0,R.stam-dt*.047*work*(counter?1.8:1)*R.stamK/Math.sqrt(R.str));
+ const work=R.tens>.28?(R.tens<.9?1.5:.9):.3;R.stam=Math.max(0,R.stam-dt*.047*work*(counter?1.8:1)*(inZ?1.6:1)*R.stamK/Math.sqrt(R.str));R.maxD=Math.max(R.maxD,R.danger/R.snapT);R.slackMax=Math.max(R.slackMax,R.slack);
  // the fish swings left and right on its runs; pulling the other way brings it back in line
  if(running)R.ang+=R.runDir*dt*.32*(pull/R.str);R.ang-=R.steer*dt*.18;R.ang*=1-dt*.15;R.ang=clamp(R.ang,-.75,.75);R.jumpT-=dt;
  const base=fightBase(),ca=Math.cos(R.ang),sa=Math.sin(R.ang),dx=F.dir.x*ca-F.dir.z*sa,dz=F.dir.x*sa+F.dir.z*ca,fx=base.x+dx*R.dist,fz=base.z+dz*R.dist;F.to.set(fx,0,fz);
- bobber.position.set(fx+Math.sin(R.t*9)*.08*pull,Math.max(surfY(fx,fz,T)-.25-R.tens*.25-(dive?.4:0)+Math.sin(R.t*13)*.05,groundH(fx,fz)+.15),fz);player.face=Math.atan2(fx-base.x,fz-base.z);
+ bobber.position.set(fx+Math.sin(R.t*9)*.08*pull+(R.warn?Math.sin(R.t*46)*.07:0),Math.max(surfY(fx,fz,T)-.25-R.tens*.25-(dive?.4:0)+Math.sin(R.t*13)*.05,groundH(fx,fz)+.15),fz);player.face=Math.atan2(fx-base.x,fz-base.z);
  if(R.jump>=0)updateJump(dt);else surfaceFish(R,dt,fx,fz,base,running);
  F.ripT-=dt;if(F.ripT<=0){F.ripT=running?.22:.5;addRipple(fx,fz,running?.9:.6);}if(running&&Math.random()<dt*6)splash(bobber.position,3,2.5);
  // sound: the reel clicks as you wind, the drag buzzes when the fish takes line, the line creaks near breaking point
@@ -335,12 +346,15 @@ function updateReel(dt){const R=F.reel,T=WIND.uTime.value;R.t+=dt;R.yank=Math.ma
  if(R.dist<=1.4)landCatch();}
 function drawReelHUD(R,running){const t=clamp(R.tens,0,1),arc=re('rfArc');
  arc.setAttribute('stroke-dasharray',(t*100).toFixed(1)+' 100');arc.setAttribute('stroke',t>.86?'#ff6a4a':t>.68?'#f2c14e':'#7fe08a');
- re('rfNeedle').style.transform=`rotate(${(-90+t*180+(t>.9?Math.sin(R.t*70)*3:0)).toFixed(1)}deg)`;re('rfGauge').classList.toggle('hot',t>.86);
+ re('rfNeedle').style.transform=`rotate(${(-90+t*180+(t>.9?Math.sin(R.t*70)*3:0)).toFixed(1)}deg)`;{const g=re('rfGauge'),z=R.hold&&t>=R.zLo&&t<=R.zHi;g.classList.toggle('hot',t>.86);g.classList.toggle('zone',z);g.classList.toggle('warn',!!R.warn||R.jump>=0);const lb=re('rfLbl'),lt=z?'Sweet zone':R.warn?'Run coming':'Line tension';if(lb.textContent!==lt)lb.textContent=lt;}
  re('rfDist').textContent=R.dist.toFixed(1);re('rfStam').style.width=(R.stam*100).toFixed(0)+'%';re('rfFish').style.left=clamp(R.dist/R.max*100,3,97).toFixed(1)+'%';
  const hint=re('reelHint');let h,w=false;
  if(t>.86){h='Ease off! The line is about to snap';w=true;}else if(R.slack>.6){h='The line is going slack. Reel a little!';w=true;}else if(R.max-R.dist<4){h='Reel in! It has almost all your line';w=true;}
+ else if(R.jump>=0){h=R.hold?'It\'s jumping! Let go!':'It\'s jumping. Good, keep off the reel';w=R.hold;}
+ else if(R.warn){h=R.hold?'It\'s about to run! Let go':'Wait for it…';w=R.hold;}
  else if(running&&R.style==='ray')h=R.hold?'It\'s diving! Let go until it stops':'It\'s diving. Wait it out';
  else if(running)h=R.hold&&R.pull>.7?'It\'s running. Let go and let the drag work':isTouch?'Hold to reel · drag against the run':'Hold to reel · A / D against the run';
+ else if(R.hold&&t>=R.zLo&&t<=R.zHi)h=R.stam<.25?'Sweet zone! It\'s tired, keep winding':'Sweet zone! Keep the needle in the green band';
  else h=R.stam<.25?'It\'s tired. Wind it in!':isTouch?'Hold anywhere to reel in':'Hold click or Space to reel in';
  if(hint.textContent!==h)hint.textContent=h;hint.classList.toggle('warn',w);
  const sEl=re('rfSteer');if(running&&R.pull>.25){const want=-R.runDir,ok=R.steer*want>.3;const txt=ok?`<span class="ok">${want<0?'◀ ':''}Good pull!${want>0?' ▶':''}</span>`:want<0?'◀ Pull left':'Pull right ▶';if(sEl.dataset.h!==txt){sEl.innerHTML=txt;sEl.dataset.h=txt;}if(sEl.className!=='on')sEl.className='on';}else if(sEl.className)sEl.className='';}
@@ -348,7 +362,9 @@ function startJump(){const R=F.reel,c=F.catch;R.jumpT=R.style==='long'?rand(2.4,
  R.ja=Math.atan2(F.dir.z,F.dir.x)+R.runDir*Math.PI/2;R.jx=bobber.position.x;R.jz=bobber.position.z;AU.leap();splash(bobber.position,16,5);
  if(!R.known){R.known=true;re('reelName').textContent=c.sp.name;}}
 function updateJump(dt){const R=F.reel,T=WIND.uTime.value;R.jump+=dt;const k=R.jump/.9,hx=Math.cos(R.ja),hz=Math.sin(R.ja);
- if(k>=1){R.jump=-1;R.fishM.visible=false;const x=R.jx+hx*1.8,z=R.jz+hz*1.8,p=new V3(x,surfY(x,z,T),z);splash(p,22,5.5);addRipple(x,z,1.5);AU.splash(1);camShake(.18);return;}
+ if(k>=1){R.jump=-1;R.fishM.visible=false;const x=R.jx+hx*1.8,z=R.jz+hz*1.8,p=new V3(x,surfY(x,z,T),z);splash(p,22,5.5);addRipple(x,z,1.5);AU.splash(1);camShake(.18);R.jumps++;
+  if(R.hold&&R.tens>.42&&!state.settings.chill){R.stam=Math.min(1,R.stam+.07);R.dist=Math.min(R.max-.5,R.dist+1.6);R.tens+=.16;floatTip('Too tight on the jump! It took back line');}
+  else if(R.t-R.heldAt<2.8){R.bows++;CS().bows++;R.stam=Math.max(0,R.stam-.06);floatTip('Let go on the jump!');chalEvent('bow');}return;}
  const x=R.jx+hx*1.8*k,z=R.jz+hz*1.8*k;R.fishM.position.set(x,surfY(x,z,T)+Math.sin(k*Math.PI)*(1.3+R.str*.45)-.2,z);R.fishM.rotation.set(0,-R.ja,(.5-k)*2.3);if(R.fishM.userData.tail)R.fishM.userData.tail.rotation.y=Math.sin(R.jump*32)*.6;}
 function surfaceFish(R,dt,fx,fz,base,running){const c=F.catch,near=R.dist<6.5&&!c.relic,T=WIND.uTime.value;
  if(!near){if(R.fishM&&R.fishM.visible&&R.jump<0)R.fishM.visible=false;R.surf=0;return;}
@@ -358,15 +374,25 @@ function surfaceFish(R,dt,fx,fz,base,running){const c=F.catch,near=R.dist<6.5&&!
  m.position.set(fx+Math.cos(a)*.35,surfY(fx,fz,T)-.18+Math.abs(Math.sin(R.t*7))*.12*thr,fz-Math.sin(a)*.35);m.rotation.set(0,a+Math.PI/2+wig*.5,Math.sin(R.t*11)*.35*thr);
  if(m.userData.tail)m.userData.tail.rotation.y=wig*1.2;if(Math.random()<dt*(3+thr*5))splash(m.position,3+Math.round(thr*3),2.5+thr);if(Math.random()<dt*2)addRipple(fx,fz,.7);}
 function snapLine(){AU.snap();buzz([60,40,90]);camShake(.4);loseFish('Snap! The line broke. Let go of the reel when the needle reaches red.',true);}
-function loseFish(msg,snapped){endFightUI();F.st='retract';F.t=0;F.retFrom.copy(bobber.position);if(!snapped)AU.escape();toast(F.catch&&F.catch.relic?'The sea glass slipped off the hook…':msg);}
-function landCatch(){endFightUI();const c=F.catch;AU.catch(c.relic?3:c.r);buzz(c.r>=3?[30,50,30,50,60]:40);camShake(c.r>=3?.3:.16);splash(bobber.position,22,6);F.flyFrom.copy(bobber.position);if(c.r>=3||c.relic)catchBeam(bobber.position,c.relic?'#9eeaff':c.r===6?'#e8e0ff':RAR[c.r].c);addRipple(bobber.position.x,bobber.position.z,1.5);bobber.visible=false;fline.visible=false;
+function loseFish(msg,snapped){if(F.reel&&F.reel.zt>0){CS().zoneS+=F.reel.zt;chalEvent('zone',{s:F.reel.zt});}endFightUI();F.st='retract';F.t=0;F.retFrom.copy(bobber.position);if(!snapped)AU.escape();toast(F.catch&&F.catch.relic?'The sea glass slipped off the hook…':msg);}
+/* tension gauge arc between two tension values (0 = left, 1 = right), for the sweet-zone band */
+function gaugeArc(t0,t1,r){const P=t=>{const a=Math.PI*(1-t);return (75+r*Math.cos(a)).toFixed(2)+' '+(78-r*Math.sin(a)).toFixed(2);};return 'M'+P(t0)+' A'+r+' '+r+' 0 0 1 '+P(t1);}
+/* how cleanly the fight went: the strike, time in the sweet zone, runs read, jumps let go, and no close calls */
+function fightGrade(R){if(!R)return null;let s=R.grade===2?30:R.grade===1?18:4;const zr=R.ht>.5?R.zt/R.ht:0;s+=30*clamp(zr/.6,0,1);s+=R.runs?20*R.reads/R.runs:16;s+=R.jumps?10*R.bows/R.jumps:8;s+=10-(R.maxD>.5?5:0)-(R.slackMax>.6?5:0);
+ const g=s>=88?4:s>=72?3:s>=50?2:1;return{s:Math.round(s),g,L:' CBAS'[g],zr,xk:[1,1,1.05,1.15,1.3][g]*(R.streak>1?1+Math.min(.4,(R.streak-1)*.05):1)};}
+function fightCard(fg,R){if(!fg)return '';const ch=[];ch.push(R.grade===2?'Perfect strike '+(R.rt||0).toFixed(2)+'s':R.grade===1?'Good strike':'Late strike');if(R.ht>.5)ch.push('Sweet zone '+Math.round(fg.zr*100)+'%');if(R.runs)ch.push('Runs read '+R.reads+'/'+R.runs);if(R.jumps)ch.push('Jumps '+R.bows+'/'+R.jumps);if(R.streak>1)ch.push('Streak ×'+R.streak);
+ const xb=Math.round((fg.xk-1)*100);return `<div class="cc-fight"><span class="cc-grade g${fg.L}">${fg.L}</span><div class="cc-fl"><b>${['','Rough fight','Solid fight','Great fight','Flawless fight'][fg.g]}${xb>0?' · +'+xb+'% XP':''}</b><span>${ch.map(esc).join(' · ')}</span></div></div>`;}
+function landCatch(){const R=F.reel,fg=fightGrade(R);if(R){if(fg.g===4)CS().sFights++;if(fg.g>=3)CS().aFights++;if(R.zt>0){CS().zoneS+=R.zt;chalEvent('zone',{s:R.zt});}chalEvent('land',{g:fg.g});}const xk=fg?fg.xk:1;
+ endFightUI();const c=F.catch;AU.catch(c.relic?3:c.r);buzz(c.r>=3?[30,50,30,50,60]:40);camShake(c.r>=3?.3:.16);splash(bobber.position,22,6);F.flyFrom.copy(bobber.position);if(c.r>=3||c.relic)catchBeam(bobber.position,c.relic?'#9eeaff':c.r===6?'#e8e0ff':RAR[c.r].c);addRipple(bobber.position.x,bobber.position.z,1.5);bobber.visible=false;fline.visible=false;
  let held,card;const id=rid();
- if(c.relic){state.relics++;questEvent('relic');held=buildRelic();held.scale.setScalar(.8);card=`<div class="cc-new">SEA GLASS</div><div class="cc-name">Sea Glass</div><div class="cc-tags"><span class="pill" style="--c:#c6f4ff">Rune material</span></div><div class="muted">Offer it at the Runestone on Mossreach to carve a rune into your rod.</div>`;gainXP(80);F.lastCatch={i:id,sp:'relic',m:null,w:0};$('#catchCard').style.setProperty('--rc','#9eeaff');}
+ if(c.relic){state.relics++;questEvent('relic');held=buildRelic();held.scale.setScalar(.8);card=`<div class="cc-new">SEA GLASS</div><div class="cc-name">Sea Glass</div><div class="cc-tags"><span class="pill" style="--c:#c6f4ff">Rune material</span></div><div class="muted">Offer it at the Runestone on Mossreach to carve a rune into your rod.</div>`+fightCard(fg,R);gainXP(80*xk);F.lastCatch={i:id,sp:'relic',m:null,w:0};$('#catchCard').style.setProperty('--rc','#9eeaff');}
  else{const f={id:state.uid++,sp:c.sp.id,w:c.w,mut:c.mut,lock:false};if(c.sp.zone==='well'&&F.wellIsl)f.vk=Math.round(ZONE_BASE[F.wellIsl]/WELL_REF*100)/100;state.inv.push(f);const dx=state.dex[c.sp.id]||(state.dex[c.sp.id]={n:0,best:0,muts:[]});const isNew=dx.n===0;if(isNew&&c.r>=3)setTimeout(()=>grantCrate('a new '+RAR[c.r].n+' species'),1400);dx.n++;dx.best=Math.max(dx.best,c.w);if(c.mut&&!dx.muts.includes(c.mut))dx.muts.push(c.mut);if(Math.random()<stats().dbl&&state.inv.length<maxInv()){state.inv.push({id:state.uid++,sp:c.sp.id,w:rollWeight(c.sp,stats().wt),mut:c.mut,lock:false});dx.n++;setTimeout(()=>toast('Double catch! A second '+c.sp.name+' came up too.','gold'),600);}
   held=buildFish(c.sp,c.mut);held.scale.setScalar(fishScale(c.sp,c.w));
-  card=`${isNew?'<div class="cc-new">NEW SPECIES</div>':''}<div class="cc-name">${c.mut?MUTS[c.mut].n+' ':''}${esc(c.sp.name)}</div><div class="cc-tags">${rarPill(c.r)}${c.mut?mutPill(c.mut):''}</div><div class="cc-stats"><span><b>${fmtW(c.w)} kg</b>Weight</span><span><b>${fmt(fishValue(f))}c</b>Value</span></div>`;
-  const avg=(c.sp.minW+c.sp.maxW)/2;gainXP(RAR[c.r].xp*(c.mut?1.5:1)*clamp(c.w/avg,.6,2));F.lastCatch={i:id,sp:c.sp.id,m:c.mut||null,w:c.w};$('#catchCard').style.setProperty('--rc',RAR[c.r].c);
-  {const pz=pondAt(F.to.x,F.to.z);if(typeof bountyCatch==='function')bountyCatch(c,F.zone);if(typeof checkEarnedRods==='function')checkEarnedRods();if(typeof derbyCatch==='function')derbyCatch(c);questEvent('catch',{sp:c.sp.id,w:c.w,mut:c.mut,r:c.r,zone:F.zone,isl:pz?pz.isl:zoneAt(F.to.x,F.to.z),night:isNight(),sea:player.mode==='boat'&&zoneAt(player.pos.x,player.pos.z)==='sea',ev:!!(env.event&&env.event.big)});card+=catchQuestInfo();}
+  card=`${isNew?'<div class="cc-new">NEW SPECIES</div>':''}<div class="cc-name">${c.mut?MUTS[c.mut].n+' ':''}${esc(c.sp.name)}</div><div class="cc-tags">${rarPill(c.r)}${c.mut?mutPill(c.mut):''}</div><div class="cc-stats"><span><b>${fmtW(c.w)} kg</b>Weight</span><span><b>${fmt(fishValue(f))}c</b>Value</span></div>`+fightCard(fg,R);
+  const avg=(c.sp.minW+c.sp.maxW)/2;gainXP(RAR[c.r].xp*(c.mut?1.5:1)*clamp(c.w/avg,.6,2)*xk);F.lastCatch={i:id,sp:c.sp.id,m:c.mut||null,w:c.w};$('#catchCard').style.setProperty('--rc',RAR[c.r].c);
+  {const pz=pondAt(F.to.x,F.to.z);if(typeof bountyCatch==='function')bountyCatch(c,F.zone);if(typeof checkEarnedRods==='function')checkEarnedRods();if(typeof derbyCatch==='function')derbyCatch(c);questEvent('catch',{sp:c.sp.id,w:c.w,mut:c.mut,r:c.r,zone:F.zone,isl:pz?pz.isl:zoneAt(F.to.x,F.to.z),night:isNight(),sea:player.mode==='boat'&&zoneAt(player.pos.x,player.pos.z)==='sea',ev:!!(env.event&&env.event.big)});
+   {const home=c.sp.zone.startsWith('pond_')?c.sp.zone.slice(5):c.sp.zone;chalEvent('catch',{sp:c.sp.id,r:c.r,mut:c.mut,night:isNight(),sea:player.mode==='boat'&&zoneAt(player.pos.x,player.pos.z)==='sea',isl:pz?pz.isl:zoneAt(F.to.x,F.to.z),home,wk:(c.w-c.sp.minW)/((c.sp.maxW-c.sp.minW)||1)});}
+   card+=catchQuestInfo()+chalCatchInfo();}
   if(F.inSchool)F.inSchool=false;
   if(isNotable(c.r,c.mut)){addFeed(profileOr().name,c.sp,c.mut,c.w,profileOr().color,true,id);if(typeof netOnMyCatch==='function')netOnMyCatch(c,id);}}
  const cc=$('#catchCard');cc.innerHTML=card;cc.hidden=false;cc.onclick=()=>finishCatch();
@@ -386,12 +412,14 @@ function updateFishing(dt){F.t+=dt;const T=WIND.uTime.value;
  if(F.st==='charging'){const p=(F.t/1.15)%2;F.power=p>1?2-p:p;re('powFill').style.width=(F.power*100)+'%';re('powTxt').textContent=Math.round(F.power*100)+'%';const d=camFwd();player.face=Math.atan2(d.x,d.z);}
  else if(F.st==='casting'){const k=clamp(F.t/F.flight,0,1);const wy=surfY(F.to.x,F.to.z,T);bobber.position.set(lerp(F.from.x,F.to.x,k),lerp(F.from.y,wy,k)+Math.sin(k*Math.PI)*F.arc,lerp(F.from.z,F.to.z,k));F.trT=(F.trT||0)-dt;if(F.trT<=0&&k<.92){F.trT=.05;spawnPuff(bobber.position.x,bobber.position.y,bobber.position.z,'#e8f4ff');}
   if(k>=1){if(state.rod==='isleheart'){ringAt(F.to.x,surfY(F.to.x,F.to.z,WIND.uTime.value)+.05,F.to.z,1.4,1.6);splash(new V3(F.to.x,surfY(F.to.x,F.to.z,WIND.uTime.value),F.to.z),10,3);}F.st='waiting';F.t=0;{const pd=pondAt(F.to.x,F.to.z);F.zone=pd?pd.key:zoneAt(F.to.x,F.to.z);{const w=!pd&&wellAt(F.to.x,F.to.z);F.wellIsl=w?w.isl:null;if(w){F.zone='well';if(!state.tips.well){state.tips.well=1;toast('You\'re fishing in a Tide Well! Only rare fish bite here, and they live nowhere else.','gold');}}}if(pd){ringAt(F.to.x,pd.y+.03,F.to.z,1.2,1.4);if(!state.tips['p_'+pd.key]){state.tips['p_'+pd.key]=1;toast(`You're fishing in ${ZONES[pd.key].n}. Its fish live nowhere else.`);}}}
-   if(onCastLanded())return;F.wait=rand(8,16)*stats().wait;F.nibT=rand(2,4);F.nib=0;F.twT=0;F.twK=0;F.ripT=1.5;AU.splash(.8);AU.plop();splash(bobber.position,12,4);addRipple(F.to.x,F.to.z,1.2);useBait();
+   if(onCastLanded())return;F.wait=rand(8,16)*stats().wait;F.nibT=rand(2,4);F.nib=0;F.twT=0;F.twK=0;F.ripT=1.5;F.tap=0;F.tapAfter=0;F.tapT=0;F.taps=state.settings.chill?0:Math.random()<.62?(Math.random()<.35?2:1):0;AU.splash(.8);AU.plop();splash(bobber.position,12,4);addRipple(F.to.x,F.to.z,1.2);useBait();
    if(!state.tips.strike){state.tips.strike=1;toast('Twitch the lure to tempt a fish. When the float dives under, strike!');}}}
- else if(F.st==='waiting'){F.twT-=dt;F.twK=Math.max(0,F.twK-dt*5);F.nib=Math.max(0,F.nib-dt);const dip=F.nib>0?Math.sin(F.nib/.5*Math.PI)*.2:0;
+ else if(F.st==='waiting'){F.twT-=dt;F.twK=Math.max(0,F.twK-dt*5);F.nib=Math.max(0,F.nib-dt);F.tap=Math.max(0,(F.tap||0)-dt);F.tapAfter=Math.max(0,(F.tapAfter||0)-dt);const dip=(F.nib>0?Math.sin(F.nib/.5*Math.PI)*.2:0)+(F.tap>0?Math.abs(Math.sin(F.tap/.4*Math.PI*2))*.34:0);
   bobber.position.set(F.to.x,surfY(F.to.x,F.to.z,T)+Math.sin(T*3)*.05-dip-F.twK*.12,F.to.z);F.wait-=dt;F.ripT-=dt;if(F.ripT<=0){F.ripT=rand(1.8,3);addRipple(F.to.x,F.to.z,.45);}
-  F.nibT-=dt;if(F.nibT<=0&&F.wait>.8){F.nibT=F.wait<5?rand(1,2.2):rand(2.5,5);F.nib=.5;AU.nibble();addRipple(F.to.x,F.to.z,.5);}
-  F.twN=Math.max(0,(F.twN||0)-dt*.6);F.spookT=Math.max(0,(F.spookT||0)-dt);if(!MENU.on&&!(F.spookT>0))fishTip(F.nib>0?'<b>Nibble!</b> Twitch now to tempt it':isTouch?'Tap to twitch the lure · <b>Reel</b> to pull it back':'<b>Space</b> or click to twitch the lure · <b>F</b> to reel back',F.nib>0?'nib':'');
+  const tapPhase=F.taps>0&&F.wait<2.6;F.nibT-=dt;if(F.nibT<=0&&F.wait>.8&&!tapPhase&&!(F.tap>0)){F.nibT=F.wait<5?rand(1,2.2):rand(2.5,5);F.nib=.5;AU.nibble();addRipple(F.to.x,F.to.z,.5);}
+  /* testing taps: the float bobs twice but stays up. That's not the take yet, so striking now is too early */
+  F.tapT=(F.tapT||0)-dt;if(tapPhase&&F.wait>.45&&F.tapT<=0&&!(F.nib>0)){F.taps--;F.tap=.4;F.tapAfter=.5;F.tapT=rand(.8,1.2);AU.nibble();setTimeout(()=>AU.nibble(),140);addRipple(F.to.x,F.to.z,.8);splash(bobber.position,4,2.4);}
+  F.twN=Math.max(0,(F.twN||0)-dt*.6);F.spookT=Math.max(0,(F.spookT||0)-dt);if(!MENU.on&&!(F.spookT>0))fishTip(F.tap>0?'<b>Steady…</b> it\'s only testing the bait. Wait for the float to go under':F.nib>0?'<b>Nibble!</b> Twitch now to tempt it':isTouch?'Tap to twitch the lure · <b>Reel</b> to pull it back':'<b>Space</b> or click to twitch the lure · <b>F</b> to reel back',F.nib>0||F.tap>0?'nib':'');
   if(F.wait<=0)startBite();}
  else if(F.st==='bite'){const bk=Math.min(1,F.t*1.6),tow=Math.min(.9,F.t*1.4),shk=Math.sin(F.t*34)*(.16-bk*.08);if(F.biteFrom){F.to.x=F.biteFrom.x+Math.cos(F.biteA)*tow;F.to.z=F.biteFrom.z+Math.sin(F.biteA)*tow;}
   bobber.position.set(F.to.x+shk*.4,surfY(F.to.x,F.to.z,T)-.35-bk*.4+shk,F.to.z);biteShadowAt(F.to.x,surfY(F.to.x,F.to.z,T)-.5,F.to.z,F.biteA,F.t);exclaim.position.set(prig.root.position.x,prig.root.position.y+HEAD_TOP+1.25+Math.sin(F.t*12)*.15,prig.root.position.z);

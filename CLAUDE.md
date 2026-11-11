@@ -42,7 +42,7 @@ original: never imitate another game's names, UI layout, art, terms or signature
 - Don't put model names or identifiers in commits.
 - Cam's workflow: **do one phase, redeploy, give the main domain link, then stop so Cam can test.**
 
-## Status and plan (last release: 9.1)
+## Status and plan (last release: 9.2)
 
 - Phase 1, performance (5.2): done.
 - Phase 2, graphics (6.0): done.
@@ -78,8 +78,13 @@ original: never imitate another game's names, UI layout, art, terms or signature
   and tilts up); while moving the pitch only eases back into a band. Perf: no HUD backdrop blur, lower tier pixel ratios,
   Pro/Max Macs auto-start on High (`gpuV` forces one re-detect), grass skipped in the water reflection, and
   `world.farMeshes` (non-detail chunks, `userData.far`) hidden beyond ~75% of fog distance.
-- Phase 3, features: next.
-  - Fishing quests and daily challenges.
+- 9.2 Challenges and a sharper bite:
+  - Striking: testing taps before the take (`F.taps`, `F.tap`, `earlyStrike`), reaction time and perfect-strike streak (`F.streak`).
+  - Reeling: sweet zone band (`R.zLo`/`R.zHi`, `#rfZone`, `gaugeArc`), run warning (`R.warn`, reads), let go on jumps (bows),
+    `fightGrade` C to S on the catch card with bonus XP.
+  - Challenges (end of di-quests): `CHAL_POOL`, daily/weekly lists in `state.chal`, `MILESTONES` with titles,
+    lifetime skill counters in `state.cst` (`CS()`, `CST_KEYS`), `chalEvent`, `openChallenges`, logbook tab 9 `#chalBtn`.
+- Phase 3, features: next (challenges done in 9.2).
   - Aquarium / trophy room.
   - Crab pots and traps (a basic version exists as `POTS`).
   - Weather events: storms with rare fish, fog, meteor showers (`MET` meteors exist; `env.meteorK` speeds them up).

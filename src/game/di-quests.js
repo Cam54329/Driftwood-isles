@@ -110,7 +110,7 @@ const QUESTS=[
 ];
 const QM={};QUESTS.forEach(q=>QM[q.id]=q);
 const LEVEL_TITLES=[[1,'Novice Angler'],[10,'Seasoned Angler'],[25,'Master Angler'],[50,'Legend of the Isles']];
-const TITLE_COL={'Heart of the Isles':'#7ff0e0','Derby Champion':'#ffd76e','Pagekeeper':'#f0d890','Ruin Diver':'#9ab8ff','Kelp Wanderer':'#c8f05a','Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Developer':'#ffcf5a','Abyss Diver':'#c890ff','Cartographer':'#8af0ff','Tidesinger':'#e8e8ff','Desert Hunter':'#f0c060','Starsmith':'#c8a8ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
+const TITLE_COL={'Heart of the Isles':'#7ff0e0','Sharp Eye':'#ffe08a','Hot Hand':'#ff9a5a','Clean Lines':'#9af0c8','Tide Reader':'#7fd8ff','Soft Hands':'#f0b8ff','Isle Veteran':'#e0cf9a','Challenger':'#ffc85a','Derby Champion':'#ffd76e','Pagekeeper':'#f0d890','Ruin Diver':'#9ab8ff','Kelp Wanderer':'#c8f05a','Novice Angler':'#c9d2da','Seasoned Angler':'#8fd49a','Master Angler':'#7fb8ff','Legend of the Isles':'#ffcf5a','Big Catch':'#ffb46a','Collector':'#e8a6ff','Starwatcher':'#c9a6ff','Sea Legs':'#6fd0e8','Night Owl':'#a8b4ff','Developer':'#ffcf5a','Abyss Diver':'#c890ff','Cartographer':'#8af0ff','Tidesinger':'#e8e8ff','Desert Hunter':'#f0c060','Starsmith':'#c8a8ff','Tide-Touched':'#7ff0e0','Frost Fisher':'#bfe6ff','Ember Legend':'#ff8a5a','Glen Legend':'#f0b050'};
 const ALL_TITLES=Object.keys(TITLE_COL);
 
 /* ---------- dialogue lines (extra flavour beyond the quests) ---------- */
@@ -191,3 +191,81 @@ function openQuests(){if(JOIN.on)return;openPanel('Quests','Help the islanders a
   ${avail.length?`<div class="card"><h3>Islanders with work for you</h3><div class="list">${avail.map(o=>`<div class="statrow"><span>${esc(o.n.name)} · ${esc(ZONES[o.n.zone].n)}</span><span class="muted">${esc(o.q.n)}</span></div>`).join('')}</div></div>`:''}
   <div class="card"><h3>Your title</h3><div class="muted">Shown under your name. ${Q.d.length} of ${QUESTS.length} quests complete.</div><div class="hats">${state.titles.map(t=>`<button class="hat ${state.title===t?'on':''}" data-act="title" data-id="${esc(t)}" style="color:${TITLE_COL[t]||'#fff'}">${esc(t)}</button>`).join('')}</div></div>`);
  bindPanel({title:id=>{if(state.titles.includes(id)){state.title=id;save();rebuildPlayerTag();rerender();}}});});}
+
+/* ================= CHALLENGES: three daily and three weekly goals (the same for everyone) plus lifetime milestones ================= */
+const CHAL_POOL={
+ perfect:{k:'skill',d:[5,8],w:[30,45],rw:1,txt:n=>`Land ${n} perfect strikes`,ev:'strike',hit:d=>d.grade===2},
+ streak:{k:'skill',d:[3,4],w:[6,8],rw:1.2,txt:n=>`Get a perfect-strike streak of ${n}`,ev:'strike',set:d=>d.streak},
+ grade:{k:'skill',d:[3,5],w:[15,25],rw:1.1,txt:n=>`Win ${n} fights with an A grade or better`,ev:'land',hit:d=>d.g>=3},
+ sgrade:{k:'skill',d:[1,2],w:[6,10],rw:1.3,txt:n=>`Win ${n===1?'a flawless fight':n+' flawless fights'} (S grade)`,ev:'land',hit:d=>d.g>=4},
+ read:{k:'skill',d:[6,10],w:[40,60],rw:1,txt:n=>`Read ${n} runs: let go when the gauge warns you`,ev:'read'},
+ bow:{k:'skill',d:[2,3],w:[10,15],rw:1.1,txt:n=>`Let go on ${n} fish jumps`,ev:'bow'},
+ zone:{k:'skill',d:[25,40],w:[180,260],rw:1,txt:n=>`Reel for ${n} seconds in the sweet zone`,ev:'zone',amt:d=>d.s||0},
+ night:{k:'catch',d:[5,7],w:[25,35],rw:1,txt:n=>`Catch ${n} fish at night`,ev:'catch',hit:d=>d.night},
+ boat:{k:'catch',d:[5,8],w:[30,40],rw:1,txt:n=>`Catch ${n} fish from a boat out at sea`,ev:'catch',hit:d=>d.sea},
+ isl:{k:'catch',d:[8,12],w:[40,60],rw:1,txt:(n,c)=>`Catch ${n} fish around ${(ZONES[c.isl]||ZONES.cove).n}`,ev:'catch',hit:(d,c)=>d.isl===c.isl||d.home===c.isl},
+ rare:{k:'catch',d:[3,5],w:[15,25],rw:1.1,txt:n=>`Catch ${n} ${RAR[1].n}-or-better fish`,ev:'catch',hit:d=>d.r>=1},
+ variety:{k:'catch',d:[5,7],w:[20,30],rw:1,txt:n=>`Catch ${n} different species`,ev:'catch',uniq:d=>d.sp},
+ heavy:{k:'catch',d:[1,2],w:[5,8],rw:1.2,txt:n=>`Land ${n===1?'a fish':n+' fish'} in the top 30% of its weight`,ev:'catch',hit:d=>d.wk>=.7},
+ mut:{k:'catch',d:[1,1],w:[3,5],rw:1.3,txt:n=>`Catch ${n===1?'a fish':n+' fish'} with a variant`,ev:'catch',hit:d=>!!d.mut},
+};
+const MILESTONES=[
+ {id:'perfect',n:'Sharp Eye',d:'Perfect strikes',tiers:[25,100,300,750,2000],stat:()=>CS().perfect,title:[2,'Sharp Eye']},
+ {id:'streak',n:'Hot Hand',d:'Best perfect-strike streak',tiers:[3,5,8,12,20],stat:()=>CS().bestStreak,title:[3,'Hot Hand']},
+ {id:'sgrade',n:'Clean Lines',d:'Flawless (S grade) fights',tiers:[5,25,75,200,500],stat:()=>CS().sFights,title:[2,'Clean Lines']},
+ {id:'read',n:'Tide Reader',d:'Runs read',tiers:[25,100,300,800,2000],stat:()=>CS().reads,title:[2,'Tide Reader']},
+ {id:'bow',n:'Soft Hands',d:'Jumps you let go on',tiers:[10,50,150,400,1000],stat:()=>CS().bows,title:[3,'Soft Hands']},
+ {id:'catches',n:'Isle Veteran',d:'Fish caught',tiers:[50,250,1000,3000,10000],stat:()=>{let n=0;for(const k in state.dex)n+=state.dex[k].n||0;return n;},title:[3,'Isle Veteran']},
+ {id:'chal',n:'Challenger',d:'Challenges completed',tiers:[5,25,75,200,500],stat:()=>CS().cDone,title:[2,'Challenger']},
+];
+const MS_COINS=[1500,6000,25000,90000,300000],ROMAN=['','I','II','III','IV','V'];
+const weekKey=()=>{const d=new Date();d.setDate(d.getDate()-(d.getDay()+6)%7);return 'W'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const CHAL_HIT=new Set();let CHAL_MS_T=0;
+function chalSeed(key){let h=7;for(const ch of key)h=(h*31+ch.charCodeAt(0))>>>0;return rng(h%1000003+11);}
+function makeChalList(r,pattern,weekly){const used=new Set(),L=[],isl=state.unlocked.filter(k=>ZONES[k]&&ISL.includes(k));
+ for(const kind of pattern){const opts=Object.keys(CHAL_POOL).filter(t=>!used.has(t)&&(kind==='any'||CHAL_POOL[t].k===kind));const t=opts[Math.floor(r()*opts.length)]||'perfect';used.add(t);const P=CHAL_POOL[t],rg=weekly?P.w:P.d;
+  const need=rg[0]+Math.floor(r()*(rg[1]-rg[0]+1)),c={};if(t==='isl')c.isl=isl[Math.floor(r()*isl.length)]||'cove';L.push({t,need,n:0,c,done:false});}
+ return L;}
+function chalState(){const s=state;if(!s.chal||typeof s.chal!=='object'||!Array.isArray(s.chal.d)||!Array.isArray(s.chal.w))s.chal={day:'',d:[],dAll:false,wk:'',w:[],wAll:false,ms:{}};const C=s.chal;if(!C.ms)C.ms={};
+ const day=todayKey(),wk=weekKey();let ch=false;
+ if(C.day!==day||!C.d.length){C.day=day;C.d=makeChalList(chalSeed('d'+day),['skill','skill','catch'],false);C.dAll=false;ch=true;}
+ if(C.wk!==wk||!C.w.length){C.wk=wk;C.w=makeChalList(chalSeed(wk),['skill','catch','any'],true);C.wAll=false;ch=true;}
+ if(!CHAL_MS_T){CHAL_MS_T=setTimeout(function msLater(){if(typeof MENU!=='undefined'&&MENU.on){CHAL_MS_T=setTimeout(msLater,3000);return;}checkMilestones();},5000);}
+ if(ch&&s.savedAt)save();return C;}
+function chalText(c){const P=CHAL_POOL[c.t];return P?P.txt(c.need,c.c||{}):'';}
+function chalReward(c,weekly){const P=CHAL_POOL[c.t]||{rw:1},pay=bountyPay();return{coins:Math.round(pay*(weekly?260:42)*P.rw/50)*50||50,xp:Math.round((weekly?220:60)+state.level*(weekly?14:4)),crate:weekly};}
+function chalEvent(ev,d={}){const C=chalState();let changed=false;if(ev==='strike')CHAL_HIT.clear();
+ for(const weekly of[false,true])for(const c of weekly?C.w:C.d){if(c.done)continue;const P=CHAL_POOL[c.t];if(!P||P.ev!==ev)continue;
+  if(P.set){const v=P.set(d)||0;if(v<=c.n)continue;c.n=Math.min(c.need,v);}
+  else if(P.uniq){const k=P.uniq(d);if(!Array.isArray(c.u))c.u=[];if(!k||c.u.includes(k))continue;c.u.push(k);c.n=Math.min(c.need,c.n+1);}
+  else{if(P.hit&&!P.hit(d,c.c||{}))continue;const inc=P.amt?P.amt(d):1;if(!(inc>0))continue;c.n=Math.min(c.need,c.n+inc);}
+  changed=true;CHAL_HIT.add(c);if(c.n>=c.need)chalDone(c,weekly);}
+ if(changed){save();if(typeof renderHotbar==='function')renderHotbar();if(panelCtx&&panelCtx.kind==='chal')rerender();}
+ if(ev==='land'||ev==='strike'||ev==='read'||ev==='bow')checkMilestones();}
+function chalDone(c,weekly){const C=chalState(),rw=chalReward(c,weekly);c.done=true;c.n=c.need;CS().cDone++;state.coins+=rw.coins;state.earned+=rw.coins;gainXP(rw.xp);
+ setTimeout(()=>{AU.coin();coinBurst(8);toast(`${weekly?'Weekly':'Daily'} challenge done: ${chalText(c)}. +${fmt(rw.coins)} coins`,'gold');if(rw.crate)grantCrate('a weekly challenge');updateHUD();},700);
+ const L=weekly?C.w:C.d;if(L.every(x=>x.done)){if(weekly&&!C.wAll){C.wAll=true;state.relics+=2;setTimeout(()=>toast('All three weekly challenges done! +2 Sea Glass','gold'),2600);}else if(!weekly&&!C.dAll){C.dAll=true;setTimeout(()=>grantCrate('finishing today\'s challenges'),2400);}}
+ checkMilestones();}
+function checkMilestones(){const C=state.chal&&state.chal.ms?state.chal.ms:chalState().ms;let changed=false;
+ for(const M of MILESTONES){const v=M.stat(),reached=M.tiers.filter(t=>v>=t).length,prev=Math.min(M.tiers.length,Math.max(0,Math.floor(Number(C[M.id])||0)));if(reached<=prev)continue;
+  let coins=0,crates=0,glass=0;for(let t=prev;t<reached;t++){coins+=MS_COINS[t];if(t>=1)crates++;if(t===4)glass+=2;}C[M.id]=reached;changed=true;state.coins+=coins;state.earned+=coins;state.relics+=glass;
+  if(crates){state.crates=(state.crates||0)+crates;}const tt=M.title&&reached>M.title[0]&&prev<=M.title[0]?M.title[1]:null;
+  setTimeout(()=>{AU.coin();toast(`Milestone: ${M.n} ${ROMAN[reached]}! +${fmt(coins)} coins${crates?` and ${crates} Mystery Crate${crates>1?'s':''}`:''}${glass?' and '+glass+' Sea Glass':''}`,'gold');if(tt)grantTitle(tt);updateHUD();if(typeof renderHotbar==='function')renderHotbar();},1200);}
+ if(changed)save();}
+function chalCatchInfo(){const L=[...CHAL_HIT].filter(c=>!c.done).slice(0,2);return L.map(c=>`<div class="cc-q">Challenge: ${esc(chalText(c))} · ${Math.floor(c.n)}/${c.need}</div>`).join('');}
+function chalTabInfo(){if(!state||!state.chal||state.chal.day!==todayKey())return{s:'New',q:'!'};const C=state.chal,n=C.d.filter(c=>c.done).length;return{s:n+'/'+C.d.length+' today',q:''};}
+function fmtLeft(ms){const m=Math.max(1,Math.floor(ms/60000)),h=Math.floor(m/60),d=Math.floor(h/24);return d?`${d}d ${h%24}h`:h?`${h}h ${m%60}m`:`${m}m`;}
+function openChallenges(){if(JOIN.on)return;const C=chalState();checkMilestones();openPanel('Challenges','Daily and weekly goals for every angler · lifetime milestones',()=>{panelCtx.kind='chal';const now=new Date();
+ const mid=new Date(now);mid.setHours(24,0,0,0);const wEnd=new Date(now);wEnd.setHours(0,0,0,0);wEnd.setDate(wEnd.getDate()+(7-(wEnd.getDay()+6)%7));
+ const card=(c,weekly)=>{const rw=chalReward(c,weekly),p=Math.min(1,c.n/c.need);return `<div class="card ${c.done?'eq ch-done':''}"><div class="row"><div class="grow"><h3>${esc(chalText(c))}</h3><div class="ch-rw">${fmt(rw.coins)} coins · ${rw.xp} XP${rw.crate?' · Mystery Crate':''}</div><div class="bbar"><i style="width:${(p*100).toFixed(0)}%"></i><span>${Math.floor(Math.min(c.n,c.need))} / ${c.need}</span></div></div>${c.done?'<span class="pill" style="--c:#9be07a">Done</span>':''}</div></div>`;};
+ const ms=MILESTONES.map(M=>{const v=M.stat(),got=Math.min(M.tiers.length,Math.floor(Number(C.ms[M.id])||0)),next=M.tiers[got],prevT=got?M.tiers[got-1]:0,p=next?clamp((v-prevT)/(next-prevT),0,1):1;
+  const pips=M.tiers.map((t,i)=>`<i class="${i<got?'on':''}"></i>`).join('');const tl=M.title?`Title "${M.title[1]}" at tier ${ROMAN[M.title[0]+1]}`:'';
+  return `<div class="card ${got>=M.tiers.length?'eq':''}"><div class="row"><div class="grow"><h3>${esc(M.n)} ${got?ROMAN[got]:''}<span class="ch-pips">${pips}</span></h3><div class="muted">${esc(M.d)}: ${fmt(Math.floor(v))}${next?' · next tier at '+fmt(next):' · complete'}${tl?' · '+tl:''}</div>${next?`<div class="ch-rw">Next: ${fmt(MS_COINS[got])} coins${got>=1?' + Mystery Crate':''}${got===4?' + 2 Sea Glass':''}</div><div class="bbar"><i style="width:${(p*100).toFixed(0)}%"></i><span>${fmt(Math.floor(v))} / ${fmt(next)}</span></div>`:''}</div></div></div>`;}).join('');
+ const S=CS();
+ body(`<div class="ch-sec">Today<small>New challenges in ${fmtLeft(mid-now)}</small></div><div class="list">${C.d.map(c=>card(c,false)).join('')}</div>
+  <div class="muted">Finish all three today for a Mystery Crate${C.dAll?' (claimed)':''}.</div>
+  <div class="ch-sec">This week<small>New in ${fmtLeft(wEnd-now)}</small></div><div class="list">${C.w.map(c=>card(c,true)).join('')}</div>
+  <div class="muted">Finish all three this week for 2 Sea Glass${C.wAll?' (claimed)':''}.</div>
+  <div class="ch-sec">Your fishing skill</div><div class="ch-skill"><div><b>${fmt(S.perfect)}</b><span>Perfect strikes</span></div><div><b>×${S.bestStreak}</b><span>Best streak</span></div><div><b>${fmt(S.sFights)}</b><span>S-grade fights</span></div><div><b>${fmt(S.reads)}</b><span>Runs read</span></div><div><b>${fmt(S.bows)}</b><span>Jumps let go</span></div><div><b>${fmt(S.cDone)}</b><span>Challenges done</span></div></div>
+  <div class="ch-sec">Milestones<small>Rewards are paid as soon as you reach a tier</small></div><div class="list">${ms}</div>
+  <div class="card"><h3>How fights are graded</h3><div class="muted">Strike the moment the float goes under (gold ring = perfect). While reeling, keep the needle in the bright green band. Let go when the gauge warns that a run is coming, and let go when the fish jumps. S and A fights give bonus XP, and perfect strikes in a row add more.</div></div>`);});}

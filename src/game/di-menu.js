@@ -101,7 +101,7 @@ function openMap(){if(JOIN.on)return;openPanel('Map of the isles','You · island
 function renderHotbar(){if(!$('#hbRodN'))return;const r=RODM[state.rod],e=state.ench[state.rod],b=state.baitOn?BAITM[state.baitOn]:null,dex=SPECIES.filter(s=>state.dex[s.id]&&state.dex[s.id].n).length;
  const set=(id,v)=>{const el=$(id);if(el&&el.textContent!==v)el.textContent=v;};
  set('#hbRodN',r.n.replace(/ Rod$/,''));set('#hbRodS',e?ENCH[e].n:'Rod');set('#hbBaitN',b?(b.n.length>11?b.n.split(' ').pop():b.n):'No bait');set('#hbBaitS',state.crates?state.crates+' crate'+(state.crates>1?'s':''):b?'Bait':'Tackle');{const hb=document.getElementById('hbBait');if(hb)hb.classList.toggle('crate',!!state.crates);}set('#hbBaitQ',b?'×'+(state.bait[state.baitOn]||0):'');
- set('#hbBagS',state.inv.length+'/'+maxInv());set('#hbDexS',dex+'/'+SPECIES.length);const aq=activeQuests(),ready=aq.filter(q=>qState().a[q.id]>=q.goal.n).length;set('#hbQuestS',aq.length?(ready?ready+' ready':aq.length+' active'):'None');set('#hbQuestQ',ready?'!':'');
+ set('#hbBagS',state.inv.length+'/'+maxInv());set('#hbDexS',dex+'/'+SPECIES.length);const aq=activeQuests(),ready=aq.filter(q=>qState().a[q.id]>=q.goal.n).length;set('#hbQuestS',aq.length?(ready?ready+' ready':aq.length+' active'):'None');set('#hbQuestQ',ready?'!':'');{const t=chalTabInfo();set('#hbChalS',t.s);set('#hbChalQ',t.q);}
  set('#hbMapS',ZONES[player&&player.zone||'cove'].n);}
 /* ---------- your tackle: rods, bait, lures, lines and Mystery Crates ---------- */
 function grantCrate(why){state.crates=(state.crates||0)+1;save();renderHotbar();toast(`+1 Mystery Crate for ${why}! Open it from your tackle (slot 2).`,'gold');AU.bell(1568,.5,.07);}
@@ -143,8 +143,8 @@ function openGear(tab){if(JOIN.on)return;tab=tab||'rods';openPanel('Your tackle'
 /* ---------- what's new ---------- */
 function openUpdates(){openPanel("What's new",'Driftwood Isles '+GAME_VER,()=>{panelCtx.kind='updates';body(UPDATES.map((u,i)=>`<div class="card ${i===0?'eq':''}"><h3>Version ${u.v} · ${esc(u.d)}</h3><ul class="upd">${u.items.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>`).join(''));bindPanel({});});}
 $('#hbRod').addEventListener('click',()=>{AU.init();openGear('rods');});$('#hbBait').addEventListener('click',()=>{AU.init();openGear('bait');});
-$('#questBtn').addEventListener('click',()=>{AU.init();openQuests();});$('#mapBtn').addEventListener('click',()=>{AU.init();openMap();});$('#mmBtn').addEventListener('click',()=>{AU.init();openMap();});
-function hotbarKey(n){({1:()=>openGear('rods'),2:()=>openGear('bait'),3:openBag,4:openDex,5:openQuests,6:()=>{const m=$('#emoteMenu');m.hidden=!m.hidden;},7:openStats,8:openMap})[n]?.();}
+$('#questBtn').addEventListener('click',()=>{AU.init();openQuests();});$('#chalBtn').addEventListener('click',()=>{AU.init();openChallenges();});$('#mapBtn').addEventListener('click',()=>{AU.init();openMap();});$('#mmBtn').addEventListener('click',()=>{AU.init();openMap();});
+function hotbarKey(n){({1:()=>openGear('rods'),2:()=>openGear('bait'),3:openBag,4:openDex,5:openQuests,6:()=>{const m=$('#emoteMenu');m.hidden=!m.hidden;},7:openStats,8:openMap,9:openChallenges})[n]?.();}
 
 /* ---------- name tags: level, name and title, outlined like the HUD ---------- */
 function tagTex(top,name,sub,subCol,dot){const c=document.createElement('canvas');c.width=512;c.height=sub?168:118;const x=c.getContext('2d');x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
