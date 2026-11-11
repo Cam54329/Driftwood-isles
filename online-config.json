@@ -1,0 +1,10 @@
+{
+  "note": "Optional: paste your Firebase web config here instead of using Vercel environment variables. See SETUP-MULTIPLAYER.md.",
+  "firebase": {
+    "apiKey": "",
+    "authDomain": "",
+    "databaseURL": "",
+    "projectId": "",
+    "appId": ""
+  }
+}
